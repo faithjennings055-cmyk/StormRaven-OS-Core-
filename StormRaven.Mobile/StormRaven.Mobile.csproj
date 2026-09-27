@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.Maui.Sdk/8.0.100">
+
+  <!--
+    StormRaven.Mobile - MAUI port of the StormRaven kernel for iOS.
+
+    Reuses the kernel's portable sources (Contracts, Kernel/DecisionEngine,
+    Providers, Storage, ContextBus, Ipc) via linked compilation. The Windows
+    ServiceBase wrapper (Core/StormRaven.Kernel/KernelService.cs) is NOT
+    linked; iOS uses KernelHostedService instead.
+  -->
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-ios</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>StormRaven.Mobile</RootNamespace>
+    <AssemblyName>StormRavenMobile</AssemblyName>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <ApplicationTitle>StormRaven</ApplicationTitle>
+    <ApplicationId>com.stormraven.mobile</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</TargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
+    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.100" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Kernel sources come in via the platform-neutral portable library
+       (single source of truth shared with the Windows kernel project).
+       The Windows-only ServiceBase wrapper is NOT part of it; iOS uses
+       KernelHostedService instead. -->
+  <ItemGroup>
+    <ProjectReference Include="..\StormRaven.Kernel.Portable\StormRaven.Kernel.Portable.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Info.plist" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    StormRaven.Kernel.Portable - platform-neutral kernel library.
+
+    Compiles the kernel's portable sources (Contracts, Kernel/DecisionEngine,
+    Providers, Storage, ContextBus, Ipc) via linked compilation so there is a
+    single source of truth shared with the Windows kernel project. Targets
+    plain net8.0 so it can be built and verified on any platform, and is
+    consumed by StormRaven.Mobile (MAUI, net8.0-ios) via ProjectReference.
+
+    The Windows-only ServiceBase wrapper (Core/StormRaven.Kernel/KernelService.cs)
+    is intentionally NOT linked here; each host supplies its own lifecycle
+    wrapper (Windows: ServiceBase, iOS/MAUI: KernelHostedService).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>StormRaven.Kernel</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Contracts\**\*.cs" LinkBase="Kernel\Contracts" />
+    <Compile Include="..\Kernel\**\*.cs" LinkBase="Kernel\DecisionEngine" />
+    <Compile Include="..\Providers\**\*.cs" LinkBase="Kernel\Providers" />
+    <Compile Include="..\Storage\**\*.cs" LinkBase="Kernel\Storage" />
+    <Compile Include="..\ContextBus\**\*.cs" LinkBase="Kernel\ContextBus" />
+    <Compile Include="..\Ipc\**\*.cs" LinkBase="Kernel\Ipc" />
+  </ItemGroup>
+
+</Project>
