@@ -16,3 +16,4 @@ Next steps:‎
 2. Add a solution file and include the two projects.
 3. To test the prototype kernel, run `python StormRaven.Python/odin.py`.
 4. For Linux/WSL restoration, execute `bash StormRaven.Installer/restore_odin.sh`.
+5. iOS companion app: see `ios/StormRavenCompanion/README.md` (Bifrost HTTP/WS gateway in `Ipc/BifrostGateway.cs`, listens on :8787).
