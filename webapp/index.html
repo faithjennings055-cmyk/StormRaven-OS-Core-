@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>StormRaven OS</title>
+<meta name="description" content="StormRaven OS companion — kernel status, Edge tabs, and decision console.">
+<!-- iOS PWA meta -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="StormRaven">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="sigil">✦</span>
+      <div>
+        <h1>STORMRAVEN <span class="os">OS</span></h1>
+        <div id="connState" class="conn-state">connecting…</div>
+      </div>
+    </div>
+    <button id="settingsBtn" class="icon-btn" aria-label="Settings">⚙︎</button>
+  </header>
+
+  <nav class="tabbar">
+    <button class="tab active" data-view="status">Status</button>
+    <button class="tab" data-view="tabs">Tabs</button>
+    <button class="tab" data-view="console">Console</button>
+  </nav>
+
+  <main>
+    <!-- STATUS -->
+    <section id="view-status" class="view active">
+      <div class="card hero">
+        <div class="hero-row">
+          <div class="pulse-dot" id="pulseDot"></div>
+          <div>
+            <div id="kernelName" class="kernel-name">Kernel</div>
+            <div id="kernelUptime" class="muted">uptime —</div>
+          </div>
+          <div id="healthBadge" class="badge">unknown</div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card stat"><div class="stat-label">Version</div><div id="stVersion" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Uptime</div><div id="stUptime" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Providers</div><div id="stProviders" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Decisions</div><div id="stDecisions" class="stat-val">—</div></div>
+      </div>
+      <div class="card">
+        <h2>Kernel health</h2>
+        <div id="healthList" class="health-list"><div class="muted">Waiting for kernel…</div></div>
+      </div>
+      <div class="card">
+        <h2>Recent decisions</h2>
+        <div id="decisionsList" class="feed"><div class="muted">No decisions yet.</div></div>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <section id="view-tabs" class="view">
+      <div class="card">
+        <div class="row-between">
+          <h2>Edge tabs</h2>
+          <button id="refreshTabs" class="btn small">Refresh</button>
+        </div>
+        <div id="tabsList" class="tab-list"><div class="muted">No tab signal yet — kernel offline or provider idle.</div></div>
+      </div>
+    </section>
+
+    <!-- CONSOLE -->
+    <section id="view-console" class="view">
+      <div class="card console-card">
+        <h2>Decision engine console</h2>
+        <div id="consoleOut" class="console-out"><div class="muted">Type a command for the kernel. Try: <code>status</code>, <code>tabs</code>, <code>evaluate</code></div></div>
+        <form id="consoleForm" class="console-form">
+          <span class="prompt">❯</span>
+          <input id="consoleInput" type="text" autocomplete="off" placeholder="command…">
+          <button class="btn" type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- SETTINGS -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Settings</h2>
+      <label class="field-label" for="serverUrl">Kernel gateway URL</label>
+      <input id="serverUrl" type="url" inputmode="url" autocapitalize="off" placeholder="http://192.168.1.10:5080">
+      <p class="hint">HTTP/WS endpoint of the StormRaven IPC gateway (branch <code>ios-companion</code>). REST: <code>GET /status</code>, <code>GET /tabs</code>, <code>POST /command</code> · WS: <code>/events</code>.</p>
+      <div class="row-end">
+        <button id="settingsCancel" class="btn ghost">Cancel</button>
+        <button id="settingsSave" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
