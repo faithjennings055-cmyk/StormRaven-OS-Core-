@@ -1,0 +1,26 @@
+{
+  "name": "stormraven-desktop",
+  "productName": "StormRaven",
+  "version": "0.1.0",
+  "description": "StormRaven OS desktop shell: runs the kernel + Bifrost gateway locally and hosts the PWA UI.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --mac",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.stormraven.desktop",
+    "productName": "StormRaven",
+    "files": ["main.js", "preload.js", "icon.png"],
+    "extraResources": [{ "from": "../webapp", "to": "webapp" }],
+    "mac": { "target": ["dmg", "zip"], "identity": null },
+    "win": { "target": ["nsis", "zip"] },
+    "directories": { "output": "dist" }
+  }
+}
