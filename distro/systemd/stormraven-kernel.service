@@ -1,0 +1,24 @@
+[Unit]
+Description=StormRaven Kernel (with Bifrost HTTP/WS gateway on :8787)
+Documentation=https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Dedicated user; kernel writes SQLite state to /var/lib/stormraven (created below)
+User=stormraven
+Group=stormraven
+WorkingDirectory=/opt/stormraven
+ExecStart=/usr/bin/dotnet /opt/stormraven/StormRaven.Kernel.dll
+ExecStartPre=/usr/bin/install -d -o stormraven -g stormraven /var/lib/stormraven
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=30
+# 8787 needs no special caps for a >1024 port
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/stormraven /opt/stormraven
+
+[Install]
+WantedBy=multi-user.target
