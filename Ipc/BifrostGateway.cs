@@ -103,11 +103,27 @@ namespace StormRaven.Kernel.Ipc
             }
             catch (HttpListenerException)
             {
-                // no URLACL / no permission for wildcard — loopback still works
+                // no URLACL / no permission for wildcard — try explicit interface binds, then loopback
                 _listener.Close();
-                _listener = new HttpListener();
-                _listener.Prefixes.Add($"http://127.0.0.1:{_port}/");
-                _listener.Start();
+                bool bound = false;
+                if (!OperatingSystem.IsWindows())
+                {
+                    try
+                    {
+                        _listener = new HttpListener();
+                        _listener.Prefixes.Add($"http://*:{_port}/");
+                        _listener.Start();
+                        bound = true;
+                    }
+                    catch (HttpListenerException) { }
+                }
+                if (!bound)
+                {
+                    _listener.Close();
+                    _listener = new HttpListener();
+                    _listener.Prefixes.Add($"http://127.0.0.1:{_port}/");
+                    _listener.Start();
+                }
             }
 
             var t = new Thread(ListenLoop) { IsBackground = true, Name = "BifrostGateway" };
