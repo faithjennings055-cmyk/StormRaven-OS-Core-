@@ -1,0 +1,10 @@
+sudo
+curl
+wget
+wget
+sqlite3
+python3
+python3-pip
+locales
+net-tools
+iputils-ping

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -x
+mkdir -p /opt/stormraven /var/lib/stormraven
+cp -a "$(dirname "$0")/payload/." /opt/stormraven/
+useradd -r -s /usr/sbin/nologin stormraven || true
+chown -R stormraven:stormraven /var/lib/stormraven /opt/stormraven
+ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
+rm -rf "$(dirname "$0")/payload"
+exit 0

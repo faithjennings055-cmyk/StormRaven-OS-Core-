@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+mkdir -p /etc/systemd/network
+cat > /etc/systemd/network/80-stormraven.network <<'NET'
+[Match]
+Name=ens* en* eth*
+
+[Network]
+DHCP=yes
+NET
+exit 0
