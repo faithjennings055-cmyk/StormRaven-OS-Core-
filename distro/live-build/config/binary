@@ -1,4 +1,4 @@
-# config/binary - options for live-build(7), binary stage
+# config/binary - options for live-build(7), binary stage (Ubuntu 24.04 LTS Noble Numbat)
 
 # Set image type
 LB_IMAGE_TYPE="iso-hybrid"
@@ -10,16 +10,16 @@ LB_BINARY_FILESYSTEM="fat32"
 LB_APT_INDICES="true"
 
 # Set boot parameters
-LB_BOOTAPPEND_LIVE="boot=live components quiet splash"
+LB_BOOTAPPEND_LIVE="boot=casper quiet splash"
 
-# Set boot parameters
+# Set boot parameters for install
 LB_BOOTAPPEND_INSTALL=""
 
-# Set boot parameters
-LB_BOOTAPPEND_LIVE_FAILSAFE="boot=live components memtest noapic noapm nodma nomce nolapic nosmp nosplash vga=788"
+# Set failsafe boot parameters
+LB_BOOTAPPEND_LIVE_FAILSAFE="boot=casper memtest noapic noapm nodma nomce nolapic nosmp nosplash vga=788"
 
 # Set BIOS bootloader
-LB_BOOTLOADER_BIOS="syslinux"
+LB_BOOTLOADER_BIOS="grub-pc"
 
 # Set EFI bootloader
 LB_BOOTLOADER_EFI="grub-efi"
@@ -36,54 +36,44 @@ LB_COMPRESSION="none"
 # Support dm-verity on rootfs
 LB_DM_VERITY=""
 
-# Support FEC on dm-verity rootfs
-LB_DM_VERITY_FEC_ROOTS=""
-
-# Set sign script for roothash for dm-verity rootfs
-LB_DM_VERITY_SIGN=""
-
 # Set zsync
-LB_ZSYNC="true"
+LB_ZSYNC="false"
 
 # Control if we build binary images chrooted
-# NEVER, *EVER*, *E*V*E*R* SET THIS OPTION to false.
 LB_BUILD_WITH_CHROOT="true"
 
 # Set debian-installer
 LB_DEBIAN_INSTALLER="none"
 
 # Set debian-installer suite
-LB_DEBIAN_INSTALLER_DISTRIBUTION="bookworm"
+LB_DEBIAN_INSTALLER_DISTRIBUTION="noble"
 
 # Set debian-installer preseed filename/url
 LB_DEBIAN_INSTALLER_PRESEEDFILE=""
 
 # Toggle use of GUI debian-installer
-LB_DEBIAN_INSTALLER_GUI="true"
+LB_DEBIAN_INSTALLER_GUI="false"
 
 # Set hdd label
-LB_HDD_LABEL="DEBIAN_LIVE"
+LB_HDD_LABEL="STORMRAVEN_UBUNTU"
 
 # Set hdd filesystem size
 LB_HDD_SIZE="auto"
 
-# Set start of partition for the hdd target for BIOSes that expect a specific boot partition start (e.g. "63s"). If empty, use optimal layout.
+# Set start of partition for the hdd target
 LB_HDD_PARTITION_START=""
 
 # Set iso author
-LB_ISO_APPLICATION="Debian Live"
+LB_ISO_APPLICATION="StormRaven OS 24.04 LTS (Ubuntu Noble)"
 
 # Set iso preparer
-LB_ISO_PREPARER="live-build @LB_VERSION@; https://salsa.debian.org/live-team/live-build"
+LB_ISO_PREPARER="StormRaven Ubuntu Live Builder; https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-"
 
 # Set iso publisher
-LB_ISO_PUBLISHER="Debian Live project; https://wiki.debian.org/DebianLive; debian-live@lists.debian.org"
+LB_ISO_PUBLISHER="StormRaven OS Project; https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-"
 
 # Set iso volume (max 32 chars)
-LB_ISO_VOLUME="Debian bookworm @ISOVOLUME_TS@"
-
-# Set jffs2 eraseblock size
-LB_JFFS2_ERASEBLOCK=""
+LB_ISO_VOLUME="StormRaven 24.04 amd64"
 
 # Set memtest
 LB_MEMTEST="none"
@@ -95,25 +85,4 @@ LB_LOADLIN="false"
 LB_WIN32_LOADER="false"
 
 # Set net tarball
-LB_NET_TARBALL="true"
-
-# Set onie
-LB_ONIE="false"
-
-# Set onie additional kernel cmdline options
-LB_ONIE_KERNEL_CMDLINE=""
-
-# Set inclusion of firmware packages in debian-installer
-LB_FIRMWARE_BINARY="true"
-
-# Set inclusion of firmware packages in the live image
-LB_FIRMWARE_CHROOT="true"
-
-# Set swap file path
-LB_SWAP_FILE_PATH=""
-
-# Set swap file size
-LB_SWAP_FILE_SIZE="512"
-
-# Enable/disable UEFI secure boot support
-LB_UEFI_SECURE_BOOT="auto"
+LB_NET_TARBALL="false"

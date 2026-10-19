@@ -20,7 +20,8 @@ console = Console()
 
 class Odin:
     def __init__(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
+        if sys.stdout.isatty():
+            os.system('cls' if os.name == 'nt' else 'clear')
         ensure_dirs()
         
         # Manifest Pentagram
@@ -79,7 +80,8 @@ class Odin:
                     continue
 
                 if user.lower() == "viz":
-                    os.system("python void_viz.py")
+                    viz_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "void_viz.py")
+                    os.system(f'"{sys.executable}" "{viz_path}"')
                     continue
 
                 # Standard Translation
@@ -87,7 +89,8 @@ class Odin:
                 if plan['valid'] and self.guard.audit(plan['cmd']):
                     self.hammer.strike_system(plan['cmd'])
 
-            except KeyboardInterrupt: break
+            except (KeyboardInterrupt, EOFError):
+                break
 
 if __name__ == "__main__":
     Odin().run()

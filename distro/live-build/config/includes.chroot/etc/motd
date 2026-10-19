@@ -5,9 +5,11 @@
  ██╔══██╗██╔══██╗██║   ██║██║   ██║   ██║
  ██║  ██║██║  ██║╚██████╔╝╚██████╔╝   ██║
  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝
-        R A V E N   O S  v1.0
+        S T O R M R A V E N   O S   2 4 . 0 4   L T S
 
- Welcome to StormRaven OS — Ubuntu-based hybrid kernel environment
+ Welcome to StormRaven OS 24.04 LTS (Ubuntu Noble Numbat)
  Bifrost Gateway:  http://localhost:8787/health
  Kernel service:   systemctl status stormraven-kernel
- Dashboard (PWA):  served by the kernel gateway
+ StormRaven CLI:   stormraven status | stormraven health | stormraven decisions | stormraven odin
+ Pantheon Core:    python3 /opt/stormraven/python/odin.py
+ Dashboard (PWA):  /opt/stormraven/webapp/

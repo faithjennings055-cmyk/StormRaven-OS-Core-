@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+GATEWAY_URL="${STORMRAVEN_GATEWAY_URL:-http://127.0.0.1:8787}"
+CMD="${1:-status}"
+
+case "$CMD" in
+  status)
+    echo "=== StormRaven OS Status ==="
+    if [ -f /etc/os-release ]; then
+      . /etc/os-release
+      echo "Distro:   ${PRETTY_NAME:-StormRaven OS}"
+    fi
+    echo "Kernel:   $(uname -srm)"
+    SVC_STATE="$(systemctl is-active stormraven-kernel.service 2>/dev/null || echo inactive)"
+    echo "Service:  stormraven-kernel.service ($SVC_STATE)"
+    echo -n "Health:   "
+    curl -fsS "${GATEWAY_URL}/health" && echo "" || echo "unreachable"
+    echo -n "State:    "
+    curl -fsS "${GATEWAY_URL}/state" && echo "" || echo "unreachable"
+    ;;
+  health)
+    curl -fsS "${GATEWAY_URL}/health"
+    echo ""
+    ;;
+  state)
+    curl -fsS "${GATEWAY_URL}/state"
+    echo ""
+    ;;
+  decisions)
+    curl -fsS "${GATEWAY_URL}/decisions"
+    echo ""
+    ;;
+  tabs)
+    curl -fsS "${GATEWAY_URL}/tabs"
+    echo ""
+    ;;
+  ping)
+    curl -fsS -X POST "${GATEWAY_URL}/commands" \
+      -H "Content-Type: application/json" \
+      -d '{"intent":"ping"}'
+    echo ""
+    ;;
+  odin)
+    shift || true
+    cd /opt/stormraven/python
+    exec python3 /opt/stormraven/python/odin.py "$@"
+    ;;
+  *)
+    echo "Usage: stormraven {status|health|state|decisions|tabs|ping|odin}"
+    exit 1
+    ;;
+esac

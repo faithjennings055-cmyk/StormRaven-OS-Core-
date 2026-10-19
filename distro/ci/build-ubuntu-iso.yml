@@ -1,0 +1,32 @@
+name: Build StormRaven Ubuntu 24.04 LTS Live ISO
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'distro/**'
+      - 'StormRaven.Python/**'
+      - 'webapp/**'
+      - '.github/workflows/build-ubuntu-iso.yml'
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build StormRaven OS Ubuntu 24.04 LTS Live ISO
+        run: |
+          chmod +x distro/build-ubuntu-iso.sh
+          sudo ./distro/build-ubuntu-iso.sh
+
+      - name: Upload Ubuntu 24.04 Live ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StormRavenOS-ubuntu-24.04-amd64
+          path: |
+            StormRavenOS-ubuntu-24.04-amd64.iso
+            StormRavenOS-ubuntu-24.04-amd64.iso.sha256
+          if-no-files-found: error
