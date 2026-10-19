@@ -1,7 +1,7 @@
 {
-  "name": "StormRaven OS",
+  "name": "StormRaven OS Mobile",
   "short_name": "StormRaven",
-  "description": "StormRaven OS companion — kernel status, Edge tabs, and decision console.",
+  "description": "StormRaven OS Mobile — Ubuntu 24.04 LTS (Noble Numbat) kernel status, Edge tabs, Odin Python Pantheon, and decision console.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

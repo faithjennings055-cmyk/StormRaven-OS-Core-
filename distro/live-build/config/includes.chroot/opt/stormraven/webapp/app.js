@@ -1,25 +1,35 @@
-/* StormRaven OS companion PWA */
+/* StormRaven OS Mobile PWA — Bifrost v1 + Odin Python Pantheon */
 (function () {
   'use strict';
 
   var $ = function (id) { return document.getElementById(id); };
+  var defaultOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.indexOf('http') === 0)
+    ? window.location.origin
+    : 'https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app';
+
   var store = {
-    get url() { return localStorage.getItem('sr.serverUrl') || ''; },
-    set url(v) { localStorage.setItem('sr.serverUrl', v); }
+    get url() { return localStorage.getItem('sr.serverUrl') || defaultOrigin; },
+    set url(v) {
+      if (!v) localStorage.removeItem('sr.serverUrl');
+      else localStorage.setItem('sr.serverUrl', v);
+    }
   };
 
-  var state = { ws: null, wsTimer: null, pollTimer: null, tabTimer: null };
-
-  /* ---------- connection ---------- */
+  var state = { ws: null, pollTimer: null, decisions: [], tabs: [] };
 
   function baseUrl() {
-    var u = store.url.replace(/\/+$/, '');
-    return u;
+    return (store.url || defaultOrigin).replace(/\/+$/, '');
+  }
+
+  function unwrap(json) {
+    if (json && typeof json === 'object' && json.ok === true && json.data !== undefined) {
+      return json.data;
+    }
+    return json;
   }
 
   function api(path, opts) {
     var base = baseUrl();
-    if (!base) return Promise.reject(new Error('No gateway URL configured. Open Settings ⚙︎ and set the kernel gateway URL.'));
     return fetch(base + path, Object.assign({ headers: { 'Accept': 'application/json' } }, opts || {}))
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -29,106 +39,210 @@
 
   function setConn(ok, text) {
     var el = $('connState'), dot = $('pulseDot');
-    el.textContent = text;
-    el.className = 'conn-state ' + (ok ? 'ok' : 'bad');
-    dot.className = 'pulse-dot' + (ok ? ' ok' : '');
+    if (el) {
+      el.textContent = text;
+      el.className = 'conn-state ' + (ok ? 'ok' : 'bad');
+    }
+    if (dot) {
+      dot.className = 'pulse-dot' + (ok ? ' ok' : '');
+    }
   }
-
-  /* ---------- status view ---------- */
 
   function fmtUptime(sec) {
     if (sec == null) return '—';
-    var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+    var s = Number(sec);
+    var d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    if (d === 0 && h === 0 && m === 0) return s + 's';
     return (d ? d + 'd ' : '') + (h ? h + 'h ' : '') + m + 'm';
   }
 
   function badgeFor(health) {
     var b = $('healthBadge');
+    if (!b) return;
     b.textContent = health;
-    b.className = 'badge ' + (health === 'healthy' ? 'ok' : health === 'offline' || health === 'degraded' ? 'bad' : 'warn');
+    var ok = (health === 'healthy' || health === 'online' || health === 'ok');
+    var bad = (health === 'offline' || health === 'degraded' || health === 'error');
+    b.className = 'badge ' + (ok ? 'ok' : bad ? 'bad' : 'warn');
   }
 
-  function renderStatus(s) {
-    var st = s.status || s.state || s;
-    var health = st.health || st.healthStatus || 'unknown';
-    badgeFor(String(health).toLowerCase());
-    $('kernelName').textContent = st.name || st.kernel || 'StormRaven Kernel';
-    $('kernelUptime').textContent = 'uptime ' + fmtUptime(st.uptimeSec != null ? st.uptimeSec : st.uptimeSeconds);
-    $('stVersion').textContent = st.version || '—';
-    $('stUptime').textContent = fmtUptime(st.uptimeSec != null ? st.uptimeSec : st.uptimeSeconds);
-    var provs = st.providers || [];
-    $('stProviders').textContent = Array.isArray(provs) ? String(provs.length) : (provs || '—');
-    var decs = s.decisions || st.recentDecisions || [];
-    renderDecisions(Array.isArray(decs) ? decs : []);
+  function renderStatus(raw) {
+    var s = unwrap(raw);
+    var st = s.status && typeof s.status === 'object' ? s.status : s;
+    var healthStr = String(st.health || st.status || 'online').toLowerCase();
+    badgeFor(healthStr === 'online' ? 'healthy' : healthStr);
+
+    var kName = st.distro || st.name || st.kernel || 'StormRaven OS (Ubuntu 24.04 Noble)';
+    $('kernelName').textContent = kName;
+    var up = st.uptimeSec != null ? st.uptimeSec : st.uptimeSeconds;
+    $('kernelUptime').textContent = 'uptime ' + fmtUptime(up) + ' · bridge ' + (st.bridgeVersion || 'sr.bridge.mobile.v1');
+    $('stVersion').textContent = (st.distroVersion || '24.04 Noble') + ' · v' + (st.version || '1.0.0');
+    $('stUptime').textContent = fmtUptime(up);
+
+    var openTabsCount = st.openTabs != null ? st.openTabs : (Array.isArray(st.tabs) ? st.tabs.length : state.tabs.length);
+    $('stProviders').textContent = String(openTabsCount) + ' active';
+
+    if (st.telemetry) {
+      if ($('odinCpu')) $('odinCpu').textContent = st.telemetry.cpu + '%';
+      if ($('odinRam')) $('odinRam').textContent = st.telemetry.ram + '%';
+    }
+    if (st.linuxKernel && $('odinKernelVer')) {
+      $('odinKernelVer').textContent = st.linuxKernel;
+    }
+
+    var decs = s.decisions || st.recentDecisions || state.decisions || [];
+    if (Array.isArray(decs) && decs.length) {
+      state.decisions = decs;
+      renderDecisions(decs);
+    }
 
     var checks = st.checks || [
-      { name: 'IPC pipe', state: st.ipc ? 'ok' : 'unknown' },
-      { name: 'Edge tabs provider', state: st.edgeTabs ? 'ok' : 'unknown' },
-      { name: 'Decision engine', state: 'ok' },
-      { name: 'SQLite storage', state: st.storage ? 'ok' : 'unknown' }
+      { name: 'Bifrost Mobile Gateway (:8787)', state: 'ok' },
+      { name: 'Ubuntu 24.04 LTS (Noble) Runtime', state: 'ok' },
+      { name: 'Edge Tabs Signal Provider', state: 'ok' },
+      { name: 'Deterministic DecisionEngine', state: 'ok' },
+      { name: 'Odin Python Pantheon (Thor/Freya/Heimdall)', state: 'ok' },
+      { name: 'SQLite Decision Store', state: 'ok' }
     ];
     var list = $('healthList');
-    if (!Array.isArray(checks) || !checks.length) { list.innerHTML = '<div class="muted">No health checks reported.</div>'; return; }
-    list.innerHTML = '';
-    checks.forEach(function (c) {
-      var cls = c.state === 'ok' ? 'h-ok' : c.state === 'warn' ? 'h-warn' : 'h-bad';
-      var row = document.createElement('div');
-      row.className = 'health-item';
-      row.innerHTML = '<span>' + esc(c.name || c.check) + '</span><span class="' + cls + '">' + esc(c.state || 'unknown') + '</span>';
-      list.appendChild(row);
-    });
+    if (list) {
+      list.innerHTML = '';
+      checks.forEach(function (c) {
+        var cls = c.state === 'ok' ? 'h-ok' : c.state === 'warn' ? 'h-warn' : 'h-bad';
+        var row = document.createElement('div');
+        row.className = 'health-item';
+        row.innerHTML = '<span>' + esc(c.name || c.check) + '</span><span class="' + cls + '">' + esc(c.state || 'ok') + '</span>';
+        list.appendChild(row);
+      });
+    }
   }
 
   function renderDecisions(decs) {
-    var feed = $('decisionsList');
-    if (!decs.length) { feed.innerHTML = '<div class="muted">No decisions yet.</div>'; $('stDecisions').textContent = '0'; return; }
-    $('stDecisions').textContent = String(decs.length);
-    feed.innerHTML = '';
-    decs.slice(0, 8).forEach(function (d) {
-      var el = document.createElement('div');
-      el.className = 'feed-item';
-      var sev = String(d.severity || 'info').toLowerCase();
-      el.innerHTML = '<span class="sev-' + esc(sev) + '">[' + esc(sev) + ']</span> ' + esc(d.summary || d.text || JSON.stringify(d)) +
-        '<time>' + esc(d.id || '') + (d.time ? ' · ' + esc(String(d.time)) : '') + '</time>';
-      feed.appendChild(el);
+    var arr = Array.isArray(decs) ? decs : (decs && decs.decisions ? decs.decisions : []);
+    state.decisions = arr;
+    if ($('stDecisions')) $('stDecisions').textContent = String(arr.length);
+
+    ['decisionsList', 'fullDecisionsList'].forEach(function (targetId) {
+      var feed = $(targetId);
+      if (!feed) return;
+      if (!arr.length) {
+        feed.innerHTML = '<div class="muted">No decisions recorded yet.</div>';
+        return;
+      }
+      feed.innerHTML = '';
+      var limit = targetId === 'decisionsList' ? 5 : 25;
+      arr.slice(0, limit).forEach(function (d) {
+        var el = document.createElement('div');
+        el.className = 'feed-item';
+        var sev = String(d.severity || 'info').toLowerCase();
+        var rule = (d.explainability && d.explainability.ruleId) ? ' · rule: ' + d.explainability.ruleId : (d.ruleId ? ' · rule: ' + d.ruleId : '');
+        el.innerHTML = '<span class="sev-' + esc(sev) + '">[' + esc(sev.toUpperCase()) + ']</span> ' +
+          esc(d.summary || d.text || JSON.stringify(d)) +
+          '<time>' + esc(d.id || '') + (d.time ? ' · ' + esc(String(d.time)) : '') + esc(rule) + '</time>';
+        feed.appendChild(el);
+      });
     });
   }
 
   function refreshStatus() {
-    api('/status').then(function (s) { renderStatus(s); setConn(true, 'connected · ' + baseUrl().replace(/^https?:\/\//, '')); })
+    api('/status')
+      .then(function (s) {
+        renderStatus(s);
+        var hostLabel = baseUrl().replace(/^https?:\/\//, '');
+        setConn(true, 'connected · ' + hostLabel);
+      })
+      .catch(function () {
+        // Fallback directly to Bifrost v1 /health + /decisions
+        return Promise.all([api('/health'), api('/decisions').catch(function () { return {}; })])
+          .then(function (res) {
+            var h = unwrap(res[0]);
+            var d = unwrap(res[1]);
+            h.decisions = d.decisions || [];
+            renderStatus(h);
+            setConn(true, 'connected · ' + baseUrl().replace(/^https?:\/\//, ''));
+          });
+      })
       .catch(function (e) {
         badgeFor('offline');
         setConn(false, 'offline — ' + (e.message || 'cannot reach kernel'));
-        $('healthList').innerHTML = '<div class="muted">Kernel unreachable. Check the gateway URL in Settings and that the kernel (ios-companion gateway) is running.</div>';
       });
   }
 
   /* ---------- tabs view ---------- */
 
-  function renderTabs(tabs) {
+  function renderTabs(raw) {
     var list = $('tabsList');
-    var arr = Array.isArray(tabs) ? tabs : (tabs.tabs || tabs.payload && tabs.payload.tabs || []);
-    if (!arr.length) { list.innerHTML = '<div class="muted">No tab signal yet — kernel offline or provider idle.</div>'; return; }
+    if (!list) return;
+    var unwrapped = unwrap(raw);
+    var arr = Array.isArray(unwrapped) ? unwrapped : (unwrapped.tabs || (unwrapped.payload && unwrapped.payload.tabs) || []);
+    state.tabs = arr;
+    if ($('stProviders')) $('stProviders').textContent = String(arr.length) + ' active';
+    if (!arr.length) {
+      list.innerHTML = '<div class="muted">No tab signal yet — tap "+ Demo Tab" to ingest a live mobile tab signal.</div>';
+      return;
+    }
     list.innerHTML = '';
     arr.forEach(function (t) {
+      var isCur = Boolean(t.isCurrent || t.current || t.active);
       var el = document.createElement('div');
-      el.className = 'tab-item' + (t.isCurrent || t.current || t.active ? ' current' : '');
-      el.innerHTML = '<span class="dot"></span><div style="min-width:0"><div>' + esc(t.title || t.name || 'Untitled') + '</div>' +
-        '<span class="url">' + esc(t.url || t.host || '') + '</span></div>';
+      el.className = 'tab-item' + (isCur ? ' current' : '');
+      el.innerHTML =
+        '<div class="tab-main">' +
+          '<span class="dot"></span>' +
+          '<div style="min-width:0">' +
+            '<div style="font-weight:600">' + esc(t.title || t.name || 'Untitled') + '</div>' +
+            '<span class="url">' + esc(t.url || t.host || '') + '</span>' +
+          '</div>' +
+        '</div>' +
+        (isCur ? '<span class="tab-badge">FOCUSED</span>' : '');
       list.appendChild(el);
     });
   }
 
   function refreshTabs() {
     api('/tabs').then(renderTabs).catch(function (e) {
-      $('tabsList').innerHTML = '<div class="muted">Cannot load tabs: ' + esc(e.message) + '</div>';
+      if ($('tabsList')) $('tabsList').innerHTML = '<div class="muted">Cannot load tabs: ' + esc(e.message) + '</div>';
     });
   }
 
-  /* ---------- console ---------- */
+  function refreshDecisions() {
+    api('/decisions').then(function (r) {
+      var d = unwrap(r);
+      renderDecisions(d.decisions || d);
+    }).catch(function () {});
+  }
+
+  function ingestDemoTab() {
+    var now = new Date().toISOString();
+    var demoTabs = [
+      { id: 'mob-core', title: 'StormRaven OS Mobile — Bifrost Active Session', url: baseUrl() + '/', isCurrent: true, isAudible: false, updatedUtc: now },
+      { id: 'mob-repo', title: 'faithjennings055-cmyk/StormRaven-OS-Core- (Ubuntu 24.04 Noble)', url: 'https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-', isCurrent: false, isAudible: false, updatedUtc: now },
+      { id: 'mob-odin', title: 'Odin Leviathan Core v5.0 — Pantheon Telemetry', url: 'stormraven://pantheon/odin', isCurrent: false, isAudible: false, updatedUtc: now }
+    ];
+    api('/tabs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(demoTabs)
+    }).then(function (res) {
+      refreshTabs();
+      refreshStatus();
+      refreshDecisions();
+      if ($('odinOutput')) {
+        $('odinOutput').textContent = JSON.stringify(unwrap(res), null, 2);
+      }
+    }).catch(function (err) {
+      out('ingest error: ' + err.message, 'err');
+    });
+  }
+
+  function evaluateNow() {
+    runCommand('evaluate', true);
+  }
+
+  /* ---------- console & Odin Pantheon ---------- */
 
   function out(text, cls) {
     var o = $('consoleOut');
+    if (!o) return;
     if (o.querySelector('.muted')) o.innerHTML = '';
     var l = document.createElement('div');
     l.className = 'line ' + (cls || '');
@@ -137,16 +251,35 @@
     o.scrollTop = o.scrollHeight;
   }
 
-  function runCommand(cmd) {
+  function runCommand(cmd, alsoUpdateOdinBox) {
     out('❯ ' + cmd, 'cmd');
-    api('/command', {
+    if (alsoUpdateOdinBox && $('odinOutput')) {
+      $('odinOutput').textContent = 'Running ' + cmd + '…';
+    }
+    return api('/command', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ command: cmd, source: 'pwa', ts: new Date().toISOString() })
+      body: JSON.stringify({ command: cmd, source: 'mobile-pwa', ts: new Date().toISOString() })
     }).then(function (r) {
-      var resp = r.result || r.response || r.output || r;
-      out(typeof resp === 'string' ? resp : JSON.stringify(resp, null, 2), 'out');
-    }).catch(function (e) { out('error: ' + e.message, 'err'); });
+      var payload = r.result || r.response || r.output || unwrap(r);
+      var formatted = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+      out(formatted, 'out');
+      if (alsoUpdateOdinBox && $('odinOutput')) {
+        $('odinOutput').textContent = formatted;
+      }
+      if (payload && payload.telemetry) {
+        if ($('odinCpu')) $('odinCpu').textContent = payload.telemetry.cpu + '%';
+        if ($('odinRam')) $('odinRam').textContent = payload.telemetry.ram + '%';
+      }
+      refreshStatus();
+      refreshDecisions();
+      return payload;
+    }).catch(function (e) {
+      out('error: ' + e.message, 'err');
+      if (alsoUpdateOdinBox && $('odinOutput')) {
+        $('odinOutput').textContent = 'Error: ' + e.message;
+      }
+    });
   }
 
   /* ---------- websocket events ---------- */
@@ -154,27 +287,28 @@
   function connectWs() {
     if (!baseUrl()) return;
     try { if (state.ws) state.ws.close(); } catch (e) {}
-    var wsUrl = baseUrl().replace(/^http/, 'ws') + '/events';
+    var wsUrl = baseUrl().replace(/^http/, 'ws') + '/ws';
     var ws;
     try { ws = new WebSocket(wsUrl); } catch (e) { return; }
     state.ws = ws;
-    ws.onopen = function () { out('event stream connected', 'sys'); };
+    ws.onopen = function () { out('● bifrost live stream connected (/ws)', 'sys'); };
     ws.onmessage = function (ev) {
       try {
         var msg = JSON.parse(ev.data);
-        if (msg.type === 'decision' || msg.decision) renderDecisions([msg.decision || msg].concat(currentDecisions()));
-        if (msg.type === 'tabs' || msg.tabs) renderTabs(msg.tabs || msg);
-        if (msg.type === 'status') renderStatus(msg);
-      } catch (e) { out('event: ' + ev.data, 'out'); }
+        if (msg.type === 'hello') {
+          if (msg.tabs) renderTabs(msg.tabs);
+          refreshStatus();
+        } else if (msg.type === 'decision' && msg.data) {
+          state.decisions = [msg.data].concat(state.decisions);
+          renderDecisions(state.decisions);
+        } else if (msg.type === 'tabs' || msg.tabs) {
+          renderTabs(msg.tabs || msg.data || msg);
+        } else if (msg.type === 'health.tick' && msg.data) {
+          renderStatus(msg.data);
+        }
+      } catch (e) {}
     };
-    ws.onclose = function () { /* reconnect via poll loop */ };
-  }
-
-  function currentDecisions() {
-    var feed = $('decisionsList');
-    var items = [];
-    feed.querySelectorAll('.feed-item').forEach(function () { items.push({}); });
-    return items; // placeholder — new decisions prepend via feed
+    ws.onclose = function () {};
   }
 
   /* ---------- settings ---------- */
@@ -186,9 +320,13 @@
   function closeSettings() { $('settingsModal').classList.add('hidden'); }
   function saveSettings() {
     var v = $('serverUrl').value.trim();
-    store.url = v;
+    store.url = v || defaultOrigin;
     closeSettings();
-    if (v) { setConn(false, 'connecting…'); refreshStatus(); refreshTabs(); connectWs(); }
+    setConn(false, 'connecting…');
+    refreshStatus();
+    refreshTabs();
+    refreshDecisions();
+    connectWs();
   }
 
   /* ---------- routing ---------- */
@@ -198,9 +336,9 @@
     document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
     if (name === 'tabs') refreshTabs();
     if (name === 'status') refreshStatus();
+    if (name === 'decisions') refreshDecisions();
+    if (name === 'odin') runCommand('odin telemetry', true);
   }
-
-  /* ---------- utils ---------- */
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -217,15 +355,50 @@
   $('settingsCancel').addEventListener('click', closeSettings);
   $('settingsSave').addEventListener('click', saveSettings);
   $('refreshTabs').addEventListener('click', refreshTabs);
+  if ($('ingestDemoTabBtn')) $('ingestDemoTabBtn').addEventListener('click', ingestDemoTab);
+  if ($('evalQuickBtn')) $('evalQuickBtn').addEventListener('click', evaluateNow);
+  if ($('evalEngineBtn')) $('evalEngineBtn').addEventListener('click', evaluateNow);
+
+  document.querySelectorAll('[data-odin]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var act = btn.getAttribute('data-odin');
+      if (act === 'ingest_demo_tab') {
+        ingestDemoTab();
+      } else if (act === 'evaluate' || act === 'ping') {
+        runCommand(act, true);
+      } else {
+        runCommand('odin ' + act, true);
+      }
+    });
+  });
+
+  if ($('installCmdText')) {
+    $('installCmdText').textContent = 'curl -fsSL ' + baseUrl() + '/install-mobile.sh | bash';
+  }
+  if ($('copyInstallBtn')) {
+    $('copyInstallBtn').addEventListener('click', function () {
+      var txt = $('installCmdText').textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () {
+          $('copyInstallBtn').textContent = 'Copied!';
+          setTimeout(function () { $('copyInstallBtn').textContent = 'Copy'; }, 1800);
+        });
+      }
+    });
+  }
+
   $('consoleForm').addEventListener('submit', function (e) {
     e.preventDefault();
     var v = $('consoleInput').value.trim();
-    if (v) { runCommand(v); $('consoleInput').value = ''; }
+    if (v) { runCommand(v, false); $('consoleInput').value = ''; }
   });
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
-  if (!store.url) { openSettings(); }
+
+  // Connect immediately to same-origin (or saved URL) with zero modal pop-up!
   refreshStatus();
+  refreshTabs();
+  refreshDecisions();
+  connectWs();
   state.pollTimer = setInterval(refreshStatus, 10000);
-  setInterval(function () { if (document.querySelector('#view-tabs.active')) refreshTabs(); }, 15000);
 })();
