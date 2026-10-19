@@ -1,4 +1,4 @@
-﻿class Freya:
+class Freya:
     def think_autonomously(self, data):
         if data['cpu'] > 90:
             return {"type": "command", "intent": "kill_bloatware"}

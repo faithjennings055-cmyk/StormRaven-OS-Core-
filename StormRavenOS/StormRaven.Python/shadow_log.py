@@ -1,4 +1,4 @@
-﻿import json, time, os
+import json, time, os
 from constants import LOG_DIR, ensure_dirs
 
 LOG_FILE = os.path.join(LOG_DIR, "network_history.jsonl")

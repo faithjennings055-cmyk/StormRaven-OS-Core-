@@ -1,4 +1,4 @@
-﻿import os
+import os
 from constants import KEY_PATH
 
 def verify_key():

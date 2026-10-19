@@ -1,1 +1,1 @@
-﻿def status(): print("[∞] LYNN: Honeycomb online (616 cells).")
+def status(): print("[∞] LYNN: Honeycomb online (616 cells).")

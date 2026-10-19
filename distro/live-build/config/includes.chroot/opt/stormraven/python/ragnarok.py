@@ -1,4 +1,4 @@
-﻿import os, shutil, sys
+import os, shutil, sys
 from constants import LOG_DIR, IS_WINDOWS
 
 def purge():

@@ -1,4 +1,4 @@
-﻿import os
+import os
 from constants import DEV_DRIVE, IS_WINDOWS
 
 def check_seal():

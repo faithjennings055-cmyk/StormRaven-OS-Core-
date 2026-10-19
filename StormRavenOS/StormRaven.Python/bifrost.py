@@ -1,4 +1,4 @@
-﻿import platform
+import platform
 class Bifrost:
     def __init__(self):
         self.is_win = platform.system() == "Windows"

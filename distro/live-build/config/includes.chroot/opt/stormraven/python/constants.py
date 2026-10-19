@@ -1,4 +1,4 @@
-﻿import os
+import os
 import platform
 
 IS_WINDOWS = platform.system() == "Windows"

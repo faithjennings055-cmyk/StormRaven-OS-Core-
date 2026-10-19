@@ -1,4 +1,4 @@
-﻿import json, os
+import json, os
 from rich.console import Console
 from rich.table import Table
 from constants import LOG_DIR
