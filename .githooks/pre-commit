@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Agent-repo pre-commit hook (seeded from the harness, activated by
+# `git config core.hooksPath .githooks` during sandbox setup).
+#
+# Blocks a commit that would break the image build. Today it enforces ONE rule:
+# the image builder (e2b) does not support multi-stage Dockerfiles. A Dockerfile
+# with more than one `FROM`, or a `FROM ... AS <stage>` alias, fails the remote
+# build with a terse error and no pointer to the offending lines. Catching it at
+# commit time turns a wasted build into an immediate, actionable message.
+#
+# This mirrors the shared detector in
+# @createinc/agent-lifecycle-docker/dockerfile-single-stage (kept in lockstep;
+# see that module + its tests). Pure bash + git so it runs in any agent sandbox
+# with no dependencies.
+#
+# Escape hatch: set ALLOW_MULTISTAGE_DOCKERFILE=1 to bypass (e.g. an intentional
+# local experiment). CI / the compose guard still enforce it server-side.
+set -euo pipefail
+
+if [ "${ALLOW_MULTISTAGE_DOCKERFILE:-}" = "1" ]; then
+  exit 0
+fi
+
+# Which Dockerfiles are being committed (added/copied/modified)? We only check
+# files literally named `Dockerfile` (the agent repo's build Dockerfile).
+mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACM -- '*Dockerfile' 'Dockerfile' | sort -u)
+
+if [ "${#staged[@]}" -eq 0 ]; then
+  exit 0
+fi
+
+# Detect a multi-stage Dockerfile from staged CONTENT (not the worktree file):
+# read the blob git actually has staged, so the check matches what gets committed.
+# Rules (multi-stage if EITHER holds):
+#   1. >= 2 `FROM` instructions
+#   2. any `FROM ... AS <stage>` alias
+# Only real instructions count: comments (`#...`) skipped; `FROM` must be the
+# first token; trailing-backslash line continuations are joined first.
+is_multistage() {
+  # stdin: dockerfile content. echoes the offending FROM lines; returns 0 if
+  # multi-stage, 1 if single-stage.
+  awk '
+    # Join line continuations into one logical line, preserving the start lineno.
+    {
+      raw = $0
+      if (buf == "") startline = NR
+      cont = (raw ~ /\\[ \t]*$/)
+      sub(/\\[ \t]*$/, "", raw)
+      # trim
+      gsub(/^[ \t]+|[ \t]+$/, "", raw)
+      buf = (buf == "" ? raw : buf " " raw)
+      if (cont) next
+      line = buf; ln = startline; buf = ""
+      process(line, ln)
+    }
+    END {
+      if (buf != "") process(buf, startline)
+      multistage = (from_count >= 2 || alias)
+      # print offending FROM lines to stderr for the caller
+      for (i = 1; i <= n; i++) print froms[i] > "/dev/stderr"
+      exit (multistage ? 0 : 1)
+    }
+    function process(l, lno,   toks, first, j) {
+      if (l == "") return
+      # Inside a heredoc body: ignore until the terminator line.
+      if (heredoc != "") {
+        if (l == heredoc) heredoc = ""
+        return
+      }
+      if (substr(l, 1, 1) == "#") return
+      # Does this instruction open a heredoc (<<WORD / <<-WORD / <<"WORD")?
+      if (match(l, /<<-?[ \t]*[\x27"]?[A-Za-z_][A-Za-z0-9_]*/)) {
+        h = substr(l, RSTART, RLENGTH)
+        gsub(/^<<-?[ \t]*[\x27"]?/, "", h)
+        heredoc = h
+      }
+      nt = split(l, toks, /[ \t]+/)
+      if (nt == 0) return
+      first = toupper(toks[1])
+      if (first != "FROM") return
+      from_count++
+      n++
+      froms[n] = "  line " lno ": " l
+      for (j = 2; j <= nt; j++) {
+        if (toupper(toks[j]) == "AS") alias = 1
+      }
+    }
+  '
+}
+
+violations=0
+fromsfile="$(mktemp)"
+trap 'rm -f "$fromsfile"' EXIT
+for f in "${staged[@]}"; do
+  [ -n "$f" ] || continue
+  # Staged content of this path (what will actually be committed).
+  content="$(git show ":$f" 2>/dev/null || true)"
+  [ -n "$content" ] || continue
+  if printf '%s\n' "$content" | is_multistage 2>"$fromsfile" >/dev/null; then
+    violations=1
+    {
+      echo "ERROR: multi-stage Dockerfile is not supported: $f"
+      echo ""
+      echo "Found these FROM instructions:"
+      cat "$fromsfile"
+      echo ""
+      echo "The image builder rejects any Dockerfile with more than one FROM, or a"
+      echo "\`FROM ... AS <stage>\` alias. Inline everything into a single stage:"
+      echo "install any build-time toolchain, build, and clean it up within one RUN"
+      echo "layer instead of copying artifacts from a separate \`AS build\` stage."
+      echo ""
+    } >&2
+  fi
+done
+
+if [ "$violations" -ne 0 ]; then
+  echo "Commit blocked. To bypass intentionally: ALLOW_MULTISTAGE_DOCKERFILE=1 git commit ..." >&2
+  exit 1
+fi
+
+exit 0
