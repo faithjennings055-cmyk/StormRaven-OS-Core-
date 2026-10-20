@@ -20,7 +20,12 @@ On 2026-10-20 Faith texted "Work on Stormraven os" (iMessage conv 01a159a5-4091-
 - **StormRaven-Alfheim-UI-** — created 2026-10-19. Next.js + React + Tailwind + shadcn frontend dashboard (pnpm). Links to "Bifrost WebSocket gateway". package.json name still "my-project".
 
 ## Work done
-- 2026-10-20: README of Alfheim-UI was raw pasted assistant-draft text (started "To begin your GitHub repository...", ended "Would you like me to generate..."). Cleaned into proper Markdown. Draft PR #3: https://github.com/faithjennings055-cmyk/StormRaven-Alfheim-UI-/pull/3 (branch docs/clean-readme). Awaiting her review/merge.
+- 2026-10-20: README of Alfheim-UI was raw pasted assistant-draft text. Cleaned into proper Markdown. Draft PR #3: https://github.com/faithjennings055-cmyk/StormRaven-Alfheim-UI-/pull/3 (branch docs/clean-readme). Awaiting review.
+- 2026-10-20: Core Python cleanup. Draft PR #2: https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-/pull/2 (branch chore/python-cleanup). Removed 6 unused imports (threading in odin.py, sys in ragnarok.py, os in saga.py — in BOTH Python/ and StormRaven.Python/), added .venv/ to .gitignore. 4 tests still pass, flake8 clean. Awaiting review.
+- 2026-10-20: Alfheim UI health pass. Draft PR #4: https://github.com/faithjennings055-cmyk/StormRaven-Alfheim-UI-/pull/4 (branch chore/ui-health). Fixed package.json name (my-project -> stormraven-alfheim-ui), moved pnpm.overrides to top level, removed dead lint script (no eslint config), added .env.example (BETTER_AUTH_SECRET/URL). Build green. UI is a REAL working dashboard (16 TS files, Better Auth, Drizzle+Postgres, Redux, Next.js 16/React 19), not a skeleton. Awaiting review.
+
+## Coverage gap (open, flagged to Faith 2026-10-20)
+Core tests cover only 4 of 15+ Pantheon modules. Highest-risk untested: **ragnarok** (filesystem purge) and **deadman** (kill switch). Both safely testable with temp dirs + mocked processes. Offered to write tests for these two; awaiting her go-ahead.
 
 ## Note
 "Work on Stormraven os" is open-ended. Before big changes, get a specific target from Faith. Reversible work (branches, draft PRs, docs) is fine to just do.
