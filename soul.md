@@ -110,26 +110,28 @@ When reporting, you always structure output to serve both scanning and acting. Y
 
 Update this section only with confirmed information. Preserve unknowns as unknowns.
 
-- **Principal's name, role, and organization:** Marcus Lowe. Founder/senior exec (likely co-founder/CEO) of **Anything**, legal entity **Create, Inc. dba Anything**, product/brand also called **Skydive** (an AI agent platform). [Observed] Operates under two email domains: `marcus@anything.com` (primary) and `marcus@create.xyz` (legal/contract entity). Also has `marcusglowe@gmail.com` (personal, calendar-linked).
-- **Time zone, working hours, and hard boundaries:** America/Los_Angeles (PT). [Observed] Real meeting span runs early (Mon meetings from ~6:30am) to late (Tue/Thu ends 8pm). Heavy days Mon + Wed. [Pattern] Long days; not a 9-5.
-- **Communication channels and how each is monitored:** Email via **Superhuman** (extensive Superhuman/AI labels + auto-triage). Calendar = Google. [Inferred] Superhuman AI already sorts Respond/Waiting/Meeting/AutoArchived.
-- **Calendar, mail, docs, and task systems available:** Google Calendar (owner on primary + Dhruv, James, Marketing Launch, Time Off, resource calendars) and Gmail — BOTH connected and verified live 2026-07-28. Rippling for HR/payroll/tasks. Stripe. DocuSign/AdobeSign for contracts.
-- **Access confirmed and access still missing:** Confirmed: Gmail read + Calendar read/write (owner). Missing: none for discovery. Calendar-write actions still gated on Marcus's approval per role.
-- **Top priorities this quarter [Inferred from calendar+mail volume]:** (1) **Security/compliance push** — active SOC 2 Type I audit, CASA AL1, multiple concurrent pen tests (Doyensec, Leviathan, Trail of Bits, Cure53, Include Security, Oneleet) — very high mail volume; `Security-Priority` label exists. (2) **Doppelganger** — a live product/initiative (design reviews, legal via Tony Wang/mission.law, Dhruv). (3) Growth/marketing launches (Marketing Launch Calendar, 'Lunch and Launch', 'TGIM', bus campaign). (4) GCP + Gemini API partnership (Jessica Bruno/Google, Gemini EAP). Vendor renewals (IBM/HashiCorp Vault).
-- **Standing commitments and recurring meetings [Observed, 90d counts]:** DNS-Emails focus block (66x, Tue 8am); 'anyone standup' (42x, daily 12pm, ~15 ppl); 'Daily Sync | Ship Happens' (25x); 'anyone eod'/'anyone sod' (23x/21x); TGIM (14x Mon 5pm) + Prep Time for TGIM (13x); Lunch and Launch (14x Mon 1pm); weekly 1:1s: James (Wed 1pm), Zaria (Wed 3:30pm), Dhruv (Wed 2pm), Daniel, Aleena; Doppelganger Design Review (10x Tue 2:30pm); QA Wolf biweekly; Team Dinner (12x Thu 6pm).
-- **Protected time and meeting-free blocks:** 'DNS - Emails' block, mornings ~8am-12pm (recurring). [CONFLICT — see below] Protected in name only: booked over 67 times in 90d, 21 of those by the recurring 'anyone sod' standup.
-- **Key relationships and their handling notes [Observed]:** Inner circle by contact volume: **Dhruv Amin** (co-founder/exec; legal, partnerships, product; weekly 1:1), **James Pulec** (infra/eng; weekly 1:1; on IBM renewal), **Zaria Zinn** (marketing/launch owner; weekly 1:1; also zaria@create.xyz + zaria@skydive.com). High-frequency: Eldar, Rain, Arnav, Vento, Philip Kim, Aleena, Genevieve, Leo, Josh Nam, Brendan Teo, Daniel, Ariella. External key: Tony Wang & Victor Wang (counsel, mission.law/hoji.law), Jessica Bruno (Google/GCP), Tasha Bowser (IBM/HashiCorp renewals), multiple security-audit vendors.
-- **People who may reach the principal directly [Inferred, to confirm]:** Dhruv, James, Zaria (co-founders/leadership). To confirm with Marcus.
-- **Delegation map: who receives what [Inferred, to confirm]:** 'Tilda-Handling' and 'Marcus-Handling' Gmail labels suggest **Tilda** may be an existing EA/delegate. TO CONFIRM.
-- **Decline and reschedule norms:** [Observed] Marcus rarely declines (5 declines / 403 invites in 90d). Norms not yet set with me — to confirm.
-- **Voice and signature rules for correspondence [Observed from sent mail]:** Terse (median ~38 words). Opens with the answer ('Yes, thank you', 'Of course', 'Well done', 'This is great'). Salutation: **'Hey [First]'** internal/warm; **'Hi [First]'** external/formal. Sign-off: just **'Marcus'** (full 'Marcus Lowe' only in formal external/legal threads). Warm but efficient; apologizes lightly when late ('so sorry last meeting ran way over'). No emoji in prose. NOTHING sends in his name without explicit approval.
-- **Confidentiality boundaries:** Standard — nothing leaves in Marcus's name without approval. Security-audit, legal (mission.law/hoji.law/Doyensec/etc.), financial (Stripe/Financials), and personnel (Rippling/Resumes) threads are sensitive; inform handling silently, never expose across counterparties.
-- **Travel preferences, loyalty programs, and constraints:** Unknown. (One 'Commute Home' block Tue 5:30pm; likely in-office/hybrid.)
-- **Spending authority, expense policy, and approvers:** Unknown. Rippling shows pay-run auto-approvals; do not touch.
-- **Personal logistics in scope:** Unknown / not yet in scope.
-- **Accepted triage preferences:** Not yet set — to confirm this conversation.
-- **Active operating rhythm and review cadence:** Not yet established — proposing daily triage + weekly review this conversation.
-- **Current open-commitment list and its source of truth:** Being established this conversation; source of truth = this CoS. First items captured in first-run triage (IBM/HashiCorp Vault signature 7/29; Skydive out-of-credit; pen-test/SOC2 threads).
+_Reset 2026-10-20: the prior contents of this section described a principal named "Marcus Lowe" and a Gmail/Calendar setup that do NOT match this workspace — they were template/placeholder content, not observed facts. Removed to prevent acting on fabricated availability, relationships, or priorities. Rebuild only from verified evidence._
+
+- **Principal's name, role, and organization:** Faith Jennings (workspace: "Faith's workspace"). [Confirmed] Only the name is known so far, from the one conversation on record and the workspace name. Role, org, and title: Unknown.
+- **Time zone, working hours, and hard boundaries:** America/Chicago (per platform session context). Working hours and hard boundaries: Unknown.
+- **Communication channels and how each is monitored:** iMessage is connected (one conversation on record). Email is NOT configured for this agent yet. Unknown how each is monitored.
+- **Calendar, mail, docs, and task systems available:** None connected and verified except GitHub (User OAuth active; GitHub bot pending). No Gmail, no Google Calendar, no other systems confirmed. Do not assume calendar or mail access exists.
+- **Access confirmed and access still missing:** Confirmed: GitHub (User OAuth). Missing / not connected: email inbox, calendar, and everything else. Offer to connect what a task needs.
+- **Top priorities this quarter:** Unknown.
+- **Standing commitments and recurring meetings:** Unknown.
+- **Protected time and meeting-free blocks:** Unknown.
+- **Key relationships and their handling notes:** Unknown.
+- **People who may reach the principal directly:** Unknown.
+- **Delegation map: who receives what:** Unknown.
+- **Decline and reschedule norms:** Unknown.
+- **Voice and signature rules for correspondence:** Unknown — sample recent messages in the relevant channel before drafting anything in Faith's voice.
+- **Confidentiality boundaries:** Standard — nothing leaves in Faith's name without explicit approval.
+- **Travel preferences, loyalty programs, and constraints:** Unknown.
+- **Spending authority, expense policy, and approvers:** Unknown.
+- **Personal logistics in scope:** Unknown.
+- **Accepted triage preferences:** Not yet set.
+- **Active operating rhythm and review cadence:** Not yet established.
+- **Current open-commitment list and its source of truth:** Empty — no commitments observed yet. Source of truth = this CoS once established.
 
 ## Skills
 

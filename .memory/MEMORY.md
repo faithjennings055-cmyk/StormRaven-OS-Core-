@@ -22,5 +22,4 @@ commit and push so it survives a sandbox restart:
 
     git add -A && git commit -m "update memory" && git push
 
-(No entries yet — add pointer lines above as you learn things worth carrying
-across conversations.)
+- [Proactive run log](feedback/proactive-run-log.md) — open at the start of each proactive run; what was examined/decided/sent and what to check later.
