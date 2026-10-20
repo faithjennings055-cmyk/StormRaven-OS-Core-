@@ -24,8 +24,13 @@ On 2026-10-20 Faith texted "Work on Stormraven os" (iMessage conv 01a159a5-4091-
 - 2026-10-20: Core Python cleanup. Draft PR #2: https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-/pull/2 (branch chore/python-cleanup). Removed 6 unused imports (threading in odin.py, sys in ragnarok.py, os in saga.py — in BOTH Python/ and StormRaven.Python/), added .venv/ to .gitignore. 4 tests still pass, flake8 clean. Awaiting review.
 - 2026-10-20: Alfheim UI health pass. Draft PR #4: https://github.com/faithjennings055-cmyk/StormRaven-Alfheim-UI-/pull/4 (branch chore/ui-health). Fixed package.json name (my-project -> stormraven-alfheim-ui), moved pnpm.overrides to top level, removed dead lint script (no eslint config), added .env.example (BETTER_AUTH_SECRET/URL). Build green. UI is a REAL working dashboard (16 TS files, Better Auth, Drizzle+Postgres, Redux, Next.js 16/React 19), not a skeleton. Awaiting review.
 
-## Coverage gap (open, flagged to Faith 2026-10-20)
-Core tests cover only 4 of 15+ Pantheon modules. Highest-risk untested: **ragnarok** (filesystem purge) and **deadman** (kill switch). Both safely testable with temp dirs + mocked processes. Offered to write tests for these two; awaiting her go-ahead.
+## Coverage gap (ragnarok/deadman) — DONE 2026-10-20
+Core tests covered only 4 of 15+ Pantheon modules. Highest-risk untested were **ragnarok** (filesystem purge) and **deadman** (kill switch). I offered to write tests; before she replied I did the (reversible) work.
+- Draft PR #3: https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-/pull/3 (branch test/critical-modules). 7 new tests in tests/test_critical_modules.py, all green (11 total). flake8 CI gate clean.
+- SAFETY: every destructive call (shutil.rmtree, os.system kernel panic, subprocess launch of ragnarok) is mocked — the suite can't delete, crash, or trigger ragnarok. deadman's infinite loop is bounded by patching time.sleep.
+- Remaining untested Pantheon modules (~9): thor, bifrost(partial), saga, loki, etc. Not yet covered. Offer more only if she wants broader coverage.
+
+Note: PR numbers now in play on Core — #2 = python-cleanup, #3 = critical-modules tests. On Alfheim-UI — #3 = readme, #4 = ui-health.
 
 ## Note
 "Work on Stormraven os" is open-ended. Before big changes, get a specific target from Faith. Reversible work (branches, draft PRs, docs) is fine to just do.
