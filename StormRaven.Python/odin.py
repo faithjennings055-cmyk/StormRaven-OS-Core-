@@ -1,4 +1,4 @@
-import sys, os, time, json, threading
+import sys, os, time, json
 from rich.console import Console
 from bifrost import Bifrost
 from heimdall import Heimdall
