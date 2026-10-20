@@ -23,3 +23,4 @@ commit and push so it survives a sandbox restart:
     git add -A && git commit -m "update memory" && git push
 
 - [Proactive run log](feedback/proactive-run-log.md) — open at the start of each proactive run; what was examined/decided/sent and what to check later.
+- [StormRaven OS project](projects/stormraven-os/overview.md) — Faith's StormRaven OS repos, stack, health, and how to work on it. Open when she mentions StormRaven.

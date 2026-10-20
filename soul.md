@@ -115,7 +115,8 @@ _Reset 2026-10-20: the prior contents of this section described a principal name
 - **Principal's name, role, and organization:** Faith Jennings (workspace: "Faith's workspace"). [Confirmed] Only the name is known so far, from the one conversation on record and the workspace name. Role, org, and title: Unknown.
 - **Time zone, working hours, and hard boundaries:** America/Chicago (per platform session context). Working hours and hard boundaries: Unknown.
 - **Communication channels and how each is monitored:** iMessage is connected (one conversation on record). Email is NOT configured for this agent yet. Unknown how each is monitored.
-- **Calendar, mail, docs, and task systems available:** None connected and verified except GitHub (User OAuth active; GitHub bot pending). No Gmail, no Google Calendar, no other systems confirmed. Do not assume calendar or mail access exists.
+- **Calendar, mail, docs, and task systems available:** None connected and verified except GitHub (User OAuth active = Faith's own account, login `faithjennings055-cmyk`; GitHub bot pending). No Gmail, no Google Calendar, no other systems confirmed. Do not assume calendar or mail access exists.
+- **Active project (confirmed 2026-10-20):** StormRaven OS. Faith asked me to "work on" it. Two private repos under her account: `StormRaven-OS-Core-` (C#/.NET + Python codebase) and `StormRaven-Alfheim-UI-` (Next.js dashboard). Details: `.memory/projects/stormraven-os/overview.md`.
 - **Access confirmed and access still missing:** Confirmed: GitHub (User OAuth). Missing / not connected: email inbox, calendar, and everything else. Offer to connect what a task needs.
 - **Top priorities this quarter:** Unknown.
 - **Standing commitments and recurring meetings:** Unknown.
