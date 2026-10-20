@@ -1,0 +1,45 @@
+# StormRaven OS GRUB theme (gfxterm). Matches the visual direction board.
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#05080e"
+terminal-font: "Geist Mono Regular 20"
+
++ boot_menu {
+  left = 50%-500
+  top = 420
+  width = 1000
+  height = 340
+  item_font = "Geist Mono Regular 26"
+  item_color = "#7d8aa0"
+  selected_item_font = "Geist Mono Regular 26"
+  selected_item_color = "#e6edf5"
+  item_height = 66
+  item_padding = 28
+  item_spacing = 4
+  icon_width = 0
+  icon_height = 0
+  item_icon_space = 24
+  selected_item_pixmap_style = "select_*.png"
+  scrollbar = false
+}
+
++ label {
+  left = 0
+  top = 100%-110
+  width = 100%
+  align = "center"
+  font = "Geist Mono Regular 20"
+  color = "#4b5870"
+  text = "Enter to boot   ·   e to edit   ·   c for console"
+}
+
++ label {
+  id = "__timeout__"
+  left = 0
+  top = 100%-70
+  width = 100%
+  align = "center"
+  font = "Geist Mono Regular 20"
+  color = "#34d3b0"
+  text = "Booting in %d s"
+}
