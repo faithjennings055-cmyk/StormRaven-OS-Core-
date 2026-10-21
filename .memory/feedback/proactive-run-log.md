@@ -20,6 +20,13 @@ description: Log of proactive ("be proactive") runs — what was examined, decid
 - **Sent:** One iMessage to Faith — closed the loop (found the repos), pointed at the draft PR, asked where she wants me focused (Core code vs UI vs ISO/distro). Easy short reply.
 - **To check next run:** Did Faith reply with a target? Did she merge/close PR #3? If she gives a concrete task, do it. Don't re-nudge on the PR if ignored.
 
+## 2026-10-21 (run 4)
+- **State at start:** Two convos on record. iMessage `01a159a5-...` ended 05:32 Central with StormRaven repos clean, all my draft PRs merged (via Faith's new auto-merge authority), daily health-check workflow created (id 01a15cf2-293b-767f-8181-f702865d0d29, 8:12am Central), and soul updated. Web convo `cee78705-...` ended with the Chief of Staff template (`chief-of-staff-3`) staged and card in Faith's chat. Both loops closed by the prior run.
+- **Verified:** Core repo = 0 open PRs. Alfheim-UI = 1 open PR, #2 — the stale `v0/faithjennings055-cmyk-6523db8c` -> main, created 2026-07-11, 0 files changed, Vercel check FAILURE. This is EXACTLY the guardrail case my soul note names: pre-existing v0/Vercel-gen PR I didn't create. NOT auto-merged (both because I didn't create it AND it's not green). Left untouched. Recorded in projects/stormraven-os/overview.md.
+- **Sent:** Nothing. All loops closed; Faith asleep (~6am Central); the one open item (stale PR) is already owned by the daily workflow with explicit do-not-merge handling. Interrupting adds nothing. The template publish is Faith's call (card in her chat), not a loop I own.
+- **Work done:** Updated overview.md + this log with the verified PR #2 finding so future runs (and the daily workflow) don't second-guess it.
+- **To check next run:** Did Faith publish the CoS template? Did she say anything new in iMessage? Did the 8:12am daily workflow fire and handle anything? Don't re-flag the stale UI PR #2.
+
 ## 2026-10-20 (run 3)
 - **State at start:** Only conversation is iMessage `01a159a5-...`. Faith's last msg "Both" (19:23, = do both Core + UI). I'd done Core cleanup PR #2 + UI health PR #4, flagged the ragnarok/deadman coverage gap, and asked "want me to write those two tests?" at 19:35. No reply since (~3h).
 - **Decision:** Don't re-nudge the open question — DO the work instead (reversible: draft PR, no merge). Tests for a filesystem-purge + kill-switch module are high-value and "Both" signals she wants proactive StormRaven work.

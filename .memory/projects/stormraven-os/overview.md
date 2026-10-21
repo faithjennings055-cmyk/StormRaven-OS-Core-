@@ -33,5 +33,7 @@ Core tests covered only 4 of 15+ Pantheon modules. Highest-risk untested were **
 ## Current state (as of 2026-10-21)
 Faith granted standing auto-merge on her StormRaven PRs (see soul.md Standing authorities). All the draft PRs above have since been merged — Core shows no open PRs; Alfheim-UI has only a stale `v0/...` PR #2 that I did NOT create. The daily health check (8:12am Central) now owns merging green PRs and fixing broken CI; I only ping Faith when something merged or needs her.
 
+**UI PR #2 (do NOT auto-merge):** verified 2026-10-21 — title "Merge pull request #1 from faithjennings055-cmyk/main", branch `v0/faithjennings055-cmyk-6523db8c`, created 2026-07-11, 0 files changed (+0/-0), Vercel check = FAILURE. Pre-existing v0/Vercel-generation PR I didn't create = exactly the guardrail case in soul.md. Leave it alone; flag to Faith if she ever asks, don't interrupt her for it.
+
 ## Note
 "Work on Stormraven os" is open-ended, but she said "Both" (Core + UI) and granted auto-merge, so reversible work (branches, draft PRs, cleanups, tests) just gets done. Get a specific target only before big/irreversible changes. Remaining untested Pantheon modules (~9): thor, bifrost, saga, loki, etc. — offer broader coverage only if she wants it.
