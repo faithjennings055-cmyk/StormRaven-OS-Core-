@@ -14,5 +14,10 @@ export EXA_API_KEY=sentinel-exa
 # Service name stamped on harness logs/traces.
 export HARNESS_LOG_SERVICE=skydive-agent-harness
 
+# Restore workflow scripts to the ephemeral ~/.workflows dir on every boot.
+mkdir -p /home/user/.workflows
+cp -f /home/user/.self/workflows/*.sh /home/user/.workflows/ 2>/dev/null || true
+chmod +x /home/user/.workflows/*.sh 2>/dev/null || true
+
 exec node --experimental-strip-types --no-warnings=ExperimentalWarning \
   /home/user/.self/index.ts
