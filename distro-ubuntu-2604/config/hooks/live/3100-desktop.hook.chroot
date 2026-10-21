@@ -1,0 +1,11 @@
+#!/bin/sh
+# default session: gnome with dock; live user autologin
+mkdir -p /etc/systemd/system/getty@tty1.service.d
+cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'A'
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin user --noclear %I $TERM
+A
+# enable gdm3 if present
+[ -d /usr/share/gdm ] && ln -sf /lib/systemd/system/gdm3.service /etc/systemd/system/display-manager.service 2>/dev/null || true
+exit 0

@@ -1,0 +1,41 @@
+#!/bin/sh
+# Mac-style UI: light warm theme, dock bottom, left window buttons, compact top bar
+set -e
+mkdir -p /etc/dconf/profile /etc/dconf/db/local.d
+cat > /etc/dconf/profile/user <<'P'
+user-db:user
+system-db:local
+P
+cat > /etc/dconf/db/local.d/00-mac-style <<'K'
+[org/gnome/desktop/interface]
+gtk-theme='Yaru'
+icon-theme='WhiteSur'
+cursor-theme='WhiteSur-cursors'
+color-scheme='prefer-light'
+accent-color='slate'
+enable-hot-corners=false
+
+[org/gnome/shell/extensions/dash-to-dock]
+dock-position='BOTTOM'
+dock-fixed=true
+dash-max-icon-size=52
+icon-size-fixed=false
+extend-height=false
+background-opacity=0.85
+show-apps-at-top=true
+
+[org/gnome/mutter]
+edge-tiling=true
+
+[org/gnome/desktop/wm/preferences]
+button-layout='close,minimize,maximize:appmenu'
+theme='Yaru'
+K
+cat > /etc/dconf/db/local.d/01-wallpaper <<'K'
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/stormraven-wallpaper.png'
+picture-uri-dark='file:///usr/share/backgrounds/stormraven-wallpaper-dark.png'
+picture-options='zoom'
+K
+dconf update || true
+exit 0

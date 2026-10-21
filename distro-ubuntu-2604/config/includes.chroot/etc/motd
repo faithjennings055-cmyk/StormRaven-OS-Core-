@@ -1,0 +1,12 @@
+
+ ██████╗ ██████╗  ██████╗  ██████╗ ████████╗
+ ██╔══██╗██╔══██╗██╔════╝ ██╔═══██╗╚══██╔══╝
+ ██████╔╝██████╔╝██║  ███╗██║   ██║   ██║   ██║
+ ██╔══██╗██╔══██╗██║   ██║██║   ██║   ██║
+ ██║  ██║██║  ██║╚██████╔╝╚██████╔╝   ██║
+ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝
+        R A V E N   O S  v3.0 — Resolute (26.04)
+
+ StormRaven OS — Ubuntu 26.04 LTS, Mac-style desktop
+ Bifrost Gateway:  http://localhost:8787/health
+ Kernel service:   systemctl status stormraven-kernel
