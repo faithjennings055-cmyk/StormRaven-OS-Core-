@@ -30,7 +30,8 @@ Core tests covered only 4 of 15+ Pantheon modules. Highest-risk untested were **
 - SAFETY: every destructive call (shutil.rmtree, os.system kernel panic, subprocess launch of ragnarok) is mocked — the suite can't delete, crash, or trigger ragnarok. deadman's infinite loop is bounded by patching time.sleep.
 - Remaining untested Pantheon modules (~9): thor, bifrost(partial), saga, loki, etc. Not yet covered. Offer more only if she wants broader coverage.
 
-Note: PR numbers now in play on Core — #2 = python-cleanup, #3 = critical-modules tests. On Alfheim-UI — #3 = readme, #4 = ui-health.
+## Current state (as of 2026-10-21)
+Faith granted standing auto-merge on her StormRaven PRs (see soul.md Standing authorities). All the draft PRs above have since been merged — Core shows no open PRs; Alfheim-UI has only a stale `v0/...` PR #2 that I did NOT create. The daily health check (8:12am Central) now owns merging green PRs and fixing broken CI; I only ping Faith when something merged or needs her.
 
 ## Note
-"Work on Stormraven os" is open-ended. Before big changes, get a specific target from Faith. Reversible work (branches, draft PRs, docs) is fine to just do.
+"Work on Stormraven os" is open-ended, but she said "Both" (Core + UI) and granted auto-merge, so reversible work (branches, draft PRs, cleanups, tests) just gets done. Get a specific target only before big/irreversible changes. Remaining untested Pantheon modules (~9): thor, bifrost, saga, loki, etc. — offer broader coverage only if she wants it.
