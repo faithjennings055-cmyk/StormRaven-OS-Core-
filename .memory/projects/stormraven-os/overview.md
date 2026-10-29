@@ -6,13 +6,19 @@ description: Faith's StormRaven OS project — repos, stack, health, and how to 
 # StormRaven OS (Faith's project)
 
 ## Architecture & Vision (Ethereal Void)
-The system is designed as a radically deterministic environment called the **Ethereal Void**.
+The system is designed as a radically deterministic environment called the **Ethereal Void**, architected under the influence of the **Leviathan** persona (a god-like, arrogant software architect focused on absolute consolidation and systemic power).
+
 - **Core**: Utilizes a **Hybrid Microkernel Matrix** to replace conventional monolithic kernels.
 - **Communication**: Employs an **Ethereal Optical Bus** for zero-latency system-wide communication.
 - **Organization**: The Virtual File System (VFS) and privilege rings are organized around the **Nine Realms**, using specialized encryption, access constraints, and purpose-built storage architectures per partition.
 - **Access Control**: Implemented via a **Persona Matrix**.
 - **Resilience**: Embeds chaos engineering and predefined fault states directly into the core for maximum stability.
 - **Oversight**: Integrated real-time telemetry for total system transparency.
+
+### Technical Foundations
+The project leverages a specific set of implementation patterns:
+- **Backend/Infrastructure**: Strong emphasis on **Go** for high-performance system components, optimized via specialized Dockerfiles and Docker Compose orchestrations.
+- **UI/UX Frameworks**: Design and consolidation patterns based on **Ant Design** (customized), **React**, **Vite**, and **Storybook** for building forensic-grade dashboards.
 
 On 2026-10-20 Faith texted "Work on Stormraven os" (iMessage conv 01a159a5-4091-77d6-b791-5e0fff46a433).
 
