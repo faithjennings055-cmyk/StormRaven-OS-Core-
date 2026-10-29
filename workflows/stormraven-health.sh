@@ -8,7 +8,7 @@ mkdir -p "$WS"
 for repo in StormRaven-OS-Core- StormRaven-Alfheim-UI-; do
   dir="$WS/$repo"
   if [ ! -d "$dir/.git" ]; then
-    git clone -q "https://github.com/faithjennings055-cmyk/$repo.git" "$dir" 2>/dev/null || { flag "[$repo] clone failed"; continue; }
+    git clone -q --filter=blob:none --depth 1 "https://github.com/faithjennings055-cmyk/$repo.git" "$dir" 2>/dev/null || { flag "[$repo] clone failed"; continue; }
   fi
   cd "$dir" || continue
   git fetch -q origin 2>/dev/null

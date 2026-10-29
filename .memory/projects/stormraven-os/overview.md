@@ -30,8 +30,9 @@ Core tests covered only 4 of 15+ Pantheon modules. Highest-risk untested were **
 - SAFETY: every destructive call (shutil.rmtree, os.system kernel panic, subprocess launch of ragnarok) is mocked — the suite can't delete, crash, or trigger ragnarok. deadman's infinite loop is bounded by patching time.sleep.
 - Remaining untested Pantheon modules (~9): thor, bifrost(partial), saga, loki, etc. Not yet covered. Offer more only if she wants broader coverage.
 
-## Current state (as of 2026-10-21)
-Faith granted standing auto-merge on her StormRaven PRs (see soul.md Standing authorities). All the draft PRs above have since been merged — Core shows no open PRs; Alfheim-UI has only a stale `v0/...` PR #2 that I did NOT create. The daily health check (8:12am Central) now owns merging green PRs and fixing broken CI; I only ping Faith when something merged or needs her.
+## Current state (as of 2026-10-29)
+Faith granted standing auto-merge on her StormRaven PRs (see soul.md Standing authorities). The daily health check (8:12am Central) now owns merging green PRs and fixing broken CI; I only ping Faith when something merged or needs her.
+- 2026-10-29: Health check run. No open PRs in Core or UI. Main branches are green. Workflow script fixed to prevent timeouts via partial/shallow clones.
 
 **UI PR #2 (do NOT auto-merge):** verified 2026-10-21 — title "Merge pull request #1 from faithjennings055-cmyk/main", branch `v0/faithjennings055-cmyk-6523db8c`, created 2026-07-11, 0 files changed (+0/-0), Vercel check = FAILURE. Pre-existing v0/Vercel-generation PR I didn't create = exactly the guardrail case in soul.md. Leave it alone; flag to Faith if she ever asks, don't interrupt her for it.
 
