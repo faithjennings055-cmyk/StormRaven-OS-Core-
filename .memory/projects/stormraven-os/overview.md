@@ -53,3 +53,7 @@ Faith granted standing auto-merge on her StormRaven PRs (see soul.md Standing au
 
 ## Note
 "Work on Stormraven os" is open-ended, but she said "Both" (Core + UI) and granted auto-merge, so reversible work (branches, draft PRs, cleanups, tests) just gets done. Get a specific target only before big/irreversible changes. Remaining untested Pantheon modules (~9): thor, bifrost, saga, loki, etc. — offer broader coverage only if she wants it.
+
+## Valhalla (Forensic Ledger)
+- Implemented as a post-mortem archive for crashed microkernels.
+- Records daemon failures in `/var/log/stormraven/valhalla.log`.
