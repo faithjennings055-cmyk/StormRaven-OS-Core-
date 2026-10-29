@@ -5,7 +5,16 @@ description: Faith's StormRaven OS project — repos, stack, health, and how to 
 
 # StormRaven OS (Faith's project)
 
-On 2026-10-20 Faith texted "Work on Stormraven os" (iMessage conv 01a159a5-4091-77d6-b791-5e0fff46a433). No specifics given.
+## Architecture & Vision (Ethereal Void)
+The system is designed as a radically deterministic environment called the **Ethereal Void**.
+- **Core**: Utilizes a **Hybrid Microkernel Matrix** to replace conventional monolithic kernels.
+- **Communication**: Employs an **Ethereal Optical Bus** for zero-latency system-wide communication.
+- **Organization**: The Virtual File System (VFS) and privilege rings are organized around the **Nine Realms**, using specialized encryption, access constraints, and purpose-built storage architectures per partition.
+- **Access Control**: Implemented via a **Persona Matrix**.
+- **Resilience**: Embeds chaos engineering and predefined fault states directly into the core for maximum stability.
+- **Oversight**: Integrated real-time telemetry for total system transparency.
+
+On 2026-10-20 Faith texted "Work on Stormraven os" (iMessage conv 01a159a5-4091-77d6-b791-5e0fff46a433).
 
 ## Identity
 - Faith's GitHub login: **faithjennings055-cmyk** (the connected GitHub User OAuth is her own account; `gh api /user` -> faithjennings055-cmyk).
