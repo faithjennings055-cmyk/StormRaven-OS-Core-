@@ -25,6 +25,7 @@ import {
   tick,
 } from "@/lib/store/telemetry-slice"
 import type { AppDispatch, RootState } from "@/components/store-provider"
+import { useBifrost } from "@/hooks/use-bifrost"
 
 const DEFAULT_GATEWAY = "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app"
 
@@ -36,6 +37,10 @@ export default function Page() {
   const [selectedFile, setSelectedFile] = useState<VfsNode>(() => flattenFiles(VFS)[0])
   const [gatewayUrl, setGatewayUrl] = useState(DEFAULT_GATEWAY)
   const [kernelSummary, setKernelSummary] = useState<string>("Ubuntu 24.04 LTS (Noble Numbat) · Bifrost v1")
+
+  // Connect to the real-time kernel bridge
+  const kernelHost = gatewayUrl.replace("https://", "").replace("http://", "").split(":")[0]
+  useBifrost(kernelHost)
 
   const files = useMemo(() => flattenFiles(VFS), [])
 
@@ -50,7 +55,6 @@ export default function Page() {
         const data = await res.json()
         if (cancelled) return
         const st = data.status || data.state || data
-        dispatch(setBridge("connected"))
         setKernelSummary(
           `${st.distro || "StormRaven OS 24.04 LTS"} · uptime ${Math.floor((st.uptimeSec || 0) / 60)}m · ${st.openTabs ?? 0} tabs`,
         )
@@ -59,29 +63,10 @@ export default function Page() {
       }
     }
     pollGateway()
-    const id = setInterval(() => {
-      const now = Date.now()
-      const updated = PANTHEON.map((d) => {
-        const current = telemetry.daemons[d.id]
-        const status = current?.status ?? d.defaultStatus
-        const active = status === "online"
-        return {
-          id: d.id,
-          status,
-          cpu: active ? Math.min(95, Math.max(2, Math.round(4 + Math.random() * 14))) : 0,
-          mem: active ? Math.min(92, Math.max(8, Math.round(12 + Math.random() * 10))) : 0,
-          threads: d.id === "demogorgon" ? (active ? 8 : 0) : active ? 4 : 1,
-          lastHeartbeat: now,
-          events: current?.events ?? 0,
-        }
-      })
-      dispatch(tick({ daemons: updated, threatLevel: telemetry.threatLevel }))
-    }, 3000)
     return () => {
       cancelled = true
-      clearInterval(id)
     }
-  }, [dispatch, gatewayUrl, telemetry.daemons, telemetry.threatLevel])
+  }, [dispatch, gatewayUrl])
 
   function handleRunicSubmit(e: React.FormEvent) {
     e.preventDefault()

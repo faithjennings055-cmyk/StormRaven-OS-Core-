@@ -97,29 +97,24 @@ namespace StormRaven.Kernel.Ipc
             _listener = new HttpListener();
             try
             {
-                // wildcard: reachable from the LAN so the companion app on a phone can connect
+                // Attempt universal binding (0.0.0.0 / +) to make it accessible to all platforms on the LAN
                 _listener.Prefixes.Add($"http://+:{_port}/");
                 _listener.Start();
             }
             catch (HttpListenerException)
             {
-                // no URLACL / no permission for wildcard — try explicit interface binds, then loopback
                 _listener.Close();
-                bool bound = false;
-                if (!OperatingSystem.IsWindows())
+                // Fallback for Linux/macOS where '*' is the standard wildcard
+                try
                 {
-                    try
-                    {
-                        _listener = new HttpListener();
-                        _listener.Prefixes.Add($"http://*:{_port}/");
-                        _listener.Start();
-                        bound = true;
-                    }
-                    catch (HttpListenerException) { }
+                    _listener = new HttpListener();
+                    _listener.Prefixes.Add($"http://*:{_port}/");
+                    _listener.Start();
                 }
-                if (!bound)
+                catch
                 {
                     _listener.Close();
+                    // Final fallback to loopback if all else fails
                     _listener = new HttpListener();
                     _listener.Prefixes.Add($"http://127.0.0.1:{_port}/");
                     _listener.Start();
