@@ -68,6 +68,52 @@ export default function Page() {
     }
   }, [dispatch, gatewayUrl])
 
+  // Sovereign Demo Pulse: Simulates a live kernel connection and data flow for preview
+  useEffect(() => {
+    dispatch(setBridge("connected"))
+    
+    const id = setInterval(() => {
+      const now = Date.now()
+      const updated = PANTHEON.map((d) => {
+        const current = telemetry.daemons[d.id]
+        const status = current?.status ?? d.defaultStatus
+        const active = status === "online"
+        return {
+          id: d.id,
+          status,
+          cpu: active ? Math.min(95, Math.max(2, Math.round(4 + Math.random() * 14))) : 0,
+          mem: active ? Math.min(92, Math.max(8, Math.round(12 + Math.random() * 10))) : 0,
+          threads: d.id === "demogorgon" ? (active ? 8 : 0) : active ? 4 : 1,
+          lastHeartbeat: now,
+          events: current?.events ?? 0,
+        }
+      })
+      dispatch(tick({ daemons: updated, threatLevel: telemetry.threatLevel }))
+
+      if (Math.random() > 0.7) {
+        const randomDaemon = PANTHEON[Math.floor(Math.random() * PANTHEON.length)]
+        const severities: ("info" | "warn" | "alert")[] = ["info", "warn", "alert"]
+        const sev = severities[Math.floor(Math.random() * severities.length)]
+        const events = [
+          "Heuristic scan completed: No threats found.",
+          "Runic injection attempt blocked via Heimdallr.",
+          "Sovereign authority token rotated.",
+          "Telemetry spike detected in Muspelheim.",
+          "Bifröst bridge latency within nominal range.",
+          "Void signature verified for new process."
+        ]
+        dispatch(pushEvent({
+          id: `demo-${Date.now()}`,
+          daemon: randomDaemon.id,
+          severity: sev,
+          message: events[Math.floor(Math.random() * events.length)],
+          ts: now,
+        }))
+      }
+    }, 3000)
+    return () => clearInterval(id)
+  }, [dispatch, telemetry.daemons, telemetry.threatLevel])
+
   function handleRunicSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!runeInput.trim()) return
