@@ -1,3 +1,8 @@
 {
-  "servers": {}
+  "servers": {
+    "autodesk": {
+      "transport": "http",
+      "url": "https://developer.api.autodesk.com/knowledge/public/v1/mcp"
+    }
+  }
 }
