@@ -1,45 +1,70 @@
-# StormRaven OS — Companion PWA
+# Storm Raven OS: Niðavellir Edition — Alfheim UI
 
-A mobile-first, installable Progressive Web App companion for the StormRaven OS kernel.
-Pure vanilla HTML/CSS/JS — no build step, no dependencies.
+The **Alfheim UI** is the frontend dashboard for Storm Raven OS, built with Next.js, React, Tailwind, and shadcn/ui. It links to the Bifröst WebSocket gateway and renders the Pantheon of autonomous daemons that make up the system.
 
-## Views
+This README is the canonical entry point for the UI: it defines the architectural vision, the hybrid-kernel paradigm, and the mythological taxonomy that governs the system.
 
-- **Status** — kernel name, health badge, uptime, version, provider count, decision count, per-subsystem health checks (IPC pipe, Edge tabs provider, decision engine, SQLite storage), and a live feed of recent decisions from the DecisionEngine.
-- **Tabs** — live list of Edge tabs from the EdgeTabsProvider (`sr.signal.edge.tabs.v1` envelope), with the current/foreground tab highlighted.
-- **Console** — command console for the decision engine; sends commands to the kernel and renders structured responses.
-- **Settings** — user-configurable kernel gateway URL (persisted in localStorage).
+## Overview
 
-## API contract
+Storm Raven OS is a hybrid-kernel operating environment designed for high-assurance forensic hygiene, modular security, and autonomous system governance. It combines the bare-metal control of a hardened Linux kernel with capability-based isolation (WebAssembly / WASI) and C# system services.
 
-Designed against the IPC gateway being added on branch `ios-companion`:
+## Architectural Paradigm: "Starlight Core"
 
-| Method | Path       | Purpose                                  |
-|--------|------------|------------------------------------------|
-| GET    | `/status`  | Kernel status/health snapshot             |
-| GET    | `/tabs`    | Edge tabs (array or `{tabs:[...]}`)       |
-| POST   | `/command` | `{ "command": "...", "source": "pwa" }`   |
-| WS     | `/events`  | Live events (`status`, `tabs`, `decision`) |
+Storm Raven OS avoids a conventional monolithic structure. It uses a **Hybrid Microkernel Matrix** that delegates specialized intelligence to an isolated Pantheon of autonomous daemons.
 
-The client is tolerant: it accepts common field aliases (`health`/`healthStatus`, `uptimeSec`/`uptimeSeconds`, `tabs` arrays or envelopes) so the gateway can evolve without breaking the UI. With no gateway reachable, the app degrades gracefully to an offline shell (service worker caches the UI).
+### The Pantheon (Modular Deities)
 
-## iOS install
+Operational logic is distributed across specialized modules, each mapped to a Norse figure:
 
-Serve over HTTPS, then in Safari: Share → **Add to Home Screen**. The app launches standalone (`apple-mobile-web-app-capable`, black-translucent status bar, safe-area insets, portrait orientation).
+- **Odin** (Orchestrator) — central logic flow and multi-module coordination
+- **Heimdall** (Security) — heuristic command sanitization and threat blacklisting
+- **Thor** (Executioner) — native command execution and strike agent
+- **Loki** (Memory) — persistent JSON logging and session history
+- **Bifröst** (Gateway) — structured API/IPC bridge for cross-platform mapping
+- **Jörmungandr** (Sentinel) — system monitoring and network encapsulation
 
-## Files
+## Forensic Posture (Yggdrasil VFS)
 
+Data residency is compartmentalized to enforce strict forensic footprints:
+
+- **Alfheim** — persistent source code (ReFS/NTFS)
+- **Midgard** — volatile RAM-disk execution (zero-footprint)
+- **Niflheim** — encrypted vault storage for sensitive Mjolnir soul-binds
+- **Helheim** — redirected shadow logs for forensic evaporation
+
+## Security Mandate
+
+- **Zero-Trust Perimeter** — all API requests authenticated via JWT and time-gated TOTP 2FA
+- **DDoS Mitigation** — Redis-based rate limiting integrated into the Múspellheimr Core
+- **Immutability** — core daemons protected via kernel-level immutable file attributes (`chattr +i` on Linux) and systemd service hardening
+
+## This Repository (Alfheim UI)
+
+The Next.js app lives here:
+
+- `app/` — routes, layout, and API handlers (including `better-auth` under `app/api/auth`)
+- `components/` — shared UI components (shadcn/ui)
+- `lib/` — utilities and client helpers
+
+### Prerequisites
+
+- Node.js 18+ and `pnpm`
+
+### Quick Start
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run the dev server
+pnpm dev
+
+# Build for production
+pnpm build && pnpm start
 ```
-webapp/
-  index.html      shell + views + settings modal
-  style.css       dark OS theme (storm purple #9d50bb)
-  app.js          state, REST/WS client, console, routing
-  sw.js           offline shell (network-first page, cache-first assets; never caches API traffic)
-  manifest.json   installable manifest, maskable icon
-  icons/          192/512/maskable/apple-touch icons
-```
 
-## Local dev
+The dashboard connects to the Bifröst WebSocket gateway exposed by `StormRaven.Kernel`.
 
-Any static file server works, e.g. `python3 -m http.server -d webapp 8080`.
-The gateway URL can point at any host (e.g. `http://<pc-ip>:5080`).
+## Licensing & Compliance
+
+This software is engineered for ethical hacking, authorized security auditing, and academic research. Use of these tools for unauthorized access is a violation of law. The architecture assumes no liability for misuse.
