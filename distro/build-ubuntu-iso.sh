@@ -138,13 +138,26 @@ locale-gen en_US.UTF-8 || true
 EOF
 
 echo "==> [5/7] Installing StormRaven OS payload, services, CLI, and Ubuntu 24.04 branding..."
+
+# Build the Next.js UI for static export
+echo "Building Alfheim UI..."
+if [ -d "${REPO_ROOT}/webapp" ]; then
+    (cd "${REPO_ROOT}/webapp" && npm install && npm run build) || echo "UI build failed, using existing artifacts if available"
+fi
+
 # Copy includes.chroot tree (/etc, /opt/stormraven, /usr/local/bin/stormraven)
 $SUDO cp -a "${SCRIPT_DIR}/live-build/config/includes.chroot/." "${CHROOT_DIR}/"
 
 # Ensure latest Python Pantheon and Webapp files are in /opt/stormraven/
 $SUDO mkdir -p "${CHROOT_DIR}/opt/stormraven/python" "${CHROOT_DIR}/opt/stormraven/webapp"
 $SUDO cp -a "${REPO_ROOT}/StormRaven.Python/." "${CHROOT_DIR}/opt/stormraven/python/"
-$SUDO cp -a "${REPO_ROOT}/webapp/." "${CHROOT_DIR}/opt/stormraven/webapp/"
+
+if [ -d "${REPO_ROOT}/webapp/out" ]; then
+    $SUDO cp -a "${REPO_ROOT}/webapp/out/." "${CHROOT_DIR}/opt/stormraven/webapp/"
+else
+    $SUDO cp -a "${REPO_ROOT}/webapp/." "${CHROOT_DIR}/opt/stormraven/webapp/"
+fi
+
 $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
 
