@@ -12,7 +12,7 @@ export function useBifrost(kernelIp: string = 'localhost') {
       const isLocal = kernelIp === 'localhost' || kernelIp === '127.0.0.1'
       // Port and protocol derived from environment or defaults
       const gatewayPort = process.env.NEXT_PUBLIC_STORMRAVEN_GATEWAY_PORT || '8787'
-      const wsUrl = isHttps && !isLocal 
+      let wsUrl = isHttps && !isLocal 
         ? `wss://${kernelIp}/ws` 
         : `ws://${kernelIp}:${gatewayPort}/ws`
       // Bifrost auth (issue #10): append gateway token for the /ws handshake
