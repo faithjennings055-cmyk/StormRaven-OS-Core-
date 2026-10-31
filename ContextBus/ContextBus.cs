@@ -19,5 +19,15 @@ namespace StormRaven.Kernel.ContextBus
                 State.TimeUtc = DateTime.UtcNow;
             }
         }
+
+        public void Publish(string schema, object payload)
+        {
+            Publish(new SignalEnvelope
+            {
+                Provider = "stormraven.kernel",
+                Schema = schema,
+                Payload = payload
+            });
+        }
     }
 }

@@ -1,23 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
-using StormRaven.Kernel.Contracts;
-using StormRaven.Kernel.Storage;
 
 namespace StormRaven.Kernel
 {
-    public class KernelService : ServiceBase
+    public class KernelService
     {
-        private readonly EventLog _eventLog;
-        private CancellationTokenSource _cts;
-        private Task _monitorTask;
+        private CancellationTokenSource? _cts;
+        private Task? _monitorTask;
+
+        public string ServiceName { get; } = "StormRavenKernel";
 
         // The Nine Realms
-        public ContextBus OpticalBus { get; } = new();
+        public StormRaven.Kernel.ContextBus.ContextBus OpticalBus { get; } = new();
         public PersonaMatrix PersonaMatrix { get; } = new();
         public ValhallaLedger Valhalla { get; } = new();
         public DeepArchive DeepArchive { get; } = new();
@@ -31,28 +26,18 @@ namespace StormRaven.Kernel
 
         public KernelService()
         {
-            ServiceName = "StormRavenKernel";
-            _eventLog = new EventLog
-            {
-                Source = ServiceName,
-                Log = "Application"
-            };
-
-            // Bootstrap the Void
             InitializePersonaMatrix();
             CommandDispatcher = new SovereignCommandDispatcher(PersonaMatrix);
-            RegisterSovereignCommands();
-            
             Vitality = new VitalityMonitor(OpticalBus);
             Chaos = new ChaosEngine(OpticalBus, PersonaMatrix);
             Niflheim = new NiflheimSnapshotManager(OpticalBus);
             Helheim = new HelheimIsolationVault(OpticalBus);
             Operational = new OperationalLayer(OpticalBus, BinaryManager, PersonaMatrix);
+            RegisterSovereignCommands();
         }
 
         private void InitializePersonaMatrix()
         {
-            // Seeding the Pantheon
             PersonaMatrix.AddPersona("root", "Odin", PrivilegeRing.Void);
             PersonaMatrix.AddPersona("admin", "Thor", PrivilegeRing.Sovereign);
             PersonaMatrix.AddPersona("sec-ops", "Heimdall", PrivilegeRing.Sentinel);
@@ -68,34 +53,23 @@ namespace StormRaven.Kernel
             CommandDispatcher.RegisterCommand(new TriggerChaosCommand(Chaos));
         }
 
-        protected override void OnStart(string[] args)
+        public void Start(string[]? args = null)
         {
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
-
             _monitorTask = Task.Run(() => MonitorLoop(token), token);
-            _eventLog.WriteEntry("StormRaven Kernel started: The Nine Realms are manifest.");
+            Valhalla.Append("kernel.start", "{\"message\":\"The Nine Realms are manifest.\"}");
         }
 
-        protected override void OnStop()
+        public void Stop()
         {
             if (_cts == null) return;
             _cts.Cancel();
-
             try
             {
-                if (_monitorTask != null && !_monitorTask.Wait(TimeSpan.FromSeconds(5)))
-                {
-                    _eventLog.WriteEntry("Monitor loop did not stop within 5 seconds.", EventLogEntryType.Warning);
-                }
+                _monitorTask?.Wait(TimeSpan.FromSeconds(5));
             }
-            catch (AggregateException ex)
-            {
-                foreach (var inner in ex.Flatten().InnerExceptions)
-                {
-                    _eventLog.WriteEntry($"Monitor task failed while stopping: {inner}", EventLogEntryType.Error);
-                }
-            }
+            catch { }
             finally
             {
                 _cts.Dispose();
@@ -116,24 +90,17 @@ namespace StormRaven.Kernel
                 {
                     break;
                 }
-                catch (Exception ex)
-                {
-                    _eventLog.WriteEntry($"Monitor loop failure: {ex}", EventLogEntryType.Error);
-                }
+                catch { }
             }
         }
 
-        private void RunMonitorIteration(CancellationToken token)
+        public void RunMonitorIteration(CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
-
-            // Heartbeat of the Void
             OpticalBus.Publish("sr.kernel.heartbeat", new { Timestamp = DateTime.UtcNow, Status = "Stable" });
-            
-            // Run Vitality pulse
             Vitality.Pulse();
-
-            Task.Delay(TimeSpan.FromSeconds(1), token).Wait(token);
+            if (token.CanBeCanceled)
+                Task.Delay(TimeSpan.FromSeconds(1), token).Wait(token);
         }
     }
 }

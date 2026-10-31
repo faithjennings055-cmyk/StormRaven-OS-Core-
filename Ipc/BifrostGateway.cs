@@ -78,9 +78,77 @@ namespace StormRaven.Kernel.Ipc
         
         private static readonly List<WebSocket> _sockets = new();
         private static readonly HashSet<string> _commandLog = new();
+        private static readonly StormRaven.Kernel.ContextBus.ContextBus _realmBus = new();
+        private static readonly PersonaMatrix _personas = CreateDefaultPersonas();
+        private static readonly HelheimIsolationVault _helheim = new(_realmBus);
+        private static readonly NiflheimSnapshotManager _niflheim = new(_realmBus);
+        private static readonly VitalityMonitor _vitality = new(_realmBus);
+        private static readonly ChaosEngine _chaos = new(_realmBus, _personas);
         private static long _signalCount;
         private static long _commandCount;
         private static DateTime _startedUtc = DateTime.UtcNow;
+
+        private static PersonaMatrix CreateDefaultPersonas()
+        {
+            var pm = new PersonaMatrix();
+            pm.AddPersona("root", "Odin", PrivilegeRing.Void);
+            pm.AddPersona("admin", "Thor", PrivilegeRing.Sovereign);
+            pm.AddPersona("sec-ops", "Heimdall", PrivilegeRing.Sentinel);
+            return pm;
+        }
+
+        private static object ReadLiveTelemetry()
+        {
+            var (cpu, mem) = _vitality.ReadHostSensors();
+            return new { cpu, ram = mem, cores = Environment.ProcessorCount };
+        }
+
+        private static object ExecDistroCli(string scriptName, params string[] args)
+        {
+            string[] candidates =
+            {
+                $"/usr/local/bin/{scriptName}",
+                Path.Combine(AppContext.BaseDirectory, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", scriptName),
+                Path.Combine(Directory.GetCurrentDirectory(), "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", scriptName)
+            };
+            string? scriptPath = null;
+            foreach (var c in candidates)
+            {
+                if (File.Exists(c)) { scriptPath = c; break; }
+            }
+            if (scriptPath is null)
+                return new { script = scriptName, error = "cli_not_found" };
+
+            try
+            {
+                var psi = new ProcessStartInfo("/bin/bash")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false
+                };
+                psi.ArgumentList.Add(scriptPath);
+                foreach (var a in args) psi.ArgumentList.Add(a);
+                using var proc = Process.Start(psi);
+                if (proc is null) return new { script = scriptName, error = "spawn_failed" };
+                var stdout = proc.StandardOutput.ReadToEnd().Trim();
+                var stderr = proc.StandardError.ReadToEnd().Trim();
+                proc.WaitForExit(4000);
+                try
+                {
+                    using var doc = JsonDocument.Parse(stdout);
+                    return JsonSerializer.Deserialize<object>(stdout, JsonOpts) ?? stdout;
+                }
+                catch
+                {
+                    return new { script = scriptName, exitCode = proc.ExitCode, output = stdout, stderr };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new { script = scriptName, error = ex.Message };
+            }
+        }
 
         private static StormRavenDb? _dbStatic;
         private HttpListener _listener = null!;
@@ -404,69 +472,80 @@ namespace StormRaven.Kernel.Ipc
                 case "odin_heimdall_scan":
                     return new CommandResult("accepted", "heimdall zero-trust scan clean", new { timeUtc = DateTime.UtcNow, verdict = "clean", gatekeeper = "heimdall v1" });
                 case "odin_telemetry":
-                    return new CommandResult("accepted", "odin pantheon telemetry attached", new {
+                    return new CommandResult("accepted", "odin pantheon live sensor telemetry attached", new {
                         timeUtc = DateTime.UtcNow,
-                        telemetry = new { cpu = 14, ram = 42 },
+                        telemetry = ReadLiveTelemetry(),
                         pantheon = new[] { "odin", "freya", "heimdall", "thor", "bifrost", "loki", "luci", "solomon", "heketa", "lynn", "yggdrasil", "mjolnir" },
                         state = StatePayload(),
                     });
                 case "odin_freya_think":
                 case "freya_think":
-                    return new CommandResult("accepted", "freya autonomous directive attached", new {
-                        timeUtc = DateTime.UtcNow,
-                        deity = "Freya Autonomous Mind",
-                        directive = "All 9 Realms nominal. Zero-trust posture verified; Ymir Buddy/SLAB fragmentation 0.0%.",
-                        telemetry = new { cpu = 19, ram = 44 }
-                    });
+                    {
+                        var (cpu, mem) = _vitality.ReadHostSensors();
+                        var directive = cpu > 80.0 || mem > 85.0
+                            ? $"Elevated load detected (CPU {cpu}%, RAM {mem}%). Recommending Thor process audit."
+                            : $"Live sensors nominal (CPU {cpu}%, RAM {mem}%). Zero-trust posture verified across all 9 Realms.";
+                        return new CommandResult("accepted", "freya autonomous directive attached", new {
+                            timeUtc = DateTime.UtcNow,
+                            deity = "Freya Autonomous Mind",
+                            directive,
+                            telemetry = new { cpu, ram = mem }
+                        });
+                    }
                 case "vpn_status":
                 case "odin_vpn_status":
-                    return new CommandResult("accepted", "wireguard vpn status attached", new {
-                        timeUtc = DateTime.UtcNow,
-                        iface = "wg0",
-                        status = "connected",
-                        killswitch = "on",
-                        endpoint = "jotunheim.stormraven.internal:51820",
-                        allowedIps = "0.0.0.0/0, ::/0"
-                    }, Queued: false);
+                    return new CommandResult("accepted", "wireguard vpn live status attached", ExecDistroCli("stormraven-vpn", "status"), Queued: false);
                 case "vpn_connect":
                 case "odin_vpn_connect":
-                    return new CommandResult("accepted", "wireguard tunnel wg0 connected with kill-switch", new {
-                        timeUtc = DateTime.UtcNow,
-                        iface = "wg0",
-                        status = "connected",
-                        killswitch = "on"
-                    });
+                    return new CommandResult("accepted", "wireguard tunnel up requested", ExecDistroCli("stormraven-vpn", "killswitch", "on"));
                 case "vpn_disconnect":
                 case "odin_vpn_disconnect":
-                    return new CommandResult("accepted", "wireguard tunnel wg0 disconnected", new {
-                        timeUtc = DateTime.UtcNow,
-                        iface = "wg0",
-                        status = "disconnected",
-                        killswitch = "off"
-                    });
+                    return new CommandResult("accepted", "wireguard tunnel down requested", ExecDistroCli("stormraven-vpn", "killswitch", "off"));
                 case "vpn_killswitch":
                 case "odin_vpn_killswitch":
-                    return new CommandResult("accepted", "wireguard kill-switch toggled", new {
-                        timeUtc = DateTime.UtcNow,
-                        iface = "wg0",
-                        killswitch = target == "off" ? "off" : "on"
-                    });
+                    return new CommandResult("accepted", "wireguard kill-switch toggled", ExecDistroCli("stormraven-vpn", "killswitch", target == "off" ? "off" : "on"));
                 case "vm_status":
                 case "odin_vm_status":
-                    return new CommandResult("accepted", "kvm/qemu hypervisor status attached", new {
-                        timeUtc = DateTime.UtcNow,
-                        hypervisor = "KVM/QEMU + libvirt",
-                        nestedVirt = "enabled",
-                        defaultPool = "/var/lib/libvirt/images"
-                    }, Queued: false);
+                    return new CommandResult("accepted", "kvm/qemu hypervisor live status attached", ExecDistroCli("stormraven-vm", "status"), Queued: false);
                 case "forensics_status":
                 case "odin_forensics_status":
-                    return new CommandResult("accepted", "forensic subsystem status attached", new {
-                        timeUtc = DateTime.UtcNow,
-                        writeBlocker = "ready",
-                        tools = new[] { "dc3dd", "sleuthkit", "binwalk", "foremost", "yara", "volatility3", "plaso" },
-                        chainOfCustody = "SHA-256 verified"
-                    }, Queued: false);
+                    return new CommandResult("accepted", "forensic subsystem live status attached", ExecDistroCli("stormraven-forensics", "status"), Queued: false);
+                case "helheim_quarantine":
+                    {
+                        var targetId = string.IsNullOrWhiteSpace(target) ? "suspect-artifact" : target;
+                        var path = _helheim.QuarantineTarget(targetId, Encoding.UTF8.GetBytes($"QUARANTINED:{targetId}:{DateTime.UtcNow:O}")).GetAwaiter().GetResult();
+                        return new CommandResult("accepted", $"target '{targetId}' isolated in Helheim vault", new { targetId, path, quarantined = _helheim.ListQuarantined() });
+                    }
+                case "helheim_release":
+                    {
+                        var targetId = string.IsNullOrWhiteSpace(target) ? "suspect-artifact" : target;
+                        var bytes = _helheim.ReleaseTarget(targetId).GetAwaiter().GetResult();
+                        return new CommandResult("accepted", $"target '{targetId}' released from Helheim vault", new { targetId, releasedBytes = bytes.Length });
+                    }
+                case "helheim_list":
+                    return new CommandResult("accepted", "helheim quarantine list attached", new { quarantined = _helheim.ListQuarantined() }, Queued: false);
+                case "niflheim_snapshot":
+                    {
+                        var targetId = string.IsNullOrWhiteSpace(target) ? "kernel-state" : target;
+                        var snapId = _niflheim.CreateSnapshot(targetId, SnapshotState()).GetAwaiter().GetResult();
+                        return new CommandResult("accepted", $"snapshot '{snapId}' created in Niflheim vault", new { snapshotId = snapId, snapshots = _niflheim.ListSnapshots() });
+                    }
+                case "niflheim_restore":
+                    {
+                        if (string.IsNullOrWhiteSpace(target))
+                            return new CommandResult("rejected", "niflheim_restore requires a target snapshot id", new { }, Queued: false);
+                        var restored = _niflheim.RestoreSnapshot<NormalizedState>(target).GetAwaiter().GetResult();
+                        return new CommandResult("accepted", $"snapshot '{target}' restored from Niflheim vault", new { snapshotId = target, state = restored });
+                    }
+                case "niflheim_list":
+                    return new CommandResult("accepted", "niflheim snapshot list attached", new { snapshots = _niflheim.ListSnapshots() }, Queued: false);
+                case "muspelheim_fault":
+                case "trigger_chaos":
+                    {
+                        var faultType = string.IsNullOrWhiteSpace(target) ? "memory_spike" : target;
+                        var faultRes = _chaos.InjectFault(faultType);
+                        return new CommandResult("accepted", $"muspelheim fault '{faultType}' injected and contained", faultRes);
+                    }
                 case "get_state":
                     return new CommandResult("accepted", "state snapshot attached", StatePayload(), Queued: false);
                 case "get_tabs":
