@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using StormRaven.Kernel.Contracts;
-using StormRaven.Kernel.Kernel;
+using DecisionEngineNs = global::StormRaven.Kernel.Kernel.DecisionEngine;
 using StormRaven.Kernel.Providers;
 using StormRaven.Kernel.Storage;
 
@@ -78,7 +78,7 @@ namespace StormRaven.Kernel.Ipc
         
         private static readonly List<WebSocket> _sockets = new();
         private static readonly HashSet<string> _commandLog = new();
-        private static readonly StormRaven.Kernel.ContextBus.ContextBus _realmBus = new();
+        private static readonly global::StormRaven.Kernel.ContextBus.ContextBus _realmBus = new();
         private static readonly PersonaMatrix _personas = CreateDefaultPersonas();
         private static readonly HelheimIsolationVault _helheim = new(_realmBus);
         private static readonly NiflheimSnapshotManager _niflheim = new(_realmBus);
@@ -362,10 +362,10 @@ namespace StormRaven.Kernel.Ipc
             }
 
             // run the real kernel pipeline over the ingested tabs:
-            // raw tabs -> EdgeTabsProvider.Normalize -> DecisionEngine.Evaluate
+            // raw tabs -> EdgeTabsProvider.Normalize -> DecisionEngineNs.Evaluate
             var envelope = EdgeTabsProvider.Normalize(incoming);
             var state = SnapshotState();
-            var decisions = new DecisionEngine().Evaluate(state);
+            var decisions = new DecisionEngineNs().Evaluate(state);
             Record(envelope, decisions);
 
             var created = new List<object>();
@@ -388,7 +388,7 @@ namespace StormRaven.Kernel.Ipc
             }
 
             lock (StateLock) { _lastState = state; }
-            var decisions = new DecisionEngine().Evaluate(state);
+            var decisions = new DecisionEngineNs().Evaluate(state);
 
             var envelope = new SignalEnvelope { Provider = "companion.evaluate", Schema = "sr.signal.manual.v1" };
             Record(envelope, decisions);
