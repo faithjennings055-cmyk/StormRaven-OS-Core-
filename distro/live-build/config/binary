@@ -1,0 +1,88 @@
+# config/binary - options for live-build(7), binary stage (Ubuntu 24.04 LTS Noble Numbat)
+
+# Set image type
+LB_IMAGE_TYPE="iso-hybrid"
+
+# Set image filesystem
+LB_BINARY_FILESYSTEM="fat32"
+
+# Set apt/aptitude generic indices
+LB_APT_INDICES="true"
+
+# Set boot parameters
+LB_BOOTAPPEND_LIVE="boot=casper quiet splash"
+
+# Set boot parameters for install
+LB_BOOTAPPEND_INSTALL=""
+
+# Set failsafe boot parameters
+LB_BOOTAPPEND_LIVE_FAILSAFE="boot=casper memtest noapic noapm nodma nomce nolapic nosmp nosplash vga=788"
+
+# Set BIOS bootloader
+LB_BOOTLOADER_BIOS="grub-pc"
+
+# Set EFI bootloader
+LB_BOOTLOADER_EFI="grub-efi"
+
+# Set bootloaders
+LB_BOOTLOADERS=""
+
+# Set checksums
+LB_CHECKSUMS="sha256"
+
+# Set compression
+LB_COMPRESSION="none"
+
+# Support dm-verity on rootfs
+LB_DM_VERITY=""
+
+# Set zsync
+LB_ZSYNC="false"
+
+# Control if we build binary images chrooted
+LB_BUILD_WITH_CHROOT="true"
+
+# Set debian-installer
+LB_DEBIAN_INSTALLER="none"
+
+# Set debian-installer suite
+LB_DEBIAN_INSTALLER_DISTRIBUTION="noble"
+
+# Set debian-installer preseed filename/url
+LB_DEBIAN_INSTALLER_PRESEEDFILE=""
+
+# Toggle use of GUI debian-installer
+LB_DEBIAN_INSTALLER_GUI="false"
+
+# Set hdd label
+LB_HDD_LABEL="STORMRAVEN_UBUNTU"
+
+# Set hdd filesystem size
+LB_HDD_SIZE="auto"
+
+# Set start of partition for the hdd target
+LB_HDD_PARTITION_START=""
+
+# Set iso author
+LB_ISO_APPLICATION="StormRaven OS 24.04 LTS (Ubuntu Noble)"
+
+# Set iso preparer
+LB_ISO_PREPARER="StormRaven Ubuntu Live Builder; https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-"
+
+# Set iso publisher
+LB_ISO_PUBLISHER="StormRaven OS Project; https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-"
+
+# Set iso volume (max 32 chars)
+LB_ISO_VOLUME="StormRaven 24.04 amd64"
+
+# Set memtest
+LB_MEMTEST="none"
+
+# Set loadlin
+LB_LOADLIN="false"
+
+# Set win32-loader
+LB_WIN32_LOADER="false"
+
+# Set net tarball
+LB_NET_TARBALL="false"

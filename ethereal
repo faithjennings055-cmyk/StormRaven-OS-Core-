@@ -1,0 +1,456 @@
+```react
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Terminal, ShieldAlert, Activity, Cpu, Skull, Database,
+  GlobeLock, BrainCircuit, Send, Sparkles,
+  Network, Zap, Lock, ServerCrash, KeyRound, ChevronRight,
+  FolderLock, FileCode, FileText, ShieldOff, HardDrive, Smartphone,
+  FileSearch, ChevronUp
+} from 'lucide-react';
+
+// ============================================================================
+// CORE: GEMINI NEURAL TETHER & NATIVE BRIDGES
+// ============================================================================
+const triggerHaptic = (pattern = 50) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+};
+
+const callGemini = async (prompt, systemInstructionText = "") => {
+  const apiKey = ""; 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+  const sysInst = systemInstructionText || "You are an advanced Intelligence Module of StormRaven OS. Fulfill requests with devastating accuracy and a cold, cyber-mythic tone.";
+
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    systemInstruction: { parts: [{ text: sysInst }] }
+  };
+
+  let delay = 1000;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || "Silence from the void.";
+    } catch (error) {
+      if (attempt === 4) return `[SYSTEM FAULT] The tether dropped. Your mobile bandwidth is insufficient.`;
+      await new Promise(res => setTimeout(res, delay));
+      delay *= 2;
+    }
+  }
+};
+
+const APPS = {
+  odin: { id: 'odin', title: 'Odin Shell', icon: Terminal, color: 'text-fuchsia-400' },
+  freya: { id: 'freya', title: 'Freya Nexus', icon: BrainCircuit, color: 'text-purple-400' },
+  core: { id: 'core', title: 'Omni-Core', icon: Network, color: 'text-blue-400' },
+  heimdall: { id: 'heimdall', title: 'Heimdall Gate', icon: ShieldAlert, color: 'text-red-500' },
+  fafnir: { id: 'fafnir', title: 'Fafnir Vault', icon: FolderLock, color: 'text-amber-400' },
+};
+
+// ============================================================================
+// NATIVE GESTURE BOTTOM-SHEET COMPONENT
+// ============================================================================
+const MobileWindow = ({ app, onClose, children }) => {
+  const [startY, setStartY] = useState(null);
+  const [currentY, setCurrentY] = useState(0);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleTouchStart = (e) => {
+    setStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!startY) return;
+    const y = e.touches[0].clientY;
+    const delta = y - startY;
+    if (delta > 0) { // Only allow swiping downwards
+      setCurrentY(delta);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (currentY > 150) {
+      triggerHaptic([50, 50]);
+      setIsClosing(true);
+      setTimeout(onClose, 300); // Wait for animation
+    } else {
+      setCurrentY(0); // Snap back
+    }
+    setStartY(null);
+  };
+
+  return (
+    <div 
+      className={`absolute inset-x-0 bottom-0 top-[env(safe-area-inset-top,40px)] bg-black/95 z-40 flex flex-col rounded-t-3xl border-t border-x border-fuchsia-900/50 shadow-[0_-10px_50px_rgba(139,92,246,0.2)] transition-transform duration-300 backdrop-blur-2xl ${isClosing ? 'translate-y-full' : 'translate-y-0 animate-slide-up'}`}
+      style={{ transform: !isClosing && currentY > 0 ? `translateY(${currentY}px)` : undefined }}
+    >
+      {/* Gesture Handle */}
+      <div 
+        className="w-full pt-4 pb-2 flex justify-center items-center cursor-grab active:cursor-grabbing touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="w-16 h-1.5 bg-gray-700 rounded-full" />
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-2 pb-4">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2 rounded-lg bg-gray-900/50 border border-gray-800 ${app.color}`}>
+            <app.icon className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black tracking-widest text-fuchsia-100 uppercase">{app.title}</h2>
+            <p className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Active Daemon</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden relative bg-black/80 text-gray-300 font-mono text-sm flex flex-col rounded-t-3xl">
+        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] opacity-20 z-50"></div>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// SUB-MODULE INTERFACES
+// ============================================================================
+const AppTerminal = () => {
+  const [logs, setLogs] = useState(["LEVIATHAN MOBILE SHELL ONLINE.", "Awaiting biometric or physical input..."]);
+  const [input, setInput] = useState('');
+  const bottomRef = useRef(null);
+
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    triggerHaptic();
+    const cmd = input.trim();
+    setLogs(p => [...p, `root@stormraven:~# ${cmd}`]);
+    setInput('');
+
+    if (cmd.toLowerCase().startsWith('freya ')) {
+      const resp = await callGemini(cmd.substring(6), "You are the Odin Terminal of StormRaven OS. Respond with extreme machine brevity. Raw text only.");
+      setLogs(p => [...p, `[FREYA] ${resp}`]);
+      triggerHaptic([30, 50, 30]);
+    } else {
+      setLogs(p => [...p, `Command logged to Midgard RAM.`]);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full p-4">
+      <div className="flex-1 overflow-y-auto space-y-2 text-xs pb-4">
+        {logs.map((l, i) => <div key={i} className="text-fuchsia-400 break-words">{l}</div>)}
+        <div ref={bottomRef} />
+      </div>
+      <div className="flex bg-gray-950/80 border border-fuchsia-900/50 rounded-2xl items-center p-1 mb-[env(safe-area-inset-bottom,10px)]">
+        <span className="text-fuchsia-600 pl-3 font-bold">{'>'}</span>
+        <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="flex-1 bg-transparent text-fuchsia-100 text-sm outline-none border-none p-3 font-mono focus:ring-0" placeholder="Execute..." />
+        <button onClick={handleSend} className="p-3 bg-fuchsia-900/40 text-fuchsia-300 rounded-xl active:scale-90 transition-transform"><Send className="w-4 h-4"/></button>
+      </div>
+    </div>
+  );
+};
+
+const AppFreya = () => {
+  const [msgs, setMsgs] = useState([{ role: 'freya', text: "Neural Tether synchronized. I am listening, mortal." }]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || isTyping) return;
+    triggerHaptic();
+    const q = input.trim();
+    setMsgs(p => [...p, { role: 'user', text: q }]);
+    setInput('');
+    setIsTyping(true);
+    const res = await callGemini(q, "You are Freya, the advanced Intelligence Module of StormRaven OS. Fulfill requests with devastating accuracy and a cold, cyber-mythic tone.");
+    triggerHaptic([20, 50, 20]);
+    setMsgs(p => [...p, { role: 'freya', text: res }]);
+    setIsTyping(false);
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-black">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm font-sans">
+        {msgs.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[90%] p-4 rounded-2xl shadow-lg ${m.role === 'user' ? 'bg-fuchsia-900/30 border border-fuchsia-500/30 text-fuchsia-50 rounded-tr-sm' : 'bg-purple-950/20 border border-purple-900/50 text-purple-200 rounded-tl-sm whitespace-pre-wrap leading-relaxed'}`}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {isTyping && <div className="text-purple-500 animate-pulse text-xs flex items-center gap-2 px-2"><BrainCircuit className="w-4 h-4"/> Parsing intent...</div>}
+      </div>
+      <form onSubmit={handleSubmit} className="p-3 mb-[env(safe-area-inset-bottom,10px)] flex gap-2">
+        <input type="text" value={input} onChange={e=>setInput(e.target.value)} disabled={isTyping} className="flex-1 bg-purple-950/20 border border-purple-800/40 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="Invoke Freya..." />
+        <button type="submit" disabled={isTyping || !input.trim()} className="p-4 bg-purple-900/40 border border-purple-500/50 rounded-2xl text-purple-300 disabled:opacity-50 active:scale-90 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.2)]"><Send className="w-5 h-5"/></button>
+      </form>
+    </div>
+  );
+};
+
+const AppOmniCore = () => {
+  const nodes = ['Odin', 'Heimdall', 'Loki', 'Fafnir', 'Freya'];
+  const [active, setActive] = useState('Odin');
+
+  useEffect(() => {
+    const int = setInterval(() => {
+      setActive(nodes[Math.floor(Math.random() * nodes.length)]);
+      triggerHaptic(10); // Slight tick for active node change
+    }, 2000);
+    return () => clearInterval(int);
+  }, []);
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.1)_0%,rgba(0,0,0,1)_70%)]">
+      <div className="w-48 h-48 rounded-full border border-fuchsia-500/20 flex items-center justify-center relative mb-12 shadow-[inset_0_0_50px_rgba(139,92,246,0.1)]">
+        <div className="w-32 h-32 rounded-full border border-dashed border-fuchsia-500/50 animate-[spin_6s_linear_infinite] flex items-center justify-center absolute"></div>
+        <div className="w-24 h-24 rounded-full bg-black border-2 border-fuchsia-400 flex items-center justify-center z-10 shadow-[0_0_30px_rgba(217,70,239,0.4)]">
+          <Cpu className="w-10 h-10 text-fuchsia-300" />
+        </div>
+      </div>
+      <div className="text-center space-y-3">
+        <div className="text-xs text-gray-500 tracking-[0.3em]">YGGDRASIL BUS</div>
+        <div className="text-3xl font-black text-fuchsia-100 uppercase tracking-widest animate-pulse">{active}</div>
+        <div className="text-[10px] text-emerald-500 font-mono tracking-widest mt-4 flex items-center justify-center gap-2"><Activity className="w-3 h-3"/> SYNC OPTIMAL</div>
+      </div>
+    </div>
+  );
+};
+
+const AppHeimdall = ({ triggerPurge }) => {
+  const [report, setReport] = useState(null);
+  const [generating, setGenerating] = useState(false);
+
+  const generateThreatReport = async () => {
+    triggerHaptic();
+    setGenerating(true);
+    const prompt = `Analyze these dropped payloads: "Desire_for_Data.pdf" and "Case_2:21-cv-02428". Provide a brief, tactical threat report on why this degenerate traffic was blocked by the firewall.`;
+    const sysInstruction = "You are Heimdall, the ultimate firewall and sentinel of StormRaven OS. Speak with authoritative disdain for unapproved/degenerate traffic. Maximum 3 sentences. Output plain text.";
+    const res = await callGemini(prompt, sysInstruction);
+    triggerHaptic([30, 50, 30]);
+    setReport(res);
+    setGenerating(false);
+  };
+
+  return (
+    <div className="p-5 space-y-5 flex flex-col h-full overflow-y-auto">
+      <div className="space-y-5 flex-1">
+        <div className="p-4 border border-red-900/50 bg-red-950/20 rounded-2xl shadow-lg">
+          <div className="font-black text-red-500 mb-2 flex items-center gap-2 text-sm tracking-widest"><Skull className="w-5 h-5"/> GINNUNGAGAP</div>
+          <div className="text-xs text-gray-400 font-sans">Mobile Tether Status: <span className="text-emerald-400 font-bold ml-1">ARMED</span></div>
+        </div>
+        
+        <div className="p-4 border border-fuchsia-900/50 bg-black/50 space-y-3 rounded-2xl shadow-inner">
+          <div className="text-fuchsia-400 font-black text-xs tracking-widest mb-3 flex items-center gap-2"><ShieldOff className="w-4 h-4"/> THREAT VECTORS</div>
+          <div className="p-3 bg-gray-950/80 rounded-xl border border-gray-800 font-mono text-[10px] sm:text-xs">
+            <div className="truncate text-red-400">BLOCKED: Desire_for_Data.pdf</div>
+          </div>
+          <div className="p-3 bg-gray-950/80 rounded-xl border border-gray-800 font-mono text-[10px] sm:text-xs">
+            <div className="truncate text-red-400">BLOCKED: Case_2:21-cv-02428</div>
+          </div>
+          
+          <button 
+            onClick={generateThreatReport} 
+            disabled={generating}
+            className="w-full mt-4 py-4 bg-indigo-950/40 border border-indigo-500/30 hover:border-indigo-400 text-indigo-300 font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 text-xs tracking-widest"
+          >
+            {generating ? <Activity className="w-4 h-4 animate-spin"/> : <Sparkles className="w-4 h-4"/>}
+            FORGE INTEL
+          </button>
+          
+          {report && (
+            <div className="mt-4 p-4 bg-indigo-950/20 border-l-2 border-indigo-500 rounded-r-xl text-indigo-200 font-sans text-xs leading-relaxed animate-slide-up">
+              {report}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button onClick={() => { triggerHaptic([100, 100, 100]); triggerPurge(); }} className="w-full py-5 mb-[env(safe-area-inset-bottom,10px)] bg-red-950/50 border border-red-500 text-red-400 text-sm font-black rounded-2xl tracking-[0.2em] active:scale-95 transition-transform flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+        <ServerCrash className="w-5 h-5"/> RAGNAROK PURGE
+      </button>
+    </div>
+  );
+};
+
+const AppFafnir = () => {
+  const files = ['leviathan.py', 'YormanGunder.rs', 'Luci.key', 'Blueprint.md'];
+  const [analyzing, setAnalyzing] = useState(null);
+  const [results, setResults] = useState({});
+
+  const handleDeepScan = async (file) => {
+    triggerHaptic();
+    setAnalyzing(file);
+    const prompt = `Perform a rapid, cyber-mythic forensic analysis on the file: ${file}. Assess its potential risks or contents within the StormRaven OS environment. Keep it under 3 sentences. Output plain text.`;
+    const sysInst = "You are Fafnir, the archival guardian of StormRaven OS. Speak with a possessive, analytical, and mythic tone regarding data.";
+    const res = await callGemini(prompt, sysInst);
+    triggerHaptic([20, 30, 20]);
+    setResults(prev => ({...prev, [file]: res}));
+    setAnalyzing(null);
+  };
+
+  return (
+    <div className="p-4 space-y-4 overflow-y-auto h-full">
+      <div className="text-xs font-black tracking-widest text-amber-500 px-2 flex items-center gap-2 mb-4"><HardDrive className="w-4 h-4"/> MIDGARD RAMDISK</div>
+      {files.map(f => (
+        <div key={f} className="flex flex-col bg-gray-950/90 border border-gray-800 rounded-2xl overflow-hidden shadow-lg">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4 truncate">
+              <div className="p-2 bg-amber-950/30 rounded-lg border border-amber-900/30">
+                <FileCode className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              </div>
+              <span className="text-sm text-gray-200 truncate font-sans font-bold">{f}</span>
+            </div>
+            <button 
+              onClick={() => handleDeepScan(f)}
+              disabled={analyzing === f}
+              className="p-3 bg-amber-900/20 text-amber-400 border border-amber-500/20 rounded-xl active:scale-90 transition-transform disabled:opacity-50"
+            >
+              {analyzing === f ? <Activity className="w-5 h-5 animate-spin"/> : <FileSearch className="w-5 h-5"/>}
+            </button>
+          </div>
+          
+          {(analyzing === f || results[f]) && (
+            <div className="bg-amber-950/10 border-t border-gray-800/50 p-4 text-xs font-sans text-amber-200/90 leading-relaxed shadow-inner">
+              {analyzing === f ? (
+                <div className="flex items-center gap-2 text-amber-500/50 animate-pulse"><Sparkles className="w-3 h-3"/> Analyzing structure...</div>
+              ) : (
+                <div className="animate-slide-up"><span className="text-amber-500 font-black mr-2 uppercase tracking-widest text-[10px]">SCAN:</span> {results[f]}</div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ============================================================================
+// MAIN HANDSET VIEWPORT ORCHESTRATOR
+// ============================================================================
+export default function StormRavenMobileApp() {
+  const [appState, setAppState] = useState('BOOT'); // BOOT, STAGE, DESKTOP
+  const [activeAppId, setActiveAppId] = useState(null);
+
+  useEffect(() => {
+    if (appState === 'BOOT') {
+      setTimeout(() => {
+        triggerHaptic([50, 100, 50]);
+        setAppState('STAGE');
+      }, 2000);
+    }
+  }, [appState]);
+
+  const connectNode = () => {
+    triggerHaptic([30, 50, 30]);
+    setAppState('DESKTOP');
+  }
+
+  if (appState === 'BOOT') {
+    return (
+      <div className="w-full h-[100dvh] bg-black text-fuchsia-500 font-mono flex flex-col justify-end p-8 select-none">
+        <pre className="text-xs sm:text-sm leading-loose animate-pulse tracking-wide font-bold">
+          INITIALIZING MOBILE CONVERGENCE...{"\n"}
+          FITTING 100DVH VIEWPORT...{"\n"}
+          SAFE-AREA INSETS BUFFERED...{"\n"}
+          HAPTIC DRIVERS MOUNTED...{"\n"}
+          NEURAL TETHER WAKING...{"\n"}
+          LEVIATHAN ENGINE WAITING.
+        </pre>
+        <div className="h-1.5 bg-fuchsia-950 w-full mt-6 overflow-hidden rounded-full">
+          <div className="h-full bg-fuchsia-500 animate-[load_2s_ease-in-out_forwards] shadow-[0_0_15px_#d946ef]" style={{ width: '100%' }} />
+        </div>
+        <style>{`@keyframes load { from { width: 0%; } to { width: 100%; } } @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } } .animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }`}</style>
+      </div>
+    );
+  }
+
+  if (appState === 'STAGE') {
+    return (
+      <div className="w-full h-[100dvh] bg-[#050505] flex flex-col items-center justify-between py-[env(safe-area-inset-top,60px)] pb-[env(safe-area-inset-bottom,60px)] px-6 text-center font-sans overflow-hidden relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(139,92,246,0.15),transparent_60%)] pointer-events-none"></div>
+        
+        <div className="flex flex-col items-center mt-20 z-10 animate-slide-up">
+          <div className="w-24 h-24 bg-gradient-to-br from-fuchsia-900/30 to-black border-2 border-fuchsia-500/40 rounded-3xl flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(217,70,239,0.2)] backdrop-blur-md">
+            <Lock className="w-10 h-10 text-fuchsia-400" />
+          </div>
+          <h1 className="text-2xl font-black text-white tracking-[0.2em] uppercase">Yorman Gunder</h1>
+          <p className="text-xs text-fuchsia-500 font-mono mt-3 tracking-[0.3em]">MOBILE CONVERGENCE</p>
+        </div>
+
+        <button 
+          onClick={connectNode}
+          className="w-full max-w-xs py-5 mb-10 bg-fuchsia-900/20 border border-fuchsia-500/50 hover:bg-fuchsia-900/40 rounded-2xl text-fuchsia-100 font-black text-sm tracking-[0.2em] active:scale-95 transition-all shadow-[0_0_20px_rgba(217,70,239,0.15)] flex flex-col items-center justify-center gap-1 z-10"
+        >
+          <ChevronUp className="w-5 h-5 text-fuchsia-400 animate-bounce" />
+          ESTABLISH TETHER
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-[100dvh] bg-black flex flex-col text-gray-200 overflow-hidden relative select-none font-sans">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(88,28,135,0.3),transparent_70%)] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDAiLz48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSIjMWExYTFhIi8+PC9zdmc+')] opacity-40 mix-blend-screen pointer-events-none"></div>
+
+      {/* Main Icon Grid */}
+      <div className="flex-1 px-6 pt-[calc(env(safe-area-inset-top,40px)+40px)] flex flex-wrap justify-center gap-x-6 gap-y-10 z-10">
+        {Object.values(APPS).map((app) => (
+          <div 
+            key={app.id} 
+            onClick={() => { triggerHaptic(); setActiveAppId(app.id); }}
+            className="flex flex-col items-center gap-3 cursor-pointer active:scale-90 transition-transform w-[80px]"
+          >
+            <div className="w-[72px] h-[72px] rounded-[1.4rem] bg-gray-900/60 border border-gray-700/50 backdrop-blur-xl flex items-center justify-center shadow-2xl">
+              <app.icon className={`w-8 h-8 ${app.color} drop-shadow-lg`} />
+            </div>
+            <span className="text-[11px] font-sans font-bold text-gray-300 text-center tracking-wide">{app.title.split(' ')[0]}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Slide-Up Window Modals */}
+      {activeAppId && (
+        <MobileWindow app={APPS[activeAppId]} onClose={() => { triggerHaptic(); setActiveAppId(null); }}>
+          {activeAppId === 'odin' && <AppTerminal />}
+          {activeAppId === 'freya' && <AppFreya />}
+          {activeAppId === 'core' && <AppOmniCore />}
+          {activeAppId === 'heimdall' && <AppHeimdall triggerPurge={() => setAppState('BOOT')} />}
+          {activeAppId === 'fafnir' && <AppFafnir />}
+        </MobileWindow>
+      )}
+
+      {/* Mobile Dock / Status Bar */}
+      <div className="bg-black/80 backdrop-blur-3xl border-t border-white/10 px-6 pt-4 pb-[calc(env(safe-area-inset-bottom,20px)+10px)] flex items-center justify-between z-20 shadow-[0_-20px_40px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center space-x-3 text-fuchsia-400">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
+          <span className="font-black text-xs font-mono tracking-widest">LEVIATHAN</span>
+        </div>
+        <div className="flex items-center space-x-4 text-gray-400">
+          <BrainCircuit className="w-4 h-4 text-purple-500 animate-pulse" />
+          <Activity className="w-4 h-4 text-emerald-500" />
+          <span className="font-bold text-xs">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+```

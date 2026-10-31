@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+mkdir -p /opt/stormraven /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.shadow_logs
+chmod +x /opt/stormraven/StormRaven.Kernel || true
+chmod +x /usr/local/bin/stormraven || true
+
+# Create dedicated system/live users with locked/random passwords
+id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
+echo "stormraven:$(openssl rand -base64 12)" | chpasswd
+
+id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo ubuntu
+echo "ubuntu:$(openssl rand -base64 12)" | chpasswd
+
+id -u user >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo user
+echo "user:$(openssl rand -base64 12)" | chpasswd
+
+mkdir -p /etc/sudoers.d
+cat > /etc/sudoers.d/90-stormraven-live <<'SUDO'
+ubuntu ALL=(ALL) ALL
+stormraven ALL=(ALL) ALL
+user ALL=(ALL) ALL
+SUDO
+chmod 0440 /etc/sudoers.d/90-stormraven-live
+
+chown -R stormraven:stormraven /var/lib/stormraven /opt/stormraven /etc/stormraven /mnt/dev_drive
+
+mkdir -p /etc/systemd/system/multi-user.target.wants
+ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
+ln -sf /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/systemd-networkd.service || true
+ln -sf /lib/systemd/system/systemd-resolved.service /etc/systemd/system/multi-user.target.wants/systemd-resolved.service || true
+exit 0

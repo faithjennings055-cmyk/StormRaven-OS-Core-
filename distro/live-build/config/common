@@ -1,0 +1,76 @@
+# config/common - common options for live-build(7) (Ubuntu 24.04 LTS Noble Numbat)
+
+# Version of live-build used to build config (config format version)
+LB_CONFIGURATION_VERSION="20230502"
+
+# Set package manager
+LB_APT="apt"
+
+# Set proxy for HTTP connections
+LB_APT_HTTP_PROXY=""
+
+# Set apt/aptitude pipeline depth
+LB_APT_PIPELINE=""
+
+# Set apt/aptitude recommends
+LB_APT_RECOMMENDS="false"
+
+# Set apt/aptitude security
+LB_APT_SECURE="true"
+
+# Set apt/aptitude source entries in sources.list
+LB_APT_SOURCE_ARCHIVES="false"
+
+# Control cache
+LB_CACHE="true"
+
+# Control if downloaded package indices should be cached
+LB_CACHE_INDICES="false"
+
+# Control if downloaded packages files should be cached
+LB_CACHE_PACKAGES="true"
+
+# Control if completed stages should be cached
+LB_CACHE_STAGES="bootstrap"
+
+# Set debconf(1) frontend to use
+LB_DEBCONF_FRONTEND="noninteractive"
+
+# Set debconf(1) priority to use
+LB_DEBCONF_PRIORITY="critical"
+
+# Set initramfs hook (Ubuntu casper live boot)
+LB_INITRAMFS="casper"
+
+# Set initramfs compression
+LB_INITRAMFS_COMPRESSION="gzip"
+
+# Set init system
+LB_INITSYSTEM="systemd"
+
+# Set distribution mode
+LB_MODE="ubuntu"
+
+# Set system type
+LB_SYSTEM="live"
+
+# Set base name of the image
+LB_IMAGE_NAME="StormRavenOS-ubuntu-24.04"
+
+# Set options to use with apt
+APT_OPTIONS="--yes -o Acquire::Retries=5"
+
+# Set options to use with aptitude
+APTITUDE_OPTIONS="--assume-yes -o Acquire::Retries=5"
+
+# Set options to use with debootstrap
+DEBOOTSTRAP_OPTIONS="--arch=amd64"
+
+# Set script to use with debootstrap
+DEBOOTSTRAP_SCRIPT=""
+
+# Set options to use with gzip
+GZIP_OPTIONS="-6 --rsyncable"
+
+# Enable UTC timestamps
+LB_UTC_TIME="true"

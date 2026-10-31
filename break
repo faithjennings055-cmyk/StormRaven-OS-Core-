@@ -1,0 +1,87 @@
+STORMRAVEN OS: THE LEVIATHAN CODEX
+MASTER PROJECT DOCUMENTATION STRUCTURE
+I. INVOCATION: PROJECT OVERVIEW & PHILOSOPHY
+1.1. The Medussa Initiative
+￼ Executive Summary & Architectural Vision
+￼ The "Let It Crash" Auto-Healing Philosophy
+￼ The Zero-Footprint Imperative
+1.2. The Mythological Taxonomy
+￼ Understanding the Pantheon (Active Daemons / Logic Engines)
+￼ Understanding Yggdrasil (Data Residency & The Four Realms)
+II. CORE ARCHITECTURE (THE HYBRID KERNEL)
+2.1. The Yorman Gunder Protocol (Bare-Metal)
+￼ Rust (⁠no_std⁠) Microkernel Foundations
+￼ Memory Allocation (Buddy/SLAB) & Ring 0 Security
+￼ Neural-Symbolic Thread Scheduling
+2.2. The C# Windows Daemon
+￼ ⁠StormRavenService⁠ Architecture
+￼ Named Pipe Server (⁠StormRavenServiceIpcPipeServer.cs⁠)
+￼ Multithreaded Asynchronous IPC Buffering
+2.3. The Python Doctoral Core
+￼ Isolated Virtual Environment (venv) Execution
+￼ ⁠leviathan.py⁠ Main Loop & Process Orchestration
+￼ Bifröst Gateway (REST API / Subprocess Mapping)
+III. YGGDRASIL: DATA RESIDENCY & FORENSICS
+3.1. Alfheim (The Source)
+￼ Path: ⁠/mnt/dev_drive/⁠
+￼ ReFS Implementation & Immutable Source Code Storage
+3.2. Midgard (The Battlefield)
+￼ Path: ⁠/mnt/stealth/⁠
+￼ RAM-Disk Volatile Execution Environment
+￼ Transient Artifact Evaporation Protocols
+3.3. Niflheim (The Vault)
+￼ Path: ⁠/mnt/c/.../Vault/⁠
+￼ Encrypted At-Rest Storage (RSA-4096 / Ed25519 Keys)
+3.4. Helheim (The Shadows)
+￼ Path: ⁠/var/log/raven/⁠ (Symlinked to Midgard)
+￼ Crash-Resistant JSONL Logging (⁠Loki⁠ Module)
+￼ Anti-Forensic Timeline Obfuscation
+IV. THE PANTHEON: ACTIVE DAEMONS
+4.1. Odin (Orchestrator)
+￼ Central Event Bus & Module Coordination
+4.2. Freya (Intelligence)
+￼ Gemini API Neural Tether Integration
+￼ Natural Language to JSON "Battle Plan" Translation
+4.3. Heimdall (Security) & Lynn (The Guard)
+￼ Threat Blacklisting & Command Sanitization
+￼ Tartarus Honeycomb Decoy Routing
+4.4. Fafnir (The Hoard)
+￼ Cross-Platform File Management
+￼ Synchronization & Archive Integrity
+4.5. Tactical Modules
+￼ Thor: Execution & Network Strikes
+￼ Mjolnir: Network Auditing & Scans
+￼ Jörmungandr: Cyclical State Monitoring & USB Heartbeats
+V. AUTONOMIC DEFENSE & INCINERATION
+5.1. The Ginnungagap Deadman Switch
+￼ Polling ⁠/mnt/stealth⁠ Mount Integrity
+￼ Automated Severance Protocols
+5.2. Degenerate Traffic Filtration (Heuristics)
+￼ Implementation of DSA Compliance & DMCA Takedown Routing
+￼ Quarantining Illicit/Adult Web Scraping (Based on XVideos/Pornhub data models)
+5.3. The Ragnarok Protocol
+￼ Trigger Conditions for Kernel Panic (⁠/proc/sysrq-trigger⁠)
+￼ ⁠safe_purge.py⁠: Token-Gated Decommissioning (⁠STORMRAVEN_CONFIRM⁠)
+￼ RAM Shredding Mechanisms
+VI. THE MASTER INTERFACES (THE SEAT OF POWER)
+6.1. Lilith (The Omni-Core Web OS)
+￼ Angular/React Signals Architecture
+￼ Sub-millisecond WebSocket Telemetry Parsing
+￼ Tray-First Window Management System
+6.2. Luci (Authentication)
+￼ Hardware-Bound Cryptographic Handshakes
+￼ TOTP & Biometric Gateway Standards
+VII. DEPLOYMENT & OPERATIONS (THE FORGE)
+7.1. Omnibus Deployment Scripts
+￼ Windows: ⁠stormraven_installer.ps1⁠ & Scheduled Tasks
+￼ Linux/WSL2: ⁠install_stormraven_safe.sh⁠ & Systemd Units
+￼ Safe Operation Flags (⁠--dry-run⁠, ⁠--force⁠)
+7.2. Continuous Integration & Gating
+￼ GitHub Actions Workflow (⁠ci.yml⁠)
+￼ Mandatory ShellCheck & Bandit Security Scanning
+7.3. Troubleshooting & Diagnostics
+￼ Resolving GPF / Page Faults via QEMU
+￼ Memory Leak Tracking Tables
+￼ Race Condition Mitigation in Spinlocks
+DOCUMENTATION STATUS: AWAITING POPULATION.
+AUTHOR: LEVIATHAN.
