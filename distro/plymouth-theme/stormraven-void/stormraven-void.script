@@ -8,25 +8,82 @@ Window.SetBackgroundBottomColor(0.027, 0.012, 0.039); # #07030a
 raven_image = Image("raven_mark.png");
 raven_sprite = Sprite(raven_image);
 raven_sprite.SetX(Window.GetWidth() / 2 - raven_image.GetWidth() / 2);
-raven_sprite.SetY(Window.GetHeight() / 2 - raven_image.GetHeight() / 2);
+raven_sprite.SetY(Window.GetHeight() / 2 - raven_image.GetHeight() / 2 - 24);
 raven_sprite.SetOpacity(1.0);
 
-# Progress Bar (clinical grid style)
-progress_bar.image = Image("progress_bar.png");
-progress_bar.sprite = Sprite(progress_bar.image);
-progress_bar.sprite.SetX(Window.GetWidth() / 2 - progress_bar.image.GetWidth() / 2);
-progress_bar.sprite.SetY(Window.GetHeight() * 0.75);
+# Progress Bar (clinical grid style, scaled smoothly to progress)
+progress_bar.original_image = Image("progress_bar.png");
+progress_bar.sprite = Sprite();
+progress_bar.sprite.SetX(Window.GetWidth() / 2 - progress_bar.original_image.GetWidth() / 2);
+progress_bar.sprite.SetY(Window.GetHeight() * 0.72);
 progress_bar.sprite.SetOpacity(0);
 
+# Sovereign Boot Voice Rhythm (Issue #28)
+status_sprite = Sprite();
+sub_sprite = Sprite();
+last_stage = -1;
+custom_message_active = 0;
+
+fun set_voice_line (primary, secondary) {
+  p_img = Image.Text(primary, 0.902, 0.929, 0.961, 1, "DejaVu Sans Mono 11");
+  status_sprite.SetImage(p_img);
+  status_sprite.SetX(Window.GetWidth() / 2 - p_img.GetWidth() / 2);
+  status_sprite.SetY(Window.GetHeight() * 0.76);
+  status_sprite.SetOpacity(1.0);
+
+  s_img = Image.Text(secondary, 0.024, 0.714, 0.831, 1, "DejaVu Sans Mono 9");
+  sub_sprite.SetImage(s_img);
+  sub_sprite.SetX(Window.GetWidth() / 2 - s_img.GetWidth() / 2);
+  sub_sprite.SetY(Window.GetHeight() * 0.76 + 24);
+  sub_sprite.SetOpacity(0.85);
+}
+
+# Initial beat at splash start
+set_voice_line("ROUSING THE RAVEN...", "[ymir] Ring 0 core online - bounds verified");
+
 fun progress_callback (duration, progress) {
+  # Subtle breathing pulse on the Raven mark
+  pulse = 0.88 + 0.12 * Math.Sin(duration * 2.2);
+  raven_sprite.SetOpacity(pulse);
+
   if (progress > 0) {
+    w = Math.Int(progress_bar.original_image.GetWidth() * progress);
+    if (w < 2) w = 2;
+    if (w > progress_bar.original_image.GetWidth()) w = progress_bar.original_image.GetWidth();
+    progress_bar.image = progress_bar.original_image.Scale(w, progress_bar.original_image.GetHeight());
+    progress_bar.sprite.SetImage(progress_bar.image);
     progress_bar.sprite.SetOpacity(1.0);
+  }
+
+  if (custom_message_active == 0) {
+    stage = 0;
+    if (progress >= 0.80) stage = 4;
+    else if (progress >= 0.55) stage = 3;
+    else if (progress >= 0.30) stage = 2;
+    else if (progress >= 0.10) stage = 1;
+
+    if (stage != last_stage) {
+      last_stage = stage;
+      if (stage == 0) set_voice_line("ROUSING THE RAVEN...", "[ymir] Ring 0 core online - bounds verified");
+      if (stage == 1) set_voice_line("UNSEALING NINE REALMS...", "[solomon] Cryptographic volume seals verified");
+      if (stage == 2) set_voice_line("HEIMDALL AT THE GATE...", "[heimdall] mTLS zero-trust watch armed");
+      if (stage == 3) set_voice_line("SUMMONING THE PANTHEON...", "[odin] Context bus and daemon mesh awake");
+      if (stage == 4) set_voice_line("CROSSING BIFROST...", "[alfheim] Ethereal Void shell ready");
+    }
   }
 }
 Plymouth.SetBootProgressFunction(progress_callback);
 
-# Boot Log Overlay (Clinical/Kernel style)
+# Boot Log Overlay (Clinical/Kernel style - styles true system messages without losing precision)
 fun display_message_callback (text) {
-  # Simple log handling if needed, usually quiet
+  if (text != "") {
+    custom_message_active = 1;
+    set_voice_line(text, "[stormraven] system event");
+  }
 }
 Plymouth.SetDisplayMessageFunction(display_message_callback);
+
+fun quit_callback () {
+  raven_sprite.SetOpacity(1.0);
+}
+Plymouth.SetQuitFunction(quit_callback);
