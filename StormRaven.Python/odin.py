@@ -115,8 +115,11 @@ class Odin:
                 "telemetry": tel
             }
 
-        plan = self.bridge.translate_command(cmd_str)
-        allowed = self.guard.audit(plan["cmd"])
+        # 1% Margin: strict allow-list (issue #35). Blacklist heuristics are
+        # never the gate — only explicitly allow-listed commands execute.
+        from command_allowlist import classify
+        verdict = classify(cmd_str)
+        allowed = verdict["allowed"] and self.guard.audit(verdict["cmd"] or "")
         if not allowed:
             return {
                 "ok": False,
@@ -125,7 +128,7 @@ class Odin:
                 "heimdallAudit": "BLOCKED",
                 "error": "Command rejected by Heimdall security policy."
             }
-        proc_out = os.popen(plan["cmd"]).read().strip()
+        proc_out = os.popen(verdict["cmd"]).read().strip()
         return {
             "ok": True,
             "module": "Bifrost -> Heimdall -> Thor",
