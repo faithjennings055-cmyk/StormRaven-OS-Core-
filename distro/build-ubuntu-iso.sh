@@ -260,6 +260,12 @@ EOF
 $SUDO chmod +x "${CHROOT_DIR}/usr/share/initramfs-tools/scripts/casper"
 $SUDO ln -sf casper "${CHROOT_DIR}/usr/share/initramfs-tools/scripts/live"
 
+# Copy Plymouth theme and Ethereal Void wallpapers into chroot before chrooting
+$SUDO mkdir -p "${CHROOT_DIR}/usr/share/plymouth/themes/stormraven-void"
+$SUDO cp -a "${REPO_ROOT}/distro/plymouth-theme/stormraven-void/." "${CHROOT_DIR}/usr/share/plymouth/themes/stormraven-void/"
+$SUDO mkdir -p "${CHROOT_DIR}/usr/share/backgrounds/stormraven"
+$SUDO cp -a "${REPO_ROOT}/distro/wallpapers/." "${CHROOT_DIR}/usr/share/backgrounds/stormraven/"
+
 # Configure users, services, autologin, branding, and rebuild initramfs inside chroot
 $SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<'EOF'
 mkdir -p /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.shadow_logs
@@ -342,6 +348,11 @@ DISTRIB_CODENAME=noble
 DISTRIB_DESCRIPTION="StormRaven OS 24.04 LTS (Ubuntu Noble)"
 LSBREL
 
+# Install Plymouth and set the StormRaven Void theme inside chroot
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y --no-install-recommends plymouth plymouth-themes
+plymouth-set-default-theme -R stormraven-void || plymouth-set-default-theme stormraven-void
+
 # Update initramfs for installed Ubuntu kernel
 KVER="$(ls -1 /lib/modules | sort -V | tail -n 1)"
 echo "Generating Ubuntu initramfs for kernel ${KVER}..."
@@ -382,26 +393,39 @@ ln -sf ../casper/vmlinuz "${ISO_STAGING}/live/vmlinuz"
 ln -sf ../casper/initrd "${ISO_STAGING}/live/initrd"
 ln -sf ../casper/filesystem.squashfs "${ISO_STAGING}/live/filesystem.squashfs"
 
+# StormRaven GRUB theme (gfxterm): background, Geist Mono fonts, menu styling
+mkdir -p "${ISO_STAGING}/boot/grub/themes"
+cp -r "${REPO_ROOT}/distro/grub-theme/stormraven" "${ISO_STAGING}/boot/grub/themes/"
+
 cat > "${ISO_STAGING}/boot/grub/grub.cfg" <<'EOF'
 set default=0
-set timeout=3
+set timeout=5
 
 insmod all_video
 insmod gfxterm
+insmod png
+set gfxmode=1920x1080,1280x720,auto
+set gfxpayload=keep
 terminal_input console serial
-terminal_output console serial
+if loadfont /boot/grub/themes/stormraven/geistmono-26.pf2; then
+    loadfont /boot/grub/themes/stormraven/geistmono-20.pf2
+    terminal_output gfxterm serial
+    set theme=/boot/grub/themes/stormraven/theme.txt
+else
+    terminal_output console serial
+fi
 
-menuentry "StormRaven OS 24.04 LTS (Ubuntu Noble) — Live" {
+menuentry "StormRaven OS 24.04 Live" {
     linux /casper/vmlinuz boot=casper quiet console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 LTS (Ubuntu Noble) — Live (Verbose / Serial)" {
+menuentry "StormRaven OS 24.04 Live (verbose / serial)" {
     linux /casper/vmlinuz boot=casper console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 LTS (Ubuntu Noble) — Safe Mode" {
+menuentry "StormRaven OS 24.04 Safe Mode" {
     linux /casper/vmlinuz boot=casper nomodeset noapic noapm nodma nomce nolapic nosmp console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }

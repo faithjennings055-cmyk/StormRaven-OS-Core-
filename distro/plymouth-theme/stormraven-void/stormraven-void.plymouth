@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=StormRaven Void
+Description=Deep Void background with faceted Raven mark and icy accents.
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/stormraven-void
+ScriptFile=/usr/share/plymouth/themes/stormraven-void/stormraven-void.script
