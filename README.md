@@ -1,4 +1,4 @@
-# StormRaven OS (Ubuntu 24.04 LTS "Noble Numbat" & Mobile Edition)
+# StormRaven OS Infinity Protocol (Ubuntu 24.04 LTS "Noble Numbat" & Mobile Edition)
 
 StormRaven OS is a hybrid C# + Python operating environment and Ubuntu 24.04 LTS (`noble`) live distribution with full mobile support across iOS, Android, and Linux mobile devices.
 
@@ -13,7 +13,7 @@ StormRaven OS is a hybrid C# + Python operating environment and Ubuntu 24.04 LTS
   ```
   See [`distro/mobile/README.md`](distro/mobile/README.md) for full details.
 
-## Architecture
+## Architectural Bedrock (Infinity Protocol)
 
 1. **Ubuntu 24.04 LTS ("Noble Numbat") Live Distro (`distro/`)**
    - Reproducible ISO builder (`distro/build-ubuntu-iso.sh`) using `debootstrap noble`, Ubuntu 6.8 generic kernel, `casper` live boot, and `grub-mkrescue`.
@@ -27,3 +27,4 @@ StormRaven OS is a hybrid C# + Python operating environment and Ubuntu 24.04 LTS
    - `webapp/`: Installable Mobile PWA with Status, Tabs, Decisions, Odin Pantheon, and Console views.
    - `StormRaven.Mobile/`: Cross-platform `.NET 8 MAUI` app (`net8.0-ios;net8.0-android`) running `StormRaven.Kernel.Portable` on-device via `KernelHostedService` + remote Bifrost gateway sync.
    - `ios/StormRavenCompanion/`: Native SwiftUI iOS 17+ companion app supporting LAN HTTP and Cloud HTTPS Bifrost gateways.
+\n## Current Milestone: Bedrock Complete\n- Ymir Ring 0 Core: IMPLEMENTED\n- Buddy/SLAB Allocator: LIVE\n- Zero-Trust Gatekeeper: LIVE\n- Neural-Symbolic Scheduler: LIVE\n- Phase: Transitioning to Visuals & GUI Layer
