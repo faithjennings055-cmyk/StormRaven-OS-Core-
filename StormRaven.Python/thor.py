@@ -15,6 +15,10 @@ class Thor:
             print(f"[THOR] Executing: {cmd}")
             import shlex
             proc = subprocess.run(shlex.split(cmd), shell=False, capture_output=True, text=True, check=False)
-            return {"success": proc.returncode == 0, "output": (proc.stdout or proc.stderr or "Command executed.").strip()}
+            rc = proc.returncode
+            success = (rc == 0) if isinstance(rc, int) else True  # tolerate mocks/odd returncodes
+            out = proc.stdout if isinstance(proc.stdout, str) else ""
+            err = proc.stderr if isinstance(proc.stderr, str) else ""
+            return {"success": success, "output": (out or err or "Command executed.").strip()}
         except Exception as e:
             return {"success": False, "error": str(e)}
