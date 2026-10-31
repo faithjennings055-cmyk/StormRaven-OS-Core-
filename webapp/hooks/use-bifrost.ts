@@ -6,7 +6,16 @@ export function useBifrost(kernelIp: string = 'localhost') {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    const socket = new WebSocket(`ws://${kernelIp}:8787/ws`)
+    let socket: WebSocket | null = null
+    try {
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
+      const isLocal = kernelIp === 'localhost' || kernelIp === '127.0.0.1'
+      const wsUrl = isHttps && !isLocal ? `wss://${kernelIp}/ws` : `ws://${kernelIp}:8787/ws`
+      socket = new WebSocket(wsUrl)
+    } catch {
+      dispatch(setBridge('degraded'))
+      return
+    }
 
     socket.onopen = () => {
       dispatch(setBridge('connected'))
@@ -50,6 +59,12 @@ export function useBifrost(kernelIp: string = 'localhost') {
       dispatch(setBridge('degraded'))
     }
 
-    return () => socket.close()
+    return () => {
+      try {
+        socket?.close()
+      } catch {
+        // ignore close errors
+      }
+    }
   }, [kernelIp, dispatch])
 }
