@@ -30,7 +30,7 @@ terminal-font: "Geist Mono Regular 20"
   align = "center"
   font = "Geist Mono Regular 20"
   color = "#4b5870"
-  text = "Enter to boot   ·   e to edit   ·   c for console"
+  text = "Enter to rouse the raven   ·   e to inspect runes   ·   c for void console"
 }
 
 + label {
@@ -41,5 +41,5 @@ terminal-font: "Geist Mono Regular 20"
   align = "center"
   font = "Geist Mono Regular 20"
   color = "#34d3b0"
-  text = "Booting in %d s"
+  text = "Crossing Bifrost in %d s"
 }

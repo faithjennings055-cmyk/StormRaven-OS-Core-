@@ -496,17 +496,20 @@ else
     terminal_output console serial
 fi
 
-menuentry "StormRaven OS 24.04 Live" {
-    linux /casper/vmlinuz boot=casper quiet console=tty0 console=ttyS0,115200n8
+menuentry "StormRaven OS 24.04 - Ethereal Void" {
+    echo "Rousing the raven... [Ymir core + Pantheon]"
+    linux /casper/vmlinuz boot=casper quiet splash console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 Live (verbose / serial)" {
+menuentry "StormRaven OS 24.04 - All-Father Sight (Verbose / Serial)" {
+    echo "Unsealing kernel telemetry... [Serial 115200n8]"
     linux /casper/vmlinuz boot=casper console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 Safe Mode" {
+menuentry "StormRaven OS 24.04 - Iron Ward (Safe Mode)" {
+    echo "Entering Iron Ward fallback... [nomodeset / fail-safe]"
     linux /casper/vmlinuz boot=casper nomodeset noapic noapm nodma nomce nolapic nosmp console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
