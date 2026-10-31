@@ -132,32 +132,66 @@ apt-get install -y --no-install-recommends \
   libicu74 \
   libssl3t64 \
   less \
-  nano \
+  nano
+locale-gen en_US.UTF-8 || true
+EOF
+
+echo "==> [4.5/7] Installing modern systems layer (VPN, VM, forensics, baseline)..."
+$SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<EOF
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+
+# --- Built-in VPN (WireGuard native + firewall) ---
+apt-get install -y --no-install-recommends \
+  wireguard \
   wireguard-tools \
-  iptables \
-  nftables \
-  qrencode \
+  ufw
+
+# --- Built-in VM capabilities (KVM/QEMU + libvirt + virt-manager) ---
+apt-get install -y --no-install-recommends \
   qemu-system-x86 \
   qemu-utils \
-  libvirt-clients \
   libvirt-daemon-system \
+  libvirt-clients \
   virt-manager \
+  ovmf
+
+# --- Built-in forensic subsystems ---
+apt-get install -y --no-install-recommends \
   sleuthkit \
   binwalk \
   foremost \
+  testdisk \
   yara \
+  hashdeep \
   dc3dd \
   ewf-tools \
-  auditd \
+  chkrootkit \
+  libimage-exiftool-perl
+
+# --- Modern desktop baseline (network, audio, printing, scanning, media, tools) ---
+apt-get install -y --no-install-recommends \
   network-manager \
-  ufw \
   bluez \
   pipewire \
+  pipewire-audio \
   wireplumber \
+  cups \
   cups-client \
+  sane-utils \
+  ffmpeg \
+  p7zip-full \
+  unzip \
+  zip \
+  rsync \
+  gnupg \
+  openssh-client \
+  openssh-server \
   unattended-upgrades \
-  rsync
-locale-gen en_US.UTF-8 || true
+  timeshift \
+  libnss-systemd
+
+apt-get clean
 EOF
 
 # Build StormRaven.Kernel from source instead of using pre-compiled binary
@@ -196,15 +230,6 @@ fi
 # StormRaven.Kernel is built from source in step 5.1
 $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
-$SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven-vpn" "${CHROOT_DIR}/usr/local/bin/stormraven-vm" "${CHROOT_DIR}/usr/local/bin/stormraven-forensics" 2>/dev/null || true
-
-# Preconfigure KVM nested virtualization and default libvirt storage pool (#25)
-$SUDO mkdir -p "${CHROOT_DIR}/etc/modprobe.d" "${CHROOT_DIR}/var/lib/libvirt/images" "${CHROOT_DIR}/var/lib/stormraven/evidence" "${CHROOT_DIR}/etc/wireguard"
-$SUDO chmod 0700 "${CHROOT_DIR}/etc/wireguard"
-$SUDO tee "${CHROOT_DIR}/etc/modprobe.d/stormraven-kvm.conf" >/dev/null <<'EOF'
-options kvm_intel nested=1
-options kvm_amd nested=1
-EOF
 
 # Install live initramfs hook & script so both boot=casper and boot=live mount the squashfs cleanly
 $SUDO tee "${CHROOT_DIR}/etc/initramfs-tools/modules" >/dev/null <<'EOF'
@@ -329,6 +354,11 @@ rm -f /etc/systemd/system/multi-user.target.wants/casper-md5check.service \
 # Enable systemd services
 mkdir -p /etc/systemd/system/multi-user.target.wants
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
+ln -sf /lib/systemd/system/libvirtd.service /etc/systemd/system/multi-user.target.wants/libvirtd.service || true
+ln -sf /lib/systemd/system/bluetooth.service /etc/systemd/system/multi-user.target.wants/bluetooth.service || true
+ln -sf /lib/systemd/system/cups.service /etc/systemd/system/multi-user.target.wants/cups.service || true
+ln -sf /lib/systemd/system/ufw.service /etc/systemd/system/multi-user.target.wants/ufw.service || true
+ln -sf /lib/systemd/system/unattended-upgrades.service /etc/systemd/system/multi-user.target.wants/unattended-upgrades.service || true
 ln -sf /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/systemd-networkd.service || true
 ln -sf /lib/systemd/system/systemd-resolved.service /etc/systemd/system/multi-user.target.wants/systemd-resolved.service || true
 
@@ -394,6 +424,24 @@ update-initramfs -c -k "${KVER}" || update-initramfs -u -k "${KVER}"
 # Clean apt package caches to keep squashfs lean (keep apt lists so apt-cache policy works immediately!)
 apt-get clean
 rm -rf /var/tmp/* /tmp/* /var/log/*.log || true
+
+# StormRaven voice: motd with attitude (plain-text fallback for logins)
+$SUDO rm -f "${CHROOT_DIR}/etc/motd"
+$SUDO tee "${CHROOT_DIR}/etc/motd" >/dev/null <<'MOTD'
+  .__                      .__
+  |__|_______   ____   __ |__| ________________
+  |  \_  __ \_/ __ \ |  | |  | \__  \_  __ \
+  |  ||  | \/\  ___/ |  |_|  |__/ __ \|  | \/
+  |__||__|    \___  >____/____(____  /__|
+                  \/               \/
+  StormRaven OS 24.04 LTS (Ubuntu Noble)
+
+  "The void does not crash. It remembers, and it deletes."
+
+  The Nine Realms stand watch. The kernel is listening.
+  Run 'stormraven status' to greet the Sovereign stack,
+  or 'stormraven odin' to speak with Odin himself.
+MOTD
 EOF
 
 # Remove policy-rc.d and set up clean resolv.conf
@@ -455,11 +503,6 @@ menuentry "StormRaven OS 24.04 Live" {
 
 menuentry "StormRaven OS 24.04 Live (verbose / serial)" {
     linux /casper/vmlinuz boot=casper console=tty0 console=ttyS0,115200n8
-    initrd /casper/initrd
-}
-
-menuentry "StormRaven OS 24.04 Forensic Mode (Read-Only / Write-Blocker)" {
-    linux /casper/vmlinuz boot=casper ro forensic=1 noswap noautomount console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
