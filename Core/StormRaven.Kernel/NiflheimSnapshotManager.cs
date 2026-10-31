@@ -9,9 +9,9 @@ namespace StormRaven.Kernel
     public class NiflheimSnapshotManager
     {
         private readonly string _snapshotPath;
-        private readonly StormRaven.Kernel.ContextBus.ContextBus _bus;
+        private readonly global::StormRaven.Kernel.ContextBus.ContextBus _bus;
 
-        public NiflheimSnapshotManager(StormRaven.Kernel.ContextBus.ContextBus bus, string? snapshotPath = null)
+        public NiflheimSnapshotManager(global::StormRaven.Kernel.ContextBus.ContextBus bus, string? snapshotPath = null)
         {
             _bus = bus;
             var baseDir = Environment.GetEnvironmentVariable("STORMRAVEN_VOID_DIR")

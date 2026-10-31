@@ -12,7 +12,7 @@ namespace StormRaven.Kernel
         public string ServiceName { get; } = "StormRavenKernel";
 
         // The Nine Realms
-        public StormRaven.Kernel.ContextBus.ContextBus OpticalBus { get; } = new();
+        public global::StormRaven.Kernel.ContextBus.ContextBus OpticalBus { get; } = new();
         public PersonaMatrix PersonaMatrix { get; } = new();
         public ValhallaLedger Valhalla { get; } = new();
         public DeepArchive DeepArchive { get; } = new();

@@ -96,12 +96,12 @@ namespace StormRaven.Kernel
 
     public sealed class OperationalLayer
     {
-        private readonly StormRaven.Kernel.ContextBus.ContextBus _bus;
+        private readonly global::StormRaven.Kernel.ContextBus.ContextBus _bus;
         private readonly MicrokernelBinaryManager _binaryManager;
         private readonly PersonaMatrix _personaMatrix;
 
         public OperationalLayer(
-            StormRaven.Kernel.ContextBus.ContextBus bus,
+            global::StormRaven.Kernel.ContextBus.ContextBus bus,
             MicrokernelBinaryManager binaryManager,
             PersonaMatrix personaMatrix)
         {
@@ -120,9 +120,9 @@ namespace StormRaven.Kernel
 
     public sealed class VitalityMonitor
     {
-        private readonly StormRaven.Kernel.ContextBus.ContextBus _bus;
+        private readonly global::StormRaven.Kernel.ContextBus.ContextBus _bus;
 
-        public VitalityMonitor(StormRaven.Kernel.ContextBus.ContextBus bus)
+        public VitalityMonitor(global::StormRaven.Kernel.ContextBus.ContextBus bus)
         {
             _bus = bus;
         }
@@ -174,11 +174,11 @@ namespace StormRaven.Kernel
 
     public sealed class ChaosEngine
     {
-        private readonly StormRaven.Kernel.ContextBus.ContextBus _bus;
+        private readonly global::StormRaven.Kernel.ContextBus.ContextBus _bus;
         private readonly PersonaMatrix _personas;
         private readonly List<ChaosFaultResult> _history = new();
 
-        public ChaosEngine(StormRaven.Kernel.ContextBus.ContextBus bus, PersonaMatrix personas)
+        public ChaosEngine(global::StormRaven.Kernel.ContextBus.ContextBus bus, PersonaMatrix personas)
         {
             _bus = bus;
             _personas = personas;

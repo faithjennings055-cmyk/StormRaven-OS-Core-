@@ -8,9 +8,9 @@ namespace StormRaven.Kernel
     public class HelheimIsolationVault
     {
         private readonly string _vaultPath;
-        private readonly StormRaven.Kernel.ContextBus.ContextBus _bus;
+        private readonly global::StormRaven.Kernel.ContextBus.ContextBus _bus;
 
-        public HelheimIsolationVault(StormRaven.Kernel.ContextBus.ContextBus bus, string? vaultPath = null)
+        public HelheimIsolationVault(global::StormRaven.Kernel.ContextBus.ContextBus bus, string? vaultPath = null)
         {
             _bus = bus;
             var baseDir = Environment.GetEnvironmentVariable("STORMRAVEN_VOID_DIR")
