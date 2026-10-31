@@ -5,9 +5,9 @@
 set -euo pipefail
 
 WG_DIR="/etc/wireguard"
-STATE_DIR="/var/lib/stormraven/vpn"
+STATE_DIR="${STORMRAVEN_VPN_STATE_DIR:-/var/lib/stormraven/vpn}"
 IFACE="${STORMRAVEN_WG_IFACE:-wg0}"
-mkdir -p "${STATE_DIR}"
+mkdir -p "${STATE_DIR}" 2>/dev/null || { STATE_DIR="/tmp/stormraven-void/vpn"; mkdir -p "${STATE_DIR}"; }
 
 usage() {
   cat <<EOF

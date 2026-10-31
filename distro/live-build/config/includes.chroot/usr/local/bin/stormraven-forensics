@@ -5,7 +5,7 @@
 set -euo pipefail
 
 EVIDENCE_DIR="${STORMRAVEN_EVIDENCE_DIR:-/var/lib/stormraven/evidence}"
-mkdir -p "${EVIDENCE_DIR}"
+mkdir -p "${EVIDENCE_DIR}" 2>/dev/null || { EVIDENCE_DIR="/tmp/stormraven-void/evidence"; mkdir -p "${EVIDENCE_DIR}"; }
 
 usage() {
   cat <<EOF
