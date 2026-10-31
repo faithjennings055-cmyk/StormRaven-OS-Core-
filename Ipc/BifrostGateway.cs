@@ -182,24 +182,19 @@ namespace StormRaven.Kernel.Ipc
             var raw = ctx.Request.Url?.AbsolutePath ?? "/";
             try
             {
-                // Zero-trust gate: reject unauthenticated callers before any route
-                // (including /ws). Anonymous probes get a generic 401.
-                if (!Authorized(ctx.Request))
-                {
-                    ctx.Response.StatusCode = 401;
-                    ctx.Response.Headers["WWW-Authenticate"] = "Bearer realm="stormraven-bifrost"";
-                    try { await WriteJson(ctx, Error("unauthorized", "missing or invalid gateway token"), 401); }
-                    catch { ctx.Response.Close(); }
-                    return;
-                }
-
                 if (ctx.Request.IsWebSocketRequest && raw == "/ws")
                 {
                     // WebSocket handshake: Authorization headers are unreliable in
-                    // browsers pre-connect, so /ws also accepts ?token=<tok>.
+                    // browsers pre-connect, so /ws accepts ?token=<tok> OR a Bearer
+                    // header. The gate runs here, before accepting the socket.
                     var qsToken = ctx.Request.QueryString["token"] ?? "";
-                    if (qsToken.Length > 0 && string.IsNullOrEmpty(_authToken))
-                        return; // fail closed
+                    if (qsToken.Length == 0 && !Authorized(ctx.Request))
+                    {
+                        ctx.Response.StatusCode = 401;
+                        try { await WriteJson(ctx, Error("unauthorized", "missing or invalid gateway token"), 401); }
+                        catch { ctx.Response.Close(); }
+                        return;
+                    }
                     if (qsToken.Length > 0)
                     {
                         if (!CryptographicOperations.FixedTimeEquals(
@@ -214,6 +209,17 @@ namespace StormRaven.Kernel.Ipc
                     }
                     var wsCtx = await ctx.AcceptWebSocketAsync(null);
                     await HandleSocket(wsCtx.WebSocket);
+                    return;
+                }
+
+                // Zero-trust gate for plain HTTP routes: reject unauthenticated
+                // callers (401 + WWW-Authenticate) before dispatch.
+                if (!Authorized(ctx.Request))
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.Headers["WWW-Authenticate"] = "Bearer realm=\"stormraven-bifrost\"";
+                    try { await WriteJson(ctx, Error("unauthorized", "missing or invalid gateway token"), 401); }
+                    catch { ctx.Response.Close(); }
                     return;
                 }
 
