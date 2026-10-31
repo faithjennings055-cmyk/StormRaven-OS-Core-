@@ -39,6 +39,8 @@ class BifrostGateContract(unittest.TestCase):
     def test_fails_closed_without_token_env(self):
         self.assertIn("return false; // fail closed", GATEWAY_SRC,
             "unset STORMRAVEN_GATEWAY_TOKEN must refuse all traffic")
+        self.assertIn("string.IsNullOrEmpty(_authToken) || !CryptographicOperations.FixedTimeEquals", GATEWAY_SRC,
+            "ws ?token= check must fail closed with 401 when _authToken is unset instead of throwing ArgumentNullException")
 
     def test_compiles_no_unescaped_quotes(self):
         # Regression for the escaped-quote compile bug found in review.

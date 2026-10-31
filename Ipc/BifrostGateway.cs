@@ -197,9 +197,9 @@ namespace StormRaven.Kernel.Ipc
                     }
                     if (qsToken.Length > 0)
                     {
-                        if (!CryptographicOperations.FixedTimeEquals(
+                        if (string.IsNullOrEmpty(_authToken) || !CryptographicOperations.FixedTimeEquals(
                                 Encoding.UTF8.GetBytes(qsToken),
-                                Encoding.UTF8.GetBytes(_authToken!)))
+                                Encoding.UTF8.GetBytes(_authToken)))
                         {
                             ctx.Response.StatusCode = 401;
                             try { await WriteJson(ctx, Error("unauthorized", "invalid gateway token"), 401); }
