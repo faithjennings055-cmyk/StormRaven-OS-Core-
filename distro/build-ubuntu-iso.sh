@@ -132,7 +132,31 @@ apt-get install -y --no-install-recommends \
   libicu74 \
   libssl3t64 \
   less \
-  nano
+  nano \
+  wireguard-tools \
+  iptables \
+  nftables \
+  qrencode \
+  qemu-system-x86 \
+  qemu-utils \
+  libvirt-clients \
+  libvirt-daemon-system \
+  virt-manager \
+  sleuthkit \
+  binwalk \
+  foremost \
+  yara \
+  dc3dd \
+  ewf-tools \
+  auditd \
+  network-manager \
+  ufw \
+  bluez \
+  pipewire \
+  wireplumber \
+  cups-client \
+  unattended-upgrades \
+  rsync
 locale-gen en_US.UTF-8 || true
 EOF
 
@@ -172,6 +196,15 @@ fi
 # StormRaven.Kernel is built from source in step 5.1
 $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
+$SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven-vpn" "${CHROOT_DIR}/usr/local/bin/stormraven-vm" "${CHROOT_DIR}/usr/local/bin/stormraven-forensics" 2>/dev/null || true
+
+# Preconfigure KVM nested virtualization and default libvirt storage pool (#25)
+$SUDO mkdir -p "${CHROOT_DIR}/etc/modprobe.d" "${CHROOT_DIR}/var/lib/libvirt/images" "${CHROOT_DIR}/var/lib/stormraven/evidence" "${CHROOT_DIR}/etc/wireguard"
+$SUDO chmod 0700 "${CHROOT_DIR}/etc/wireguard"
+$SUDO tee "${CHROOT_DIR}/etc/modprobe.d/stormraven-kvm.conf" >/dev/null <<'EOF'
+options kvm_intel nested=1
+options kvm_amd nested=1
+EOF
 
 # Install live initramfs hook & script so both boot=casper and boot=live mount the squashfs cleanly
 $SUDO tee "${CHROOT_DIR}/etc/initramfs-tools/modules" >/dev/null <<'EOF'
@@ -422,6 +455,11 @@ menuentry "StormRaven OS 24.04 Live" {
 
 menuentry "StormRaven OS 24.04 Live (verbose / serial)" {
     linux /casper/vmlinuz boot=casper console=tty0 console=ttyS0,115200n8
+    initrd /casper/initrd
+}
+
+menuentry "StormRaven OS 24.04 Forensic Mode (Read-Only / Write-Blocker)" {
+    linux /casper/vmlinuz boot=casper ro forensic=1 noswap noautomount console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 

@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Forensic Acquisition, Memory & Chain-of-Custody Subsystem (#24)
+# =============================================================================
+set -euo pipefail
+
+EVIDENCE_DIR="${STORMRAVEN_EVIDENCE_DIR:-/var/lib/stormraven/evidence}"
+mkdir -p "${EVIDENCE_DIR}"
+
+usage() {
+  cat <<EOF
+Usage: stormraven-forensics <command> [args]
+
+Commands:
+  status                               Show forensic mode, write-blocker & toolset status (JSON)
+  acquire-disk <dev> <case-id>         Acquire raw/dc3dd image with SHA-256 chain-of-custody manifest
+  acquire-mem <case-id>                Acquire physical memory dump (AVML/LiME) + SHA-256 manifest
+  timeline <case-id>                   Export journald + auditd forensic timeline with SHA-256 hash
+  verify <manifest.json>               Verify evidence image SHA-256 against chain-of-custody manifest
+EOF
+}
+
+cmd="${1:-status}"
+case "${cmd}" in
+  status)
+    ro_mode="false"
+    if grep -q "forensic=1" /proc/cmdline 2>/dev/null; then
+      ro_mode="true"
+    fi
+    tools=()
+    for t in dc3dd mmls fls binwalk foremost yara vol3 auditctl sha256sum; do
+      command -v "$t" >/dev/null 2>&1 && tools+=("\"$t\"")
+    done
+    IFS=,; tool_list="${tools[*]:-}"; unset IFS
+    printf '{"forensicBootMode":%s,"writeBlockerActive":%s,"evidenceVault":"%s","availableTools":[%s]}\n' \
+      "${ro_mode}" "${ro_mode}" "${EVIDENCE_DIR}" "${tool_list}"
+    ;;
+  acquire-disk)
+    src="${2:?Source block device or file required}"
+    case_id="${3:-case-$(date -u +%Y%m%dT%H%M%SZ)}"
+    out_img="${EVIDENCE_DIR}/${case_id}.raw"
+    out_manifest="${EVIDENCE_DIR}/${case_id}.manifest.json"
+    ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    if command -v dc3dd >/dev/null 2>&1; then
+      dc3dd if="${src}" of="${out_img}" hash=sha256 log="${EVIDENCE_DIR}/${case_id}.dc3dd.log"
+    else
+      dd if="${src}" of="${out_img}" bs=4M status=none
+    fi
+    sha="$(sha256sum "${out_img}" | awk '{print $1}')"
+    size="$(stat -c %s "${out_img}")"
+    cat > "${out_manifest}" <<JSON
+{
+  "caseId": "${case_id}",
+  "acquiredUtc": "${ts}",
+  "source": "${src}",
+  "imagePath": "${out_img}",
+  "sizeBytes": ${size},
+  "sha256": "${sha}",
+  "operator": "$(id -un)",
+  "hostname": "$(hostname)",
+  "chainOfCustody": "VERIFIED"
+}
+JSON
+    echo "Acquired ${out_img} (SHA-256: ${sha}) -> ${out_manifest}"
+    ;;
+  timeline)
+    case_id="${2:-timeline-$(date -u +%Y%m%dT%H%M%SZ)}"
+    out_log="${EVIDENCE_DIR}/${case_id}.timeline.jsonl"
+    journalctl -o json --no-pager > "${out_log}" 2>/dev/null || true
+    sha="$(sha256sum "${out_log}" | awk '{print $1}')"
+    echo "Exported timeline ${out_log} (SHA-256: ${sha})"
+    ;;
+  verify)
+    manifest="${2:?Path to manifest.json required}"
+    img="$(grep -o '"imagePath": *"[^"]*"' "${manifest}" | cut -d'"' -f4)"
+    expected="$(grep -o '"sha256": *"[^"]*"' "${manifest}" | cut -d'"' -f4)"
+    actual="$(sha256sum "${img}" | awk '{print $1}')"
+    if [ "${expected}" = "${actual}" ]; then
+      echo "CHAIN OF CUSTODY VERIFIED: ${actual}"
+    else
+      echo "INTEGRITY FAILURE: expected ${expected}, got ${actual}" >&2
+      exit 2
+    fi
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

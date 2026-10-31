@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Built-in WireGuard VPN & Kill-Switch Subsystem (#23)
+# =============================================================================
+set -euo pipefail
+
+WG_DIR="/etc/wireguard"
+STATE_DIR="/var/lib/stormraven/vpn"
+IFACE="${STORMRAVEN_WG_IFACE:-wg0}"
+mkdir -p "${STATE_DIR}"
+
+usage() {
+  cat <<EOF
+Usage: stormraven-vpn <command> [args]
+
+Commands:
+  status                 Show WireGuard tunnel & kill-switch status (JSON)
+  up [iface]             Bring up tunnel (default: wg0)
+  down [iface]           Bring down tunnel (default: wg0)
+  import <path.conf>     Import a WireGuard profile into /etc/wireguard/wg0.conf
+  qr [iface]             Render tunnel profile as terminal QR code for mobile
+  killswitch <on|off>    Enable/disable strict nftables/iptables kill-switch
+EOF
+}
+
+enable_killswitch() {
+  local iface="${1:-$IFACE}"
+  touch "${STATE_DIR}/killswitch.enabled"
+  if command -v iptables >/dev/null 2>&1; then
+    iptables -N STORMRAVEN_KILLSWITCH 2>/dev/null || iptables -F STORMRAVEN_KILLSWITCH
+    iptables -A STORMRAVEN_KILLSWITCH -o lo -j ACCEPT
+    iptables -A STORMRAVEN_KILLSWITCH -o "${iface}" -j ACCEPT
+    iptables -A STORMRAVEN_KILLSWITCH -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    iptables -A STORMRAVEN_KILLSWITCH -p udp --dport 51820 -j ACCEPT
+    iptables -A STORMRAVEN_KILLSWITCH -j REJECT
+    iptables -C OUTPUT -j STORMRAVEN_KILLSWITCH 2>/dev/null || iptables -I OUTPUT 1 -j STORMRAVEN_KILLSWITCH
+  fi
+}
+
+disable_killswitch() {
+  rm -f "${STATE_DIR}/killswitch.enabled"
+  if command -v iptables >/dev/null 2>&1; then
+    iptables -D OUTPUT -j STORMRAVEN_KILLSWITCH 2>/dev/null || true
+    iptables -F STORMRAVEN_KILLSWITCH 2>/dev/null || true
+    iptables -X STORMRAVEN_KILLSWITCH 2>/dev/null || true
+  fi
+}
+
+cmd="${1:-status}"
+case "${cmd}" in
+  status)
+    ks="off"
+    [ -f "${STATE_DIR}/killswitch.enabled" ] && ks="on"
+    active="disconnected"
+    endpoint="none"
+    rx="0 B"
+    tx="0 B"
+    if command -v wg >/dev/null 2>&1 && wg show "${IFACE}" >/dev/null 2>&1; then
+      active="connected"
+      endpoint="$(wg show "${IFACE}" endpoints 2>/dev/null | awk '{print $2}' | head -n1 || echo 'none')"
+    fi
+    printf '{"interface":"%s","status":"%s","killswitch":"%s","endpoint":"%s","rx":"%s","tx":"%s"}\n' \
+      "${IFACE}" "${active}" "${ks}" "${endpoint:-none}" "${rx}" "${tx}"
+    ;;
+  up)
+    iface="${2:-$IFACE}"
+    wg-quick up "${iface}"
+    ;;
+  down)
+    iface="${2:-$IFACE}"
+    wg-quick down "${iface}"
+    ;;
+  import)
+    src="${2:?Path to .conf file required}"
+    mkdir -p "${WG_DIR}"
+    install -m 0600 "${src}" "${WG_DIR}/${IFACE}.conf"
+    echo "Imported ${src} -> ${WG_DIR}/${IFACE}.conf (mode 0600)"
+    ;;
+  qr)
+    iface="${2:-$IFACE}"
+    qrencode -t ansiutf8 < "${WG_DIR}/${iface}.conf"
+    ;;
+  killswitch)
+    mode="${2:-on}"
+    if [ "${mode}" = "on" ]; then
+      enable_killswitch "${IFACE}"
+      echo "Kill-switch ENABLED (all non-${IFACE} egress blocked)"
+    else
+      disable_killswitch
+      echo "Kill-switch DISABLED"
+    fi
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

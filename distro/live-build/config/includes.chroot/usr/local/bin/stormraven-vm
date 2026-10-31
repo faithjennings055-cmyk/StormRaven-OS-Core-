@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Built-in KVM/QEMU & Libvirt VM Subsystem (#25)
+# =============================================================================
+set -euo pipefail
+
+POOL_DIR="/var/lib/libvirt/images"
+
+usage() {
+  cat <<EOF
+Usage: stormraven-vm <command> [args]
+
+Commands:
+  status                           Show KVM/QEMU hypervisor & nested-virt status (JSON)
+  init-pool                        Initialize default libvirt storage pool (${POOL_DIR})
+  snapshot <vm-name> <snap-name>   Create live/offline qcow2 snapshot
+  restore <vm-name> <snap-name>    Revert VM to snapshot
+  usb-attach <vm-name> <vid:pid>   Attach host USB device via passthrough
+EOF
+}
+
+cmd="${1:-status}"
+case "${cmd}" in
+  status)
+    kvm_loaded="false"
+    [ -e /dev/kvm ] && kvm_loaded="true"
+    nested="disabled"
+    if [ -f /sys/module/kvm_intel/parameters/nested ] && grep -qE "Y|1" /sys/module/kvm_intel/parameters/nested 2>/dev/null; then
+      nested="enabled"
+    elif [ -f /sys/module/kvm_amd/parameters/nested ] && grep -qE "Y|1" /sys/module/kvm_amd/parameters/nested 2>/dev/null; then
+      nested="enabled"
+    fi
+    vms=0
+    if command -v virsh >/dev/null 2>&1; then
+      vms="$(virsh list --all --name 2>/dev/null | grep -c . || true)"
+    fi
+    printf '{"hypervisor":"KVM/QEMU","kvmDevice":%s,"nestedVirt":"%s","defaultPool":"%s","configuredVms":%d}\n' \
+      "${kvm_loaded}" "${nested}" "${POOL_DIR}" "${vms}"
+    ;;
+  init-pool)
+    mkdir -p "${POOL_DIR}"
+    chmod 0711 "${POOL_DIR}"
+    if command -v virsh >/dev/null 2>&1; then
+      virsh pool-define-as default dir - - - - "${POOL_DIR}" 2>/dev/null || true
+      virsh pool-build default 2>/dev/null || true
+      virsh pool-start default 2>/dev/null || true
+      virsh pool-autostart default 2>/dev/null || true
+    fi
+    echo "Default storage pool initialized at ${POOL_DIR}"
+    ;;
+  snapshot)
+    vm="${2:?VM name required}"
+    snap="${3:-snap-$(date -u +%Y%m%dT%H%M%SZ)}"
+    virsh snapshot-create-as --domain "${vm}" --name "${snap}" --description "StormRaven VM snapshot"
+    ;;
+  restore)
+    vm="${2:?VM name required}"
+    snap="${3:?Snapshot name required}"
+    virsh snapshot-revert --domain "${vm}" --snapshotname "${snap}"
+    ;;
+  usb-attach)
+    vm="${2:?VM name required}"
+    vidpid="${3:?Vendor:Product ID (e.g. 046d:c52b) required}"
+    vid="0x${vidpid%%:*}"
+    pid="0x${vidpid##*:}"
+    tmp_xml="$(mktemp)"
+    cat > "${tmp_xml}" <<XML
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <vendor id='${vid}'/>
+    <product id='${pid}'/>
+  </source>
+</hostdev>
+XML
+    virsh attach-device "${vm}" "${tmp_xml}" --live --config
+    rm -f "${tmp_xml}"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
