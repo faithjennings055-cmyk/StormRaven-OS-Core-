@@ -20,3 +20,4 @@ __pycache__/
 /StormRaven.Kernel.runtimeconfig.json
 # distro/live-build/config/includes.chroot payload is intentional and stays tracked.
 .venv/
+.next/
