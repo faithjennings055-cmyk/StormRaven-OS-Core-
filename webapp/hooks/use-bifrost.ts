@@ -10,13 +10,14 @@ export function useBifrost(kernelIp: string = 'localhost') {
     try {
       const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
       const isLocal = kernelIp === 'localhost' || kernelIp === '127.0.0.1'
-      
       // Port and protocol derived from environment or defaults
       const gatewayPort = process.env.NEXT_PUBLIC_STORMRAVEN_GATEWAY_PORT || '8787'
       const wsUrl = isHttps && !isLocal 
         ? `wss://${kernelIp}/ws` 
         : `ws://${kernelIp}:${gatewayPort}/ws`
-        
+      // Bifrost auth (issue #10): append gateway token for the /ws handshake
+      const token = process.env.NEXT_PUBLIC_STORMRAVEN_GATEWAY_TOKEN
+      if (token && token.length > 0) wsUrl += `?token=${encodeURIComponent(token)}`
       socket = new WebSocket(wsUrl)
     } catch {
       dispatch(setBridge('degraded'))

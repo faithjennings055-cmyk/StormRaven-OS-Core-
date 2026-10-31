@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,6 +43,25 @@ namespace StormRaven.Kernel.Ipc
         // ---- gateway configuration -------------------------------------------
         public const int DefaultPort = 8787;
         public const string Version = "1.0.0";
+
+        // ---- zero-trust auth (Heimdall gate) ----------------------------------
+        // Every request must present a bearer token matching the gateway token.
+        // Configure via STORMRAVEN_GATEWAY_TOKEN (required in production); when
+        // unset the gateway refuses to serve unauthenticated traffic.
+        private static readonly string? _authToken =
+            Environment.GetEnvironmentVariable("STORMRAVEN_GATEWAY_TOKEN");
+
+        private static bool Authorized(HttpListenerRequest req)
+        {
+            if (string.IsNullOrEmpty(_authToken)) return false; // fail closed
+            var header = req.Headers["Authorization"] ?? "";
+            var provided = header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                ? header.Substring("Bearer ".Length).Trim()
+                : (req.Headers["X-StormRaven-Token"] ?? "").Trim();
+            if (provided.Length == 0) return false;
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(provided), Encoding.UTF8.GetBytes(_authToken));
+        }
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
@@ -162,8 +182,36 @@ namespace StormRaven.Kernel.Ipc
             var raw = ctx.Request.Url?.AbsolutePath ?? "/";
             try
             {
+                // Zero-trust gate: reject unauthenticated callers before any route
+                // (including /ws). Anonymous probes get a generic 401.
+                if (!Authorized(ctx.Request))
+                {
+                    ctx.Response.StatusCode = 401;
+                    ctx.Response.Headers["WWW-Authenticate"] = "Bearer realm="stormraven-bifrost"";
+                    try { await WriteJson(ctx, Error("unauthorized", "missing or invalid gateway token"), 401); }
+                    catch { ctx.Response.Close(); }
+                    return;
+                }
+
                 if (ctx.Request.IsWebSocketRequest && raw == "/ws")
                 {
+                    // WebSocket handshake: Authorization headers are unreliable in
+                    // browsers pre-connect, so /ws also accepts ?token=<tok>.
+                    var qsToken = ctx.Request.QueryString["token"] ?? "";
+                    if (qsToken.Length > 0 && string.IsNullOrEmpty(_authToken))
+                        return; // fail closed
+                    if (qsToken.Length > 0)
+                    {
+                        if (!CryptographicOperations.FixedTimeEquals(
+                                Encoding.UTF8.GetBytes(qsToken),
+                                Encoding.UTF8.GetBytes(_authToken!)))
+                        {
+                            ctx.Response.StatusCode = 401;
+                            try { await WriteJson(ctx, Error("unauthorized", "invalid gateway token"), 401); }
+                            catch { ctx.Response.Close(); }
+                            return;
+                        }
+                    }
                     var wsCtx = await ctx.AcceptWebSocketAsync(null);
                     await HandleSocket(wsCtx.WebSocket);
                     return;
