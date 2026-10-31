@@ -35,6 +35,9 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<"pantheon" | "heimdallr" | "vfs" | "mobile" | "realms">("pantheon")
   const [runeInput, setRuneInput] = useState("fehu /alfheim")
   const [selectedFile, setSelectedFile] = useState<VfsNode>(() => flattenFiles(VFS)[0])
+  const [fafnirDensity, setFafnirDensity] = useState<"clinical" | "standard">("clinical")
+  const [fafnirPreviewMode, setFafnirPreviewMode] = useState<"source" | "hex">("source")
+  const [fafnirRealmFilter, setFafnirRealmFilter] = useState<string>("ALL")
   const [gatewayUrl, setGatewayUrl] = useState(DEFAULT_GATEWAY)
   const [kernelSummary, setKernelSummary] = useState<string>("Ubuntu 24.04 LTS (Noble Numbat) · Bifrost v1")
 
@@ -186,7 +189,7 @@ export default function Page() {
         {[
           { id: "pantheon", label: "Pantheon Daemons", icon: Cpu },
           { id: "heimdallr", label: "Heimdallr Runic Gate", icon: Terminal },
-          { id: "vfs", label: "Yggdrasil VFS", icon: FolderTree },
+          { id: "vfs", label: "Fafnir File Explorer", icon: FolderTree },
           { id: "realms", label: "Nine Realms", icon: Sparkles },
           { id: "mobile", label: "Ubuntu 24.04 & Mobile", icon: Sparkles },
         ].map((t) => {
@@ -324,34 +327,119 @@ export default function Page() {
           )}
 
           {activeTab === "vfs" && (
-            <section className="glass rounded-xl p-5 border border-border grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2 border-b md:border-b-0 md:border-r border-border pb-4 md:pb-0 md:pr-4">
-                <h2 className="text-xs font-mono uppercase tracking-wider text-primary">Yggdrasil Realms</h2>
-                {files.map((f) => (
+            <section className="glass rounded-xl p-4 border border-border space-y-3">
+              {/* Fafnir Clinical Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-border">
+                <div>
+                  <h2 className="text-xs font-mono uppercase tracking-wider text-primary font-bold flex items-center gap-2">
+                    <FolderTree className="size-3.5" />
+                    Fafnir File Explorer · Yggdrasil Clinical Grid
+                  </h2>
+                  <p className="text-[11px] font-mono text-muted-foreground">
+                    Surgical density VFS inspector bridged to Ymir Buddy/SLAB memory state
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <button
-                    key={f.id}
                     type="button"
-                    onClick={() => setSelectedFile(f)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-mono transition ${
-                      selectedFile.id === f.id
-                        ? "bg-primary/15 text-primary border border-primary/30"
-                        : "hover:bg-secondary text-muted-foreground"
+                    onClick={() => setFafnirDensity(fafnirDensity === "clinical" ? "standard" : "clinical")}
+                    className="text-[10px] font-mono px-2 py-1 rounded border border-primary/40 bg-primary/15 text-primary"
+                  >
+                    Density: {fafnirDensity === "clinical" ? "CLINICAL (0-4px)" : "STANDARD"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFafnirPreviewMode(fafnirPreviewMode === "source" ? "hex" : "source")}
+                    className="text-[10px] font-mono px-2 py-1 rounded border border-border bg-secondary text-foreground"
+                  >
+                    Preview: {fafnirPreviewMode.toUpperCase()}
+                  </button>
+                </div>
+              </div>
+
+              {/* Realm Filter Pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {["ALL", "ALFHEIM", "MIDGARD", "NIFLHEIM", "HELHEIM"].map((realm) => (
+                  <button
+                    key={realm}
+                    type="button"
+                    onClick={() => setFafnirRealmFilter(realm)}
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded border transition ${
+                      fafnirRealmFilter === realm
+                        ? "bg-primary/20 text-primary border-primary/50 font-bold"
+                        : "bg-black/40 text-muted-foreground border-border hover:text-foreground"
                     }`}
                   >
-                    <div>{f.name}</div>
-                    <div className="text-[10px] opacity-70">{f.path}</div>
+                    /{realm.toLowerCase()}
                   </button>
                 ))}
               </div>
-              <div className="md:col-span-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-primary">{selectedFile.path}</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary text-muted-foreground">
-                    Immutable Blueprint
+
+              {/* Clinical Grid Table */}
+              <div className="overflow-x-auto border border-primary/30 rounded bg-[#07030a]/90">
+                <table className="w-full text-left font-mono border-collapse">
+                  <thead>
+                    <tr className="border-b border-primary/30 bg-primary/10 text-[10px] uppercase text-primary">
+                      <th className={fafnirDensity === "clinical" ? "py-1 px-2" : "py-2 px-3"}>Node / Path</th>
+                      <th className={fafnirDensity === "clinical" ? "py-1 px-2" : "py-2 px-3"}>Realm</th>
+                      <th className={fafnirDensity === "clinical" ? "py-1 px-2" : "py-2 px-3"}>Size</th>
+                      <th className={fafnirDensity === "clinical" ? "py-1 px-2" : "py-2 px-3"}>Perms</th>
+                      <th className={fafnirDensity === "clinical" ? "py-1 px-2" : "py-2 px-3"}>Entropy</th>
+                      <th className={fafnirDensity === "clinical" ? "py-1 px-2" : "py-2 px-3"}>SHA-256</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/50 text-[11px]">
+                    {files
+                      .filter((f) => fafnirRealmFilter === "ALL" || f.realm === fafnirRealmFilter)
+                      .map((f) => {
+                        const isSel = selectedFile.id === f.id
+                        const pad = fafnirDensity === "clinical" ? "py-1 px-2" : "py-2.5 px-3"
+                        return (
+                          <tr
+                            key={f.id}
+                            onClick={() => setSelectedFile(f)}
+                            className={`cursor-pointer transition ${
+                              isSel ? "bg-primary/20 text-primary font-semibold" : "hover:bg-secondary/60 text-foreground"
+                            }`}
+                          >
+                            <td className={pad}>
+                              <div>{f.name}</div>
+                              <div className="text-[9px] text-muted-foreground">{f.path}</div>
+                            </td>
+                            <td className={`${pad} text-[10px] text-primary`}>{f.realm ?? "ROOT"}</td>
+                            <td className={`${pad} text-muted-foreground`}>{f.size ?? "4.0 KB"}</td>
+                            <td className={`${pad} text-muted-foreground`}>{f.perms ?? "r--r--r--"}</td>
+                            <td className={`${pad} text-accent`}>{f.entropy ?? "0.10"}</td>
+                            <td className={`${pad} text-muted-foreground`}>{f.hash ?? "8f3a..c91e"}</td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Void Preview Pane */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-primary font-semibold">
+                    VOID PREVIEW · {selectedFile.path}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-muted-foreground border border-border">
+                    {selectedFile.perms ?? "r--r--r--"} · {selectedFile.size ?? "4.0 KB"} · SHA {selectedFile.hash ?? "verified"}
                   </span>
                 </div>
-                <pre className="p-4 rounded-lg bg-black/60 border border-border text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                  {selectedFile.content}
+                <pre className="p-3 rounded bg-black/80 border border-primary/30 text-[11px] font-mono text-foreground overflow-x-auto whitespace-pre-wrap leading-snug max-h-64">
+                  {fafnirPreviewMode === "source"
+                    ? selectedFile.content
+                    : Array.from(selectedFile.content || "")
+                        .slice(0, 192)
+                        .map((ch, idx) =>
+                          idx % 16 === 0
+                            ? `\n0x${idx.toString(16).padStart(4, "0")}: ${ch.charCodeAt(0).toString(16).padStart(2, "0")}`
+                            : ch.charCodeAt(0).toString(16).padStart(2, "0"),
+                        )
+                        .join(" ")
+                        .trim()}
                 </pre>
               </div>
             </section>

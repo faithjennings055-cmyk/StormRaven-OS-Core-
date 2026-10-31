@@ -1,65 +1,88 @@
-import React from 'react';
-import { Table, Tag, Space, Typography, Card } from 'antd';
-import { WarningOutlined, FireOutlined, ShieldOutlined } from '@ant-design/icons';
+"use client"
 
-const { Title, Text } = Typography;
+import React from "react"
+import { Flame, Shield, AlertTriangle } from "lucide-react"
 
-const ThreatWall = () => {
-  const threats = [
-    { id: 'T-01', source: 'Void-Siphon', severity: 'CRITICAL', status: 'ACTIVE', impact: 'Kernel Instability', entropy: '89%' },
-    { id: 'T-02', source: 'Fenrir-Burst', severity: 'HIGH', status: 'CONTAINED', impact: 'Bus Latency', entropy: '42%' },
-    { id: 'T-03', source: 'Surtur-Singe', severity: 'MODERATE', status: 'MONITORING', impact: 'Thermal Throttle', entropy: '15%' },
-  ];
+interface ThreatItem {
+  id: string
+  source: string
+  severity: "CRITICAL" | "HIGH" | "MODERATE"
+  status: "ACTIVE" | "CONTAINED" | "MONITORING"
+  impact: string
+  entropy: string
+}
 
-  const getSeverityColor = (sev: string) => {
+const ThreatWall: React.FC = () => {
+  const threats: ThreatItem[] = [
+    { id: "T-01", source: "Void-Siphon", severity: "CRITICAL", status: "ACTIVE", impact: "Kernel Instability", entropy: "89%" },
+    { id: "T-02", source: "Fenrir-Burst", severity: "HIGH", status: "CONTAINED", impact: "Bus Latency", entropy: "42%" },
+    { id: "T-03", source: "Surtur-Singe", severity: "MODERATE", status: "MONITORING", impact: "Thermal Throttle", entropy: "15%" },
+  ]
+
+  const getSeverityBadge = (sev: ThreatItem["severity"]) => {
     switch (sev) {
-      case 'CRITICAL': return 'volcano';
-      case 'HIGH': return 'error';
-      case 'MODERATE': return 'warning';
-      default: return 'default';
+      case "CRITICAL":
+        return "bg-red-500/20 text-red-400 border-red-500/40"
+      case "HIGH":
+        return "bg-orange-500/20 text-orange-400 border-orange-500/40"
+      case "MODERATE":
+        return "bg-yellow-500/20 text-yellow-300 border-yellow-500/40"
     }
-  };
+  }
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#0a0a0a', minHeight: '100vh', color: '#e0e0e0' }}>
-      <Card 
-        title={<Title level={3} style={{ color: '#ff4d4f' }}><FireOutlined /> Muspelheim Threat-Wall</Title>} 
-        style={{ backgroundColor: '#1a1a1a', border: '1px solid #ff4d4f', borderRadius: '8px' }}
-      >
-        <Text style={{ color: '#aaa', marginBottom: '20px', display: 'block' }}>
+    <div className="p-6 bg-[#07030a] min-h-screen text-slate-200 font-mono">
+      <div className="rounded-xl bg-[#0c0713] border border-red-500/40 p-5 space-y-4">
+        <div className="flex items-center gap-2 text-red-400 font-bold text-base">
+          <Flame className="size-5" />
+          <h3>Muspelheim Threat-Wall</h3>
+        </div>
+        <p className="text-xs text-slate-400">
           Real-time entropy monitoring of the Hybrid Microkernel Matrix.
-        </Text>
-        
-        <Table 
-          dataSource={threats} 
-          pagination={false}
-          columns={[
-            { title: 'ID', dataIndex: 'id', key: 'id', render: (text) => <Text strong style={{ color: '#00f2ff' }}>{text}</Text> },
-            { title: 'Source', dataIndex: 'source', key: 'source' },
-            { 
-              title: 'Severity', 
-              dataIndex: 'severity', 
-              key: 'severity', 
-              render: (sev) => <Tag color={getSeverityColor(sev)}>{sev}</Tag> 
-            },
-            { 
-              title: 'Status', 
-              dataIndex: 'status', 
-              key: 'status', 
-              render: (status) => (
-                <Space>
-                  <ShieldOutlined style={{ color: status === 'ACTIVE' ? '#ff4d4f' : '#52c41a' }} />
-                  {status}
-                </Space>
-              )
-            },
-            { title: 'Impact', dataIndex: 'impact', key: 'impact' },
-            { title: 'Entropy', dataIndex: 'entropy', key: 'entropy', render: (val) => <Text style={{ color: '#ff99cc' }}>{val}</Text> },
-          ]}
-        />
-      </Card>
-    </div>
-  );
-};
+        </p>
 
-export default ThreatWall;
+        <div className="overflow-x-auto border border-border rounded-lg">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-secondary/60 text-muted-foreground uppercase text-[10px]">
+                <th className="py-2 px-3">ID</th>
+                <th className="py-2 px-3">Source</th>
+                <th className="py-2 px-3">Severity</th>
+                <th className="py-2 px-3">Status</th>
+                <th className="py-2 px-3">Impact</th>
+                <th className="py-2 px-3">Entropy</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {threats.map((t) => (
+                <tr key={t.id} className="hover:bg-secondary/40 transition">
+                  <td className="py-2 px-3 font-bold text-primary">{t.id}</td>
+                  <td className="py-2 px-3">{t.source}</td>
+                  <td className="py-2 px-3">
+                    <span className={`px-2 py-0.5 rounded border text-[10px] ${getSeverityBadge(t.severity)}`}>
+                      {t.severity}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3">
+                    <span className="inline-flex items-center gap-1.5">
+                      {t.status === "ACTIVE" ? (
+                        <AlertTriangle className="size-3.5 text-red-400" />
+                      ) : (
+                        <Shield className="size-3.5 text-emerald-400" />
+                      )}
+                      {t.status}
+                    </span>
+                  </td>
+                  <td className="py-2 px-3 text-muted-foreground">{t.impact}</td>
+                  <td className="py-2 px-3 text-accent font-semibold">{t.entropy}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default ThreatWall
