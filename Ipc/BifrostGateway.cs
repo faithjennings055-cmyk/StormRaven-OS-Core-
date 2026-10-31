@@ -246,6 +246,14 @@ namespace StormRaven.Kernel.Ipc
                     case ("POST", "/commands"):
                         await HandleCommand(ctx);
                         break;
+                    // Mobile (MAUI) clients call /command + /status — accept both
+                    // spellings so existing mobile builds keep working.
+                    case ("POST", "/command"):
+                        await HandleCommand(ctx);
+                        break;
+                    case ("GET", "/status"):
+                        await WriteJson(ctx, Ok(HealthPayload()));
+                        break;
                     case ("GET", "/signals"):
                         await WriteJson(ctx, Ok(SignalsPayload()));
                         break;
@@ -380,6 +388,12 @@ namespace StormRaven.Kernel.Ipc
             {
                 case "ping":
                     return new CommandResult("accepted", "kernel is alive", new { pong = true, timeUtc = DateTime.UtcNow });
+                case "odin_telemetry":
+                    return new CommandResult("accepted", "odin pantheon telemetry attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        pantheon = new[] { "odin", "freya", "heimdall", "thor", "bifrost", "loki", "luci", "solomon", "heketa", "lynn", "yggdrasil", "mjolnir" },
+                        state = StatePayload(),
+                    });
                 case "get_state":
                     return new CommandResult("accepted", "state snapshot attached", StatePayload(), Queued: false);
                 case "get_tabs":

@@ -63,7 +63,8 @@ public partial class MainPage : ContentPage
         try
         {
             GatewayOutputLabel.Text = "Running Odin Pantheon telemetry…";
-            using var resp = await _http.PostAsJsonAsync($"{baseUrl}/command", new { command = "odin telemetry", source = "maui-mobile" });
+            // Gateway command API expects { intent, target }: map the Odin telemetry request
+            using var resp = await _http.PostAsJsonAsync($"{baseUrl}/command", new { intent = "odin_telemetry", target = "maui-mobile" });
             var body = await resp.Content.ReadAsStringAsync();
             GatewayOutputLabel.Text = body.Length > 600 ? body[..600] + "…" : body;
         }
