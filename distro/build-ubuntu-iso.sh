@@ -342,6 +342,21 @@ DISTRIB_CODENAME=noble
 DISTRIB_DESCRIPTION="StormRaven OS 24.04 LTS (Ubuntu Noble)"
 LSBREL
 
+# Install Plymouth and the StormRaven Void theme
+$SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<EOF
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y --no-install-recommends plymouth plymouth-themes
+EOF
+
+# Copy Plymouth theme
+$SUDO mkdir -p "${CHROOT_DIR}/usr/share/plymouth/themes/stormraven-void"
+$SUDO cp -a "${REPO_ROOT}/distro/plymouth-theme/stormraven-void/." "${CHROOT_DIR}/usr/share/plymouth/themes/stormraven-void/"
+
+# Set StormRaven Void as default theme and rebuild initramfs
+$SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<EOF
+plymouth-set-default-theme -R stormraven-void
+EOF
+
 # Update initramfs for installed Ubuntu kernel
 KVER="$(ls -1 /lib/modules | sort -V | tail -n 1)"
 echo "Generating Ubuntu initramfs for kernel ${KVER}..."

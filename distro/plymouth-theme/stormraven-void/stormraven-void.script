@@ -1,0 +1,32 @@
+# StormRaven Void Plymouth Script
+# Deep Void: #07030a, Icy Cyan: #06b6d4, Magenta: #a855f7
+
+Window.SetBackgroundTopColor(0.027, 0.012, 0.039);    # #07030a
+Window.SetBackgroundBottomColor(0.027, 0.012, 0.039); # #07030a
+
+# Faceted Raven Mark (Center)
+raven_image = Image("raven_mark.png");
+raven_sprite = Sprite(raven_image);
+raven_sprite.SetX(Window.GetWidth() / 2 - raven_image.GetWidth() / 2);
+raven_sprite.SetY(Window.GetHeight() / 2 - raven_image.GetHeight() / 2);
+raven_sprite.SetOpacity(1.0);
+
+# Progress Bar (clinical grid style)
+progress_bar.image = Image("progress_bar.png");
+progress_bar.sprite = Sprite(progress_bar.image);
+progress_bar.sprite.SetX(Window.GetWidth() / 2 - progress_bar.image.GetWidth() / 2);
+progress_bar.sprite.SetY(Window.GetHeight() * 0.75);
+progress_bar.sprite.SetOpacity(0);
+
+fun progress_callback (duration, progress) {
+  if (progress > 0) {
+    progress_bar.sprite.SetOpacity(1.0);
+  }
+}
+Plymouth.SetBootProgressFunction(progress_callback);
+
+# Boot Log Overlay (Clinical/Kernel style)
+fun display_message_callback (text) {
+  # Simple log handling if needed, usually quiet
+}
+Plymouth.SetDisplayMessageFunction(display_message_callback);
