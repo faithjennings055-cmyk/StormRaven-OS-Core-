@@ -27,7 +27,7 @@ import {
 import type { AppDispatch, RootState } from "@/components/store-provider"
 import { useBifrost } from "@/hooks/use-bifrost"
 
-const DEFAULT_GATEWAY = "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app"
+const DEFAULT_GATEWAY = process.env.NEXT_PUBLIC_STORMRAVEN_GATEWAY_URL || "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app"
 
 export default function Page() {
   const dispatch = useDispatch<AppDispatch>()

@@ -65,7 +65,6 @@ if [ "${CLEAN_BUILD}" = "1" ] || [ ! -x "${CHROOT_DIR}/bin/bash" ]; then
   $SUDO debootstrap \
     --arch=amd64 \
     --variant=minbase \
-    --no-check-gpg \
     --components=main,restricted,universe,multiverse \
     "${UBUNTU_SUITE}" \
     "${CHROOT_DIR}" \
@@ -137,7 +136,19 @@ apt-get install -y --no-install-recommends \
 locale-gen en_US.UTF-8 || true
 EOF
 
-echo "==> [5/7] Installing StormRaven OS payload, services, CLI, and Ubuntu 24.04 branding..."
+# Build StormRaven.Kernel from source instead of using pre-compiled binary
+echo "==> [5.1/7] Building StormRaven.Kernel from source..."
+(
+    cd "${REPO_ROOT}"
+    # Use dotnet-install script for ephemeral build environments if dotnet is missing
+    if ! command -v dotnet >/dev/null 2>&1; then
+        curl -fsSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir "${WORK_DIR}/dotnet"
+        export PATH="${WORK_DIR}/dotnet:${PATH}"
+    fi
+    dotnet publish StormRaven.Kernel.csproj -c Release -r linux-x64 --self-contained true -o "${CHROOT_DIR}/opt/stormraven/" /p:PublishSingleFile=true /p:PublishTrimmed=true
+)
+
+echo "==> [5.2/7] Installing StormRaven OS payload, services, CLI, and Ubuntu 24.04 branding..."
 
 # Build the Next.js UI for static export
 echo "Building Alfheim UI..."
@@ -158,6 +169,7 @@ else
     $SUDO cp -a "${REPO_ROOT}/webapp/." "${CHROOT_DIR}/opt/stormraven/webapp/"
 fi
 
+# StormRaven.Kernel is built from source in step 5.1
 $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
 
@@ -252,23 +264,20 @@ $SUDO ln -sf casper "${CHROOT_DIR}/usr/share/initramfs-tools/scripts/live"
 $SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<'EOF'
 mkdir -p /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.shadow_logs
 
-# Users: ubuntu (pw: stormraven), stormraven (pw: stormraven), user (pw: live)
-id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo ubuntu
-echo "ubuntu:stormraven" | chpasswd
-
+# Users: Provisioned with random/locked passwords for live session
+# stormraven:stormraven (pw: stormraven), user (pw: live) -> CHANGED TO LOCKED/RANDOM
 id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
-echo "stormraven:stormraven" | chpasswd
+echo "stormraven:$(openssl rand -base64 12)" | chpasswd
+echo "ubuntu:$(openssl rand -base64 12)" | chpasswd
+echo "root:$(openssl rand -base64 12)" | chpasswd
+echo "user:$(openssl rand -base64 12)" | chpasswd
 
-id -u user >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo user
-echo "user:live" | chpasswd
-
-echo "root:stormraven" | chpasswd
-
+# Sudo: Require password for sensitive operations (removed NOPASSWD:ALL)
 mkdir -p /etc/sudoers.d
 cat > /etc/sudoers.d/90-stormraven-live <<'SUDO'
-ubuntu ALL=(ALL) NOPASSWD:ALL
-stormraven ALL=(ALL) NOPASSWD:ALL
-user ALL=(ALL) NOPASSWD:ALL
+ubuntu ALL=(ALL) ALL
+stormraven ALL=(ALL) ALL
+user ALL=(ALL) ALL
 SUDO
 chmod 0440 /etc/sudoers.d/90-stormraven-live
 

@@ -10,7 +10,13 @@ export function useBifrost(kernelIp: string = 'localhost') {
     try {
       const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:'
       const isLocal = kernelIp === 'localhost' || kernelIp === '127.0.0.1'
-      const wsUrl = isHttps && !isLocal ? `wss://${kernelIp}/ws` : `ws://${kernelIp}:8787/ws`
+      
+      // Port and protocol derived from environment or defaults
+      const gatewayPort = process.env.NEXT_PUBLIC_STORMRAVEN_GATEWAY_PORT || '8787'
+      const wsUrl = isHttps && !isLocal 
+        ? `wss://${kernelIp}/ws` 
+        : `ws://${kernelIp}:${gatewayPort}/ws`
+        
       socket = new WebSocket(wsUrl)
     } catch {
       dispatch(setBridge('degraded'))

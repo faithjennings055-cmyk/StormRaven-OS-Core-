@@ -5,21 +5,21 @@ mkdir -p /opt/stormraven /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.sha
 chmod +x /opt/stormraven/StormRaven.Kernel || true
 chmod +x /usr/local/bin/stormraven || true
 
-# Create dedicated system/live users
+# Create dedicated system/live users with locked/random passwords
 id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
-echo "stormraven:stormraven" | chpasswd
+echo "stormraven:$(openssl rand -base64 12)" | chpasswd
 
 id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo ubuntu
-echo "ubuntu:stormraven" | chpasswd
+echo "ubuntu:$(openssl rand -base64 12)" | chpasswd
 
 id -u user >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo user
-echo "user:live" | chpasswd
+echo "user:$(openssl rand -base64 12)" | chpasswd
 
 mkdir -p /etc/sudoers.d
 cat > /etc/sudoers.d/90-stormraven-live <<'SUDO'
-ubuntu ALL=(ALL) NOPASSWD:ALL
-stormraven ALL=(ALL) NOPASSWD:ALL
-user ALL=(ALL) NOPASSWD:ALL
+ubuntu ALL=(ALL) ALL
+stormraven ALL=(ALL) ALL
+user ALL=(ALL) ALL
 SUDO
 chmod 0440 /etc/sudoers.d/90-stormraven-live
 
