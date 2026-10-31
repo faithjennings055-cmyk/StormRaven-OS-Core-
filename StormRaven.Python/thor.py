@@ -10,9 +10,11 @@ class Thor:
         }
     
     def strike_system(self, cmd):
+        # 1% Margin (issue #35): never shell=True. Split argv, execute directly.
         try:
             print(f"[THOR] Executing: {cmd}")
-            subprocess.run(cmd, shell=True)
-            return {"success": True, "output": "Command executed."}
+            import shlex
+            proc = subprocess.run(shlex.split(cmd), shell=False, capture_output=True, text=True, check=False)
+            return {"success": proc.returncode == 0, "output": (proc.stdout or proc.stderr or "Command executed.").strip()}
         except Exception as e:
             return {"success": False, "error": str(e)}

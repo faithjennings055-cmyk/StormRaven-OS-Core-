@@ -117,9 +117,22 @@ class Odin:
 
         # 1% Margin: strict allow-list (issue #35). Blacklist heuristics are
         # never the gate — only explicitly allow-listed commands execute.
+        # Reject unknown intents BEFORE Heimdall/Thor (issue #35)
+        plan = self.bridge.translate_command(cmd_str)
+        if not plan.get("valid"):
+            return {
+                "ok": False,
+                "module": "Bifrost",
+                "intent": cmd_str,
+                "heimdallAudit": "NOT_REACHED",
+                "error": plan.get("error") or plan.get("reason") or "Unknown intent rejected."
+            }
         from command_allowlist import classify
         verdict = classify(cmd_str)
-        allowed = verdict["allowed"] and self.guard.audit(verdict["cmd"] or "")
+        if verdict["allowed"] and verdict["cmd"]:
+            allowed = verdict["allowed"] and self.guard.audit(verdict["cmd"])
+        else:
+            allowed = self.guard.audit(plan["cmd"])
         if not allowed:
             return {
                 "ok": False,
@@ -128,7 +141,8 @@ class Odin:
                 "heimdallAudit": "BLOCKED",
                 "error": verdict["reason"] or "Command rejected by Heimdall security policy."
             }
-        proc_out = os.popen(verdict["cmd"]).read().strip()
+        exec_cmd = (verdict["cmd"] if verdict["allowed"] and verdict["cmd"] else plan["cmd"])
+        proc_out = self.hammer.strike_system(exec_cmd).get("output", "")
         return {
             "ok": True,
             "module": "Bifrost -> Heimdall -> Thor",
