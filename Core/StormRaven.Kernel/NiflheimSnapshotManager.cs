@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ContextBusClass = StormRaven.Kernel.ContextBus.ContextBus;
 
 namespace StormRaven.Kernel
 {
     public class NiflheimSnapshotManager
     {
         private readonly string _snapshotPath = "/void/niflheim";
-        private readonly ContextBus _bus;
+        private readonly ContextBusClass _bus;
 
-        public NiflheimSnapshotManager(ContextBus bus)
+        public NiflheimSnapshotManager(ContextBusClass bus)
         {
             _bus = bus;
             if (!Directory.Exists(_snapshotPath))

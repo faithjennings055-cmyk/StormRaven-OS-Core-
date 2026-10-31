@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using ContextBusClass = StormRaven.Kernel.ContextBus.ContextBus;
 
 namespace StormRaven.Kernel
 {
     public class HelheimIsolationVault
     {
         private readonly string _vaultPath = "/void/helheim";
-        private readonly ContextBus _bus;
+        private readonly ContextBusClass _bus;
 
-        public HelheimIsolationVault(ContextBus bus)
+        public HelheimIsolationVault(ContextBusClass bus)
         {
             _bus = bus;
             if (!Directory.Exists(_vaultPath))

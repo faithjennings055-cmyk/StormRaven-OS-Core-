@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using StormRaven.Kernel.Contracts;
 using StormRaven.Kernel.Storage;
+using StormRaven.Kernel.Realms;
+using ContextBusClass = StormRaven.Kernel.ContextBus.ContextBus;
 
 namespace StormRaven.Kernel
 {
@@ -17,7 +19,7 @@ namespace StormRaven.Kernel
         private Task _monitorTask;
 
         // The Nine Realms
-        public ContextBus OpticalBus { get; } = new();
+        public ContextBusClass OpticalBus { get; } = new();
         public PersonaMatrix PersonaMatrix { get; } = new();
         public ValhallaLedger Valhalla { get; } = new();
         public DeepArchive DeepArchive { get; } = new();
@@ -64,8 +66,10 @@ namespace StormRaven.Kernel
 
         private void RegisterSovereignCommands()
         {
-            CommandDispatcher.RegisterCommand(new RebootMatrixCommand());
-            CommandDispatcher.RegisterCommand(new TriggerChaosCommand(Chaos));
+            var reboot = new RebootMatrixCommand();
+            CommandDispatcher.RegisterCommand(reboot.Name, args => reboot.Execute(args));
+            var triggerChaos = new TriggerChaosCommand(Chaos);
+            CommandDispatcher.RegisterCommand("trigger-chaos", args => triggerChaos.Execute(args));
         }
 
         protected override void OnStart(string[] args)
