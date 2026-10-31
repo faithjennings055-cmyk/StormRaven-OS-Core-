@@ -7,7 +7,7 @@ namespace StormRaven.Kernel
 {
     public class HelheimIsolationVault
     {
-        private readonly string _vaultPath = "/void/helheim";
+        private readonly string _vaultPath = (Environment.GetEnvironmentVariable("STORMRAVENVOIDDIR") ?? "/tmp/stormraven-void") + "/helheim";
         private readonly ContextBus _bus;
 
         public HelheimIsolationVault(ContextBus bus)

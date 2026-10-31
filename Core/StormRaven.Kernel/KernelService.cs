@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using StormRaven.Kernel.Contracts;
@@ -10,9 +9,8 @@ using StormRaven.Kernel.Storage;
 
 namespace StormRaven.Kernel
 {
-    public class KernelService : ServiceBase
+    public class KernelService
     {
-        private readonly EventLog _eventLog;
         private CancellationTokenSource _cts;
         private Task _monitorTask;
 
@@ -31,13 +29,6 @@ namespace StormRaven.Kernel
 
         public KernelService()
         {
-            ServiceName = "StormRavenKernel";
-            _eventLog = new EventLog
-            {
-                Source = ServiceName,
-                Log = "Application"
-            };
-
             // Bootstrap the Void
             InitializePersonaMatrix();
             CommandDispatcher = new SovereignCommandDispatcher(PersonaMatrix);

@@ -8,7 +8,7 @@ namespace StormRaven.Kernel
 {
     public class NiflheimSnapshotManager
     {
-        private readonly string _snapshotPath = "/void/niflheim";
+        private readonly string _snapshotPath = (Environment.GetEnvironmentVariable("STORMRAVENVOIDDIR") ?? "/tmp/stormraven-void") + "/niflheim";
         private readonly ContextBus _bus;
 
         public NiflheimSnapshotManager(ContextBus bus)
