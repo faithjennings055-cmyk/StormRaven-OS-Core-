@@ -6,9 +6,6 @@ namespace StormRaven.Kernel.ContextBus
     {
         public NormalizedState State { get; } = new NormalizedState();
 
-        public void Publish(string type, object payload)
-        => Publish(new Contracts.SignalEnvelope { Type = type, Payload = payload });
-
         public void Publish(SignalEnvelope signal)
         {
             if (signal?.Schema == "sr.signal.edge.tabs.v1")
@@ -21,6 +18,16 @@ namespace StormRaven.Kernel.ContextBus
                 State.Focus.ForegroundActivity = focused ? "browser" : "unknown";
                 State.TimeUtc = DateTime.UtcNow;
             }
+        }
+
+        public void Publish(string schema, object payload)
+        {
+            Publish(new SignalEnvelope
+            {
+                Provider = "stormraven.kernel",
+                Schema = schema,
+                Payload = payload
+            });
         }
     }
 }

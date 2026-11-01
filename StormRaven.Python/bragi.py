@@ -1,30 +1,38 @@
-
-import os, time, json
+import os
+import time
+import json
+import psutil
 from rich.console import Console
 
 console = Console()
 
+
 class Bragi:
     def __init__(self):
         self.name = "Bragi"
-        self.role = "Structured Logging and Event Messaging"
+        self.role = "Structured Audit Log & Event Narrative Compiler"
         self.active = True
 
-    def status(self):
-        return f"{self.name} system is {'ACTIVE' if self.active else 'DORMANT'}. Role: {self.role}"
+    def collect_metrics(self):
+        return {'pid': os.getpid(), 'logStreams': len(psutil.pids()), 'timestampUtc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
 
-    def execute(self, action, *args, **kwargs):
-        # Skeleton for Bragi system logic
-        # No destructive wipe protocols allowed per directive.
+    def status(self):
+        metrics = self.collect_metrics()
+        return f"{self.name} system is {'ACTIVE' if self.active else 'DORMANT'}. Role: {self.role} | Metrics: {json.dumps(metrics)}"
+
+    def execute(self, action="inspect", *args, **kwargs):
+        metrics = self.collect_metrics()
         return {
             "ok": True,
             "module": self.name,
             "role": self.role,
             "action": action,
             "status": "NOMINAL",
-            "output": f"Processed {action} via {self.name} logic."
+            "metrics": metrics,
+            "output": f"{self.name} executed '{action}' with live host metrics: {json.dumps(metrics)}"
         }
+
 
 if __name__ == "__main__":
     god = Bragi()
-    print(god.status())
+    print(json.dumps(god.execute("status"), indent=2))
