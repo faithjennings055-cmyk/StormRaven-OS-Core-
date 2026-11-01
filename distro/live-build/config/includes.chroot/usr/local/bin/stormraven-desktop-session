@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Ethereal Void Graphical Desktop Session Launcher (#48)
+# =============================================================================
+set -euo pipefail
+
+WEBAPP_DIR="/opt/stormraven/webapp"
+WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
+UI_PORT="${STORMRAVEN_UI_PORT:-3000}"
+
+# 1. Ensure local Ethereal Void UI HTTP server is running on :3000
+if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
+  python3 -m http.server "${UI_PORT}" --bind 127.0.0.1 --directory "${WEBAPP_DIR}" >/tmp/stormraven-ui.log 2>&1 &
+fi
+
+# 2. If invoked from a Linux text VT without X11 running, launch Xorg via xinit
+if [ -z "${DISPLAY:-}" ]; then
+  if command -v startx >/dev/null 2>&1; then
+    exec startx /usr/local/bin/stormraven-desktop-session -- :0 vt1 -keeptty -novtswitch
+  fi
+fi
+
+# 3. Inside X11 session: configure background, window manager, and Ethereal Void UI
+xsetroot -solid "#07030a" 2>/dev/null || true
+if [ -f "${WALLPAPER}" ] && command -v feh >/dev/null 2>&1; then
+  feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
+fi
+
+if command -v openbox >/dev/null 2>&1; then
+  openbox &
+fi
+
+# Launch browser kiosk pointing to the local Ethereal Void Desktop UI
+for browser in falkon epiphany-browser chromium chromium-browser firefox; do
+  if command -v "${browser}" >/dev/null 2>&1; then
+    "${browser}" "http://127.0.0.1:${UI_PORT}" >/dev/null 2>&1 &
+    break
+  fi
+done
+
+# Launch an Ethereal Void terminal running Odin Pantheon alongside the desktop
+if command -v xterm >/dev/null 2>&1; then
+  exec xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -geometry 110x32+40+40 \
+    -T "StormRaven OS — Odin Pantheon & Void Shell" \
+    -e "/bin/bash -l -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'"
+fi
+
+wait

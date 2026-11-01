@@ -169,8 +169,16 @@ apt-get install -y --no-install-recommends \
   chkrootkit \
   libimage-exiftool-perl
 
-# --- Modern desktop baseline (network, audio, printing, scanning, media, tools) ---
+# --- Modern desktop baseline & Ethereal Void Graphical Desktop UI (#26, #48) ---
 apt-get install -y --no-install-recommends \
+  xorg \
+  xinit \
+  x11-xserver-utils \
+  openbox \
+  lightdm \
+  xterm \
+  feh \
+  falkon \
   network-manager \
   bluez \
   pipewire \
@@ -230,6 +238,7 @@ fi
 # StormRaven.Kernel is built from source in step 5.1
 $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
+$SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven-desktop-session" "${CHROOT_DIR}/usr/local/bin/stormraven-vpn" "${CHROOT_DIR}/usr/local/bin/stormraven-vm" "${CHROOT_DIR}/usr/local/bin/stormraven-forensics" 2>/dev/null || true
 
 # Install live initramfs hook & script so both boot=casper and boot=live mount the squashfs cleanly
 $SUDO tee "${CHROOT_DIR}/etc/initramfs-tools/modules" >/dev/null <<'EOF'
@@ -352,8 +361,10 @@ rm -f /etc/systemd/system/multi-user.target.wants/casper-md5check.service \
       /etc/systemd/system/final.target.wants/casper.service || true
 
 # Enable systemd services
-mkdir -p /etc/systemd/system/multi-user.target.wants
+mkdir -p /etc/systemd/system/multi-user.target.wants /etc/systemd/system/graphical.target.wants
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
+ln -sf /etc/systemd/system/stormraven-desktop.service /etc/systemd/system/multi-user.target.wants/stormraven-desktop.service
+ln -sf /etc/systemd/system/stormraven-desktop.service /etc/systemd/system/graphical.target.wants/stormraven-desktop.service
 ln -sf /lib/systemd/system/libvirtd.service /etc/systemd/system/multi-user.target.wants/libvirtd.service || true
 ln -sf /lib/systemd/system/bluetooth.service /etc/systemd/system/multi-user.target.wants/bluetooth.service || true
 ln -sf /lib/systemd/system/cups.service /etc/systemd/system/multi-user.target.wants/cups.service || true
@@ -361,6 +372,32 @@ ln -sf /lib/systemd/system/ufw.service /etc/systemd/system/multi-user.target.wan
 ln -sf /lib/systemd/system/unattended-upgrades.service /etc/systemd/system/multi-user.target.wants/unattended-upgrades.service || true
 ln -sf /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/systemd-networkd.service || true
 ln -sf /lib/systemd/system/systemd-resolved.service /etc/systemd/system/multi-user.target.wants/systemd-resolved.service || true
+
+# Configure LightDM graphical autologin & tty1 fallback launcher (#48)
+mkdir -p /etc/lightdm/lightdm.conf.d /usr/share/xsessions
+cat > /etc/lightdm/lightdm.conf.d/50-stormraven.conf <<'LIGHTDM'
+[Seat:*]
+autologin-user=ubuntu
+autologin-user-timeout=0
+user-session=stormraven-void
+LIGHTDM
+
+cat > /usr/share/xsessions/stormraven-void.desktop <<'XSESS'
+[Desktop Entry]
+Name=StormRaven Ethereal Void
+Comment=StormRaven OS Infinity Protocol Graphical Environment
+Exec=/usr/local/bin/stormraven-desktop-session
+Type=Application
+XSESS
+
+id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,video,input,audio ubuntu
+mkdir -p /home/ubuntu
+cat >> /home/ubuntu/.bash_profile <<'PROFILE'
+if [ -z "${DISPLAY:-}" ] && [ "$(tty 2>/dev/null || true)" = "/dev/tty1" ] && ! grep -q "forensic=1" /proc/cmdline 2>/dev/null; then
+  /usr/local/bin/stormraven-desktop-session || true
+fi
+PROFILE
+chown -R ubuntu:ubuntu /home/ubuntu
 
 # Configure autologin on tty1 and serial ttyS0 for live session
 mkdir -p /etc/systemd/system/getty@tty1.service.d
@@ -425,24 +462,6 @@ update-initramfs -c -k "${KVER}" || update-initramfs -u -k "${KVER}"
 # Clean apt package caches to keep squashfs lean (keep apt lists so apt-cache policy works immediately!)
 apt-get clean
 rm -rf /var/tmp/* /tmp/* /var/log/*.log || true
-
-# StormRaven voice: motd with attitude (plain-text fallback for logins)
-$SUDO rm -f "${CHROOT_DIR}/etc/motd"
-$SUDO tee "${CHROOT_DIR}/etc/motd" >/dev/null <<'MOTD'
-  .__                      .__
-  |__|_______   ____   __ |__| ________________
-  |  \_  __ \_/ __ \ |  | |  | \__  \_  __ \
-  |  ||  | \/\  ___/ |  |_|  |__/ __ \|  | \/
-  |__||__|    \___  >____/____(____  /__|
-                  \/               \/
-  StormRaven OS 24.04 LTS (Ubuntu Noble)
-
-  "The void does not crash. It remembers, and it deletes."
-
-  The Nine Realms stand watch. The kernel is listening.
-  Run 'stormraven status' to greet the Sovereign stack,
-  or 'stormraven odin' to speak with Odin himself.
-MOTD
 EOF
 
 # Remove policy-rc.d and set up clean resolv.conf

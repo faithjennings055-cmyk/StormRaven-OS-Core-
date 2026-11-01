@@ -1,0 +1,18 @@
+[Unit]
+Description=StormRaven OS Ethereal Void Graphical Desktop Session
+After=systemd-user-sessions.service stormraven-kernel.service network.target
+
+[Service]
+Type=simple
+User=root
+Environment=HOME=/root
+ExecStart=/usr/local/bin/stormraven-desktop-session
+Restart=on-failure
+RestartSec=3
+StandardInput=tty
+TTYPath=/dev/tty7
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target graphical.target

@@ -1,15 +1,15 @@
-
- ██████╗ ██████╗  ██████╗  ██████╗ ████████╗
- ██╔══██╗██╔══██╗██╔════╝ ██╔═══██╗╚══██╔══╝
- ██████╔╝██████╔╝██║  ███╗██║   ██║   ██║
- ██╔══██╗██╔══██╗██║   ██║██║   ██║   ██║
- ██║  ██║██║  ██║╚██████╔╝╚██████╔╝   ██║
- ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝
-        S T O R M R A V E N   O S   2 4 . 0 4   L T S
+ ███████╗████████╗ ██████╗ ██████╗ ███╗   ███╗██████╗  █████╗ ██╗   ██╗███████╗███╗   ██╗
+ ██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗████╗ ████║██╔══██╗██╔══██╗██║   ██║██╔════╝████╗  ██║
+ ███████╗   ██║   ██║   ██║██████╔╝██╔████╔██║██████╔╝███████║██║   ██║█████╗  ██╔██╗ ██║
+ ╚════██║   ██║   ██║   ██║██╔══██╗██║╚██╔╝██║██╔══██╗██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║
+ ███████║   ██║   ╚██████╔╝██║  ██║██║ ╚═╝ ██║██║  ██║██║  ██║ ╚████╔╝ ███████╗██║ ╚████║
+ ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝
+              S T O R M R A V E N   O S   2 4 . 0 4   L T S   —   I N F I N I T Y   P R O T O C O L
 
  Welcome to StormRaven OS 24.04 LTS (Ubuntu Noble Numbat)
- Bifrost Gateway:  http://localhost:8787/health
- Kernel service:   systemctl status stormraven-kernel
- StormRaven CLI:   stormraven status | stormraven health | stormraven decisions | stormraven odin
- Pantheon Core:    python3 /opt/stormraven/python/odin.py
- Dashboard (PWA):  /opt/stormraven/webapp/
+ Ethereal Void GUI:  Auto-starts on tty1 (or run: stormraven-desktop-session)
+ Bifrost Gateway:    http://localhost:8787/health  |  Desktop UI: http://localhost:3000
+ Kernel service:     systemctl status stormraven-kernel
+ StormRaven CLI:     stormraven status | stormraven health | stormraven decisions | stormraven odin
+ Pantheon Core:      python3 /opt/stormraven/python/odin.py
+ Built-in Systems:   stormraven-vpn status | stormraven-vm status | stormraven-forensics status

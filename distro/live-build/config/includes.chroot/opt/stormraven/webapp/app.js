@@ -338,13 +338,73 @@
 
   /* ---------- routing ---------- */
 
+  var fafnirNodes = [
+    { id: 'genesis', name: 'ostara-genesis.md', path: '/alfheim/ostara-genesis.md', realm: 'ALFHEIM', size: '4.2 KB', perms: 'r--r--r--', entropy: '0.12', hash: '8f3a..c91e', content: '# Ostara Genesis Blueprint\n\nManifests the tri-layer directory structure across Alfheim, Midgard, Niflheim, and Helheim.\nAutonomous scanners default to disabled under the Non-Destructive Mandate.' },
+    { id: 'bifrost', name: 'bifrost-bridge.md', path: '/alfheim/bifrost-bridge.md', realm: 'ALFHEIM', size: '3.8 KB', perms: 'r--r--r--', entropy: '0.18', hash: '4b12..d07a', content: '# Bifrost Telemetry Bridge\n\nStreams live daemon heartbeat and Ymir Ring 0 state over WebSocket to the Sovereign Dashboard.' },
+    { id: 'heimdallr', name: 'heimdallr-doctrine.md', path: '/midgard/heimdallr-doctrine.md', realm: 'MIDGARD', size: '6.4 KB', perms: 'r-xr-x---', entropy: '0.24', hash: '9c44..e110', content: '# Heimdallr Sanitization Doctrine\n\n7-step Zero-Trust validation flow blocking CWE-77 injection vectors before reaching Ring 0.' },
+    { id: 'ymir', name: 'ymir-buddy-slab.rs', path: '/midgard/ymir-buddy-slab.rs', realm: 'MIDGARD', size: '12.1 KB', perms: 'r-x------', entropy: '0.08', hash: 'a85f..9099', content: '// Ymir Ring 0 Memory Management: Buddy & SLAB Allocator\n// Engineered for 1% margin - zero fragmentation, zero overflow.\npub struct YmirAllocator { heap_start: usize, heap_size: usize }' },
+    { id: 'idunn', name: 'idunn-snapshot-v3.vault', path: '/niflheim/idunn-snapshot-v3.vault', realm: 'NIFLHEIM', size: '128.0 MB', perms: 'r--------', entropy: '0.99', hash: 'e3b0..c442', content: '[RSA-4096 ENCRYPTED SNAPSHOT MANIFEST]\nRealm: NIFLHEIM (Immutable Cold Vault)\nStatus: VERIFIED · ZERO DRIFT' },
+    { id: 'demogorgon', name: 'demogorgon-tarpit.md', path: '/helheim/demogorgon-tarpit.md', realm: 'HELHEIM', size: '5.1 KB', perms: 'r--------', entropy: '0.67', hash: '7f01..33b2', content: '# Demogorgon TCP Tarpit\n\nIsolation vault honeypot bound to port 2222. Disabled by default.' }
+  ];
+  var fafnirState = { realm: 'ALL', selected: fafnirNodes[0], clinical: true, hex: false };
+
+  function renderFafnir() {
+    var body = $('fafnirBody');
+    if (!body) return;
+    body.innerHTML = '';
+    var list = fafnirNodes.filter(function (n) { return fafnirState.realm === 'ALL' || n.realm === fafnirState.realm; });
+    list.forEach(function (n) {
+      var tr = document.createElement('tr');
+      if (fafnirState.selected && fafnirState.selected.id === n.id) tr.className = 'selected';
+      tr.innerHTML =
+        '<td>' + esc(n.name) + '<span class="fafnir-sub">' + esc(n.path) + '</span></td>' +
+        '<td>' + esc(n.realm) + '</td>' +
+        '<td>' + esc(n.size) + '</td>' +
+        '<td>' + esc(n.perms) + '</td>' +
+        '<td>' + esc(n.entropy) + '</td>' +
+        '<td>' + esc(n.hash) + '</td>';
+      tr.addEventListener('click', function () {
+        fafnirState.selected = n;
+        renderFafnir();
+      });
+      body.appendChild(tr);
+    });
+    var sel = fafnirState.selected || list[0];
+    if (sel && $('fafnirPreviewTitle') && $('fafnirPreviewBox')) {
+      $('fafnirPreviewTitle').textContent = 'Void Preview · ' + sel.path;
+      if ($('fafnirPreviewMeta')) $('fafnirPreviewMeta').textContent = sel.perms + ' · ' + sel.size + ' · ' + sel.hash;
+      if (fafnirState.hex) {
+        var hexLines = [];
+        for (var i = 0; i < sel.content.length; i += 16) {
+          var slice = sel.content.slice(i, i + 16);
+          var hex = [];
+          for (var j = 0; j < slice.length; j++) {
+            hex.push(('0' + slice.charCodeAt(j).toString(16)).slice(-2));
+          }
+          hexLines.push('0x' + ('0000' + i.toString(16)).slice(-4) + ': ' + hex.join(' '));
+        }
+        $('fafnirPreviewBox').textContent = hexLines.join('\n');
+      } else {
+        $('fafnirPreviewBox').textContent = sel.content;
+      }
+    }
+  }
+
   function switchView(name) {
     document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t.dataset.view === name); });
     document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
     if (name === 'tabs') refreshTabs();
+    if (name === 'fafnir') renderFafnir();
     if (name === 'status') refreshStatus();
     if (name === 'decisions') refreshDecisions();
     if (name === 'odin') runCommand('odin telemetry', true);
+    if (name === 'realms') {
+      var status = $('pulseStatus');
+      if (status) {
+        status.textContent = 'Sovereign Demo Pulse Active';
+        status.style.color = 'var(--accent)';
+      }
+    }
   }
 
   function esc(s) {
@@ -365,6 +425,31 @@
   if ($('ingestDemoTabBtn')) $('ingestDemoTabBtn').addEventListener('click', ingestDemoTab);
   if ($('evalQuickBtn')) $('evalQuickBtn').addEventListener('click', evaluateNow);
   if ($('evalEngineBtn')) $('evalEngineBtn').addEventListener('click', evaluateNow);
+
+  if ($('fafnirDensityBtn')) {
+    $('fafnirDensityBtn').addEventListener('click', function () {
+      fafnirState.clinical = !fafnirState.clinical;
+      var tbl = $('fafnirTable');
+      if (tbl) tbl.classList.toggle('standard', !fafnirState.clinical);
+      $('fafnirDensityBtn').textContent = fafnirState.clinical ? 'Clinical (0-4px)' : 'Standard';
+    });
+  }
+  if ($('fafnirModeBtn')) {
+    $('fafnirModeBtn').addEventListener('click', function () {
+      fafnirState.hex = !fafnirState.hex;
+      $('fafnirModeBtn').textContent = fafnirState.hex ? 'SOURCE' : 'HEX';
+      renderFafnir();
+    });
+  }
+  document.querySelectorAll('[data-frealm]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      fafnirState.realm = btn.getAttribute('data-frealm');
+      document.querySelectorAll('[data-frealm]').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      renderFafnir();
+    });
+  });
 
   document.querySelectorAll('[data-odin]').forEach(function (btn) {
     btn.addEventListener('click', function () {

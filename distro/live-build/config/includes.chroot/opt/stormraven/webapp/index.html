@@ -32,6 +32,8 @@
   <nav class="tabbar">
     <button class="tab active" data-view="status">Status</button>
     <button class="tab" data-view="tabs">Tabs</button>
+    <button class="tab" data-view="fafnir">Fafnir</button>
+    <button class="tab" data-view="realms">Realms</button>
     <button class="tab" data-view="decisions">Decisions</button>
     <button class="tab" data-view="odin">Odin</button>
     <button class="tab" data-view="console">Console</button>
@@ -95,6 +97,88 @@
       </div>
     </section>
 
+    <!-- FAFNIR FILE EXPLORER -->
+    <section id="view-fafnir" class="view">
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <h2>Fafnir File Explorer · Clinical Grid</h2>
+            <div class="muted" style="font-size:11px">Yggdrasil VFS · Ymir Buddy/SLAB Memory State</div>
+          </div>
+          <div class="row-actions">
+            <button id="fafnirDensityBtn" class="btn small accent-outline">Clinical (0-4px)</button>
+            <button id="fafnirModeBtn" class="btn small">HEX</button>
+          </div>
+        </div>
+        <div class="chip-grid" id="fafnirRealms" style="margin-bottom:8px">
+          <button class="chip-btn active" data-frealm="ALL">/all</button>
+          <button class="chip-btn" data-frealm="ALFHEIM">/alfheim</button>
+          <button class="chip-btn" data-frealm="MIDGARD">/midgard</button>
+          <button class="chip-btn" data-frealm="NIFLHEIM">/niflheim</button>
+          <button class="chip-btn" data-frealm="HELHEIM">/helheim</button>
+        </div>
+        <div class="fafnir-table-wrap">
+          <table class="fafnir-table" id="fafnirTable">
+            <thead>
+              <tr>
+                <th>Node / Path</th>
+                <th>Realm</th>
+                <th>Size</th>
+                <th>Perms</th>
+                <th>Entropy</th>
+                <th>SHA-256</th>
+              </tr>
+            </thead>
+            <tbody id="fafnirBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row-between">
+          <h2 id="fafnirPreviewTitle">Void Preview · /alfheim/ostara-genesis.md</h2>
+          <span id="fafnirPreviewMeta" class="badge ok">VERIFIED</span>
+        </div>
+        <pre id="fafnirPreviewBox" class="code-box">Select a node in the Fafnir Clinical Grid above to inspect raw source or hex memory state…</pre>
+      </div>
+    </section>
+
+    <!-- REALMS -->
+    <section id="view-realms" class="view">
+      <div class="card realms-card">
+        <div class="pulse-container">
+          <div class="sovereign-pulse"></div>
+          <div class="pulse-ring"></div>
+        </div>
+        <div class="realms-content">
+          <h2 class="realms-title">Sovereign Realms</h2>
+          <div id="pulseStatus" class="pulse-status">Sovereign Demo Pulse Active</div>
+          <p class="muted text-center text-xs mt-2">Yggdrasil VFS Heartbeat Nominal</p>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card realm-stat" data-realm="alfheim">
+          <div class="stat-label">Alfheim (Source)</div>
+          <div class="stat-val">NOMINAL</div>
+          <div class="muted text-xs">ReFS Immutable Source</div>
+        </div>
+        <div class="card realm-stat" data-realm="midgard">
+          <div class="stat-label">Midgard (Battlefield)</div>
+          <div class="stat-val">VOLATILE</div>
+          <div class="muted text-xs">RAM-Disk Execution</div>
+        </div>
+        <div class="card realm-stat" data-realm="niflheim">
+          <div class="stat-label">Niflheim (Vault)</div>
+          <div class="stat-val">SECURE</div>
+          <div class="muted text-xs">RSA-4096 Encrypted</div>
+        </div>
+        <div class="card realm-stat" data-realm="helheim">
+          <div class="stat-label">Helheim (Shadows)</div>
+          <div class="stat-val">CLOAKED</div>
+          <div class="muted text-xs">Anti-Forensic Logs</div>
+        </div>
+      </div>
+    </section>
+
     <!-- ODIN / UBUNTU MOBILE -->
     <section id="view-odin" class="view">
       <div class="card hero">
@@ -121,6 +205,9 @@
           <button class="chip-btn" data-odin="check_ip">🌐 Check IP</button>
           <button class="chip-btn" data-odin="heimdall_scan">🛡 Heimdall Scan</button>
           <button class="chip-btn" data-odin="freya_think">🧠 Freya Think</button>
+          <button class="chip-btn" data-odin="vpn_connect">🔒 VPN + Kill-Switch</button>
+          <button class="chip-btn" data-odin="vm_status">🖥 KVM Hypervisor</button>
+          <button class="chip-btn" data-odin="forensics_status">🔍 Forensics Suite</button>
           <button class="chip-btn" data-odin="evaluate">⚖️ Evaluate Focus</button>
           <button class="chip-btn" data-odin="ping">📡 Ping Kernel</button>
           <button class="chip-btn" data-odin="ingest_demo_tab">📑 Ingest Tab Signal</button>
