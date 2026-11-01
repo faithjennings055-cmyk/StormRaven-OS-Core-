@@ -331,10 +331,10 @@ mkdir -p /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.shadow_logs
 # Users: Provisioned with random/locked passwords for live session
 # stormraven:stormraven (pw: stormraven), user (pw: live) -> CHANGED TO LOCKED/RANDOM
 id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
-echo "stormraven:$(openssl rand -base64 12)" | chpasswd
-echo "ubuntu:$(openssl rand -base64 12)" | chpasswd
-echo "root:$(openssl rand -base64 12)" | chpasswd
-echo "user:$(openssl rand -base64 12)" | chpasswd
+id -u stormraven >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" stormraven || true
+id -u ubuntu >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" ubuntu || true
+id -u root >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" root || true
+id -u user >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" user || true
 
 # Sudo: Require password for sensitive operations (removed NOPASSWD:ALL)
 mkdir -p /etc/sudoers.d
@@ -413,8 +413,9 @@ LSBREL
 
 # Install Plymouth and set the StormRaven Void theme inside chroot
 export DEBIAN_FRONTEND=noninteractive
+export PATH="$PATH:/usr/sbin"
 apt-get install -y --no-install-recommends plymouth plymouth-themes
-plymouth-set-default-theme -R stormraven-void || plymouth-set-default-theme stormraven-void
+update-alternatives --set default.plymouth /usr/share/plymouth/themes/stormraven-void/stormraven-void.plymouth 2>/dev/null || ln -sf /usr/share/plymouth/themes/stormraven-void/stormraven-void.plymouth /usr/share/plymouth/themes/default.plymouth
 
 # Update initramfs for installed Ubuntu kernel
 KVER="$(ls -1 /lib/modules | sort -V | tail -n 1)"
