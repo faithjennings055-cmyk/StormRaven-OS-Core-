@@ -348,12 +348,13 @@ id -u ubuntu >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand 
 id -u root >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" root || true
 id -u user >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" user || true
 
-# Sudo: Require password for sensitive operations (removed NOPASSWD:ALL)
+# Sudo: Standard Ubuntu Live ISO behavior (#58) — local live user has NOPASSWD sudo
+# while account passwords remain randomized/locked against network/SSH password login.
 mkdir -p /etc/sudoers.d
 cat > /etc/sudoers.d/90-stormraven-live <<'SUDO'
-ubuntu ALL=(ALL) ALL
-stormraven ALL=(ALL) ALL
-user ALL=(ALL) ALL
+ubuntu ALL=(ALL) NOPASSWD: ALL
+stormraven ALL=(ALL) NOPASSWD: ALL
+user ALL=(ALL) NOPASSWD: ALL
 SUDO
 chmod 0440 /etc/sudoers.d/90-stormraven-live
 
