@@ -240,6 +240,9 @@ $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven-local-gateway" "${CHROOT_DIR}/usr/local/bin/stormraven-desktop-session" "${CHROOT_DIR}/usr/local/bin/stormraven-vpn" "${CHROOT_DIR}/usr/local/bin/stormraven-vm" "${CHROOT_DIR}/usr/local/bin/stormraven-forensics" 2>/dev/null || true
 
+# Preinstall official Skydive CLI (https://skydive.com/cli) into /usr/local/bin/skydive
+curl -fsSL https://skydive.sh | $SUDO env SKYDIVE_INSTALL_DIR="${CHROOT_DIR}/usr/local/bin" sh || true
+
 # Install live initramfs hook & script so both boot=casper and boot=live mount the squashfs cleanly
 $SUDO tee "${CHROOT_DIR}/etc/initramfs-tools/modules" >/dev/null <<'EOF'
 overlay
