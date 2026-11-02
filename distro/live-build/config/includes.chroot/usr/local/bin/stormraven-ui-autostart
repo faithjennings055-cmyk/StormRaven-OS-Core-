@@ -50,14 +50,26 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   sleep 0.5
 done
 
-# 3. Open the Ethereal Void Desktop UI in the active graphical desktop session
+# 3. Open the Ethereal Void Desktop UI in full-screen app mode (no browser address bar)
 if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
   URL="http://127.0.0.1:${UI_PORT}/"
-  for browser in xdg-open firefox google-chrome chromium chromium-browser falkon epiphany-browser; do
-    if command -v "$browser" >/dev/null 2>&1; then
-      nohup "$browser" "$URL" >/dev/null 2>&1 &
+  for chrome_bin in google-chrome chromium chromium-browser brave-browser microsoft-edge; do
+    if command -v "$chrome_bin" >/dev/null 2>&1; then
+      nohup "$chrome_bin" --app="$URL" --start-fullscreen >/dev/null 2>&1 &
       exit 0
     fi
   done
+  if command -v falkon >/dev/null 2>&1; then
+    nohup falkon --fullscreen "$URL" >/dev/null 2>&1 &
+    exit 0
+  fi
+  if command -v firefox >/dev/null 2>&1; then
+    nohup firefox --kiosk "$URL" >/dev/null 2>&1 &
+    exit 0
+  fi
+  if command -v xdg-open >/dev/null 2>&1; then
+    nohup xdg-open "$URL" >/dev/null 2>&1 &
+    exit 0
+  fi
 fi
 exit 0
