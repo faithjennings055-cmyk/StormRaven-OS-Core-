@@ -1,5 +1,5 @@
-/* StormRaven OS Mobile — network-first service worker (v4) */
-const CACHE = 'stormraven-mobile-v4';
+/* StormRaven OS Mobile — network-first service worker (v7) */
+const CACHE = 'stormraven-mobile-v7';
 const SHELL = [
   './',
   './index.html',

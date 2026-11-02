@@ -105,6 +105,18 @@ SSHD
       -d "{\"command\":\"odin freya_think\",\"prompt\":\"${PROMPT}\"}"
     echo ""
     ;;
+  icloud|email|mail)
+    echo "=== [Luci & Bifrost] iCloud & Custom Email Sovereign Bridge ==="
+    echo "  Protocol:      StormRaven OS: Infinity Protocol v3.7.0"
+    echo "  Apple ID:      faithjennings055@icloud.com"
+    echo "  Custom Email:  mrstormraven@stormravenoddities.com"
+    echo "  Server Hub:    https://stormravenoddities.com"
+    echo "  IMAP Server:   imap.mail.me.com:993 (SSL/TLS)"
+    echo "  SMTP Server:   smtp.mail.me.com:587 (STARTTLS)"
+    echo "  iCloud+ DNS:   MX mx01.mail.icloud.com (10), MX mx02.mail.icloud.com (10),"
+    echo "                 TXT 'v=spf1 include:icloud.com ~all',"
+    echo "                 CNAME sig1._domainkey -> sig1.dkim.stormravenoddities.com.at.icloudmailadmin.com."
+    ;;
   voice)
     MODE="${2:-status}"
     if [ ! -w "$(dirname "$VOICE_CONF")" ] && [ ! -w "$VOICE_CONF" ]; then
