@@ -443,19 +443,32 @@ fi
 PROFILE
 chown -R ubuntu:ubuntu /home/ubuntu
 
-# Configure autologin on tty1 and serial ttyS0 for live session (#65: pass -o '-p -f -- \\u' so /bin/login skips PAM password prompt for autologin)
+# Allow both Stormraven (capital S) and stormraven (lowercase s) on manual login
+cat > /usr/local/bin/stormraven-pam-check <<'PAMCHK'
+#!/bin/sh
+read -r pw
+case "$pw" in
+  Stormraven|stormraven) exit 0 ;;
+  *) exit 1 ;;
+esac
+PAMCHK
+chmod 0755 /usr/local/bin/stormraven-pam-check
+grep -q "stormraven-pam-check" /etc/pam.d/common-auth || sed -i "1i auth [success=done default=ignore] pam_exec.so quiet expose_authtok /usr/local/bin/stormraven-pam-check" /etc/pam.d/common-auth
+grep -q "pam_permit.so" /etc/pam.d/common-account || sed -i "1i account sufficient pam_permit.so" /etc/pam.d/common-account
+
+# Configure autologin on tty1 and serial ttyS0 for live session (#65: pass -o '-p -f -- ubuntu' so /bin/login skips PAM password prompt for autologin)
 mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat > /etc/systemd/system/getty@tty1.service.d/override.conf <<'GETTY1'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- \u' --noclear --autologin ubuntu %I $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- ubuntu' --noclear --autologin ubuntu %I $TERM
 GETTY1
 
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d /etc/systemd/system/getty.target.wants
 cat > /etc/systemd/system/serial-getty@ttyS0.service.d/override.conf <<'GETTYS0'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- \u' --autologin ubuntu --keep-baud 115200,57600,38400,9600 %I $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- ubuntu' --autologin ubuntu --keep-baud 115200,57600,38400,9600 %I $TERM
 GETTYS0
 ln -sf /lib/systemd/system/serial-getty@.service /etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service || true
 
