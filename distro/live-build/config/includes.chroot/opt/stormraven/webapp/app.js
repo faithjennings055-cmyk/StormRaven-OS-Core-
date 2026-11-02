@@ -52,7 +52,7 @@
     var reqOpts = Object.assign({ headers: { 'Accept': 'application/json' } }, opts || {});
     function tryNext(idx) {
       if (idx >= targets.length) {
-        return Promise.resolve({ ok: true, data: { status: 'online', version: '3.7.0', distro: 'StormRaven OS: Infinity Protocol v3.7.0', telemetry: { cpu: 12, ram: 38, cores: 8 } } });
+        return Promise.resolve({ ok: true, data: { status: 'online', version: '3.8.0', distro: 'StormRaven OS: Infinity Protocol v3.8.0', telemetry: { cpu: 12, ram: 38, cores: 8 } } });
       }
       return fetch(targets[idx] + path, reqOpts).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);

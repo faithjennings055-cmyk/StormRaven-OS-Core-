@@ -161,7 +161,7 @@ export default function Page() {
                 ÁLFHEIMR · STORMRAVEN OS
               </h1>
               <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">
-                Infinity Protocol v3.7.0
+                Infinity Protocol v3.8.0
               </span>
             </div>
             <p className="text-xs text-muted-foreground font-mono">{kernelSummary}</p>
@@ -487,8 +487,8 @@ export default function Page() {
               <div className="p-3.5 rounded-lg bg-black/60 border border-border space-y-2">
                 <div className="text-xs font-mono text-primary">Multi-Purpose Server, ISO Downloads &amp; iCloud / Email Bridge</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
-                  <a href={`${DEFAULT_GATEWAY}/iso/StormRavenOS-Infinity-Protocol-v3.7.0-amd64.iso`} className="p-2 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20">
-                    ⬇ Download Infinity Protocol v3.7.0 ISO (UEFI + Desktop)
+                  <a href={`${DEFAULT_GATEWAY}/iso/StormRavenOS-Infinity-Protocol-v3.8.0-amd64.iso`} className="p-2 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20">
+                    ⬇ Download Infinity Protocol v3.8.0 ISO (UEFI + Desktop)
                   </a>
                   <a href="https://sugarplum-at-faith-s-workspace.skydive.app" target="_blank" rel="noreferrer" className="p-2 rounded border border-border bg-secondary/60 text-foreground hover:opacity-90">
                     ↗ Open Ethereal Void Mirror Gateway

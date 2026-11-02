@@ -17,7 +17,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 WORK_DIR="${WORK_DIR:-/tmp/stormraven-ubuntu-build}"
 CHROOT_DIR="${WORK_DIR}/chroot"
 ISO_STAGING="${WORK_DIR}/iso"
-OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-ubuntu-24.04-amd64.iso}"
+OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Infinity-Protocol-v3.8.0-amd64.iso}"
 UBUNTU_SUITE="noble"
 UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}"
 UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}"
@@ -516,12 +516,12 @@ cat > /etc/hosts <<'HOSTS'
 ::1         localhost ip6-localhost ip6-loopback
 HOSTS
 
-# Re-apply StormRaven OS 24.04 LTS (Ubuntu Noble) /usr/lib/os-release & /etc/os-release
+# Re-apply StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS) /usr/lib/os-release & /etc/os-release
 rm -f /etc/os-release /usr/lib/os-release
 cat > /usr/lib/os-release <<'OSREL'
-PRETTY_NAME="StormRaven OS 24.04 LTS (Ubuntu Noble)"
+PRETTY_NAME="StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS)"
 NAME="StormRaven OS"
-VERSION_ID="24.04"
+VERSION_ID="3.8.0"
 VERSION="24.04 LTS (Noble Numbat)"
 VERSION_CODENAME=noble
 ID=stormraven
@@ -539,7 +539,7 @@ cat > /etc/lsb-release <<'LSBREL'
 DISTRIB_ID=StormRaven
 DISTRIB_RELEASE=24.04
 DISTRIB_CODENAME=noble
-DISTRIB_DESCRIPTION="StormRaven OS 24.04 LTS (Ubuntu Noble)"
+DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS)"
 LSBREL
 
 # Install Plymouth and set the StormRaven Void theme inside chroot
@@ -630,7 +630,7 @@ menuentry "StormRaven OS 24.04 - Iron Ward (Safe Mode)" {
 EOF
 
 mkdir -p "${ISO_STAGING}/.disk" "${ISO_STAGING}/EFI/BOOT"
-echo "StormRaven OS 24.04 LTS (Ubuntu Noble) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
+echo "StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
 
 # Stage standalone UEFI x86_64 binaries (BOOTX64.EFI + grubx64.efi + signed shim when available) (#61)
 if command -v grub-mkstandalone >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then

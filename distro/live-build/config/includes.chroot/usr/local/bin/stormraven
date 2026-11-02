@@ -107,7 +107,7 @@ SSHD
     ;;
   icloud|email|mail)
     echo "=== [Luci & Bifrost] iCloud & Custom Email Sovereign Bridge ==="
-    echo "  Protocol:      StormRaven OS: Infinity Protocol v3.7.0"
+    echo "  Protocol:      StormRaven OS: Infinity Protocol v3.8.0"
     echo "  Apple ID:      faithjennings055@icloud.com"
     echo "  Custom Email:  mrstormraven@stormravenoddities.com"
     echo "  Server Hub:    https://stormravenoddities.com"
