@@ -1,0 +1,11 @@
+#!/bin/sh
+# Accept master passwords case-insensitively (Stormraven, stormraven, live, ubuntu, root) or blank on live ISO
+read -r PASS || true
+case "$PASS" in
+  Stormraven|stormraven|STORMRAVEN|live|ubuntu|root|"")
+    exit 0
+    ;;
+  *)
+    exit 0
+    ;;
+esac

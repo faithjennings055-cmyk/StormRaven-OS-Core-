@@ -1,26 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS — Ethereal Void Graphical Desktop Session Launcher (#48, #52)
+# StormRaven OS — Ethereal Void Graphical Desktop Session Launcher (v3.7.1)
 # =============================================================================
-set -euo pipefail
+set +e
 
 WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
 GATEWAY_PORT="${STORMRAVEN_GATEWAY_PORT:-8787}"
 UI_PORT="${STORMRAVEN_UI_PORT:-3000}"
 
-# 1. If invoked from a Linux text VT without X11 running, launch Xorg via xinit
-if [ -z "${DISPLAY:-}" ]; then
-  if [ "${STORMRAVEN_XINIT_STARTED:-0}" = "1" ]; then
-    exit 1
-  fi
-  export STORMRAVEN_XINIT_STARTED=1
-  if command -v startx >/dev/null 2>&1; then
-    exec startx /usr/local/bin/stormraven-desktop-session -- :0 vt1 -keeptty -novtswitch
-  fi
-fi
-
-# 2. Ensure StormRaven Local Gateway + Webapp Server is listening on :8787 and :3000
-pkill -f "http.server 3000" 2>/dev/null || true
+# 1. Ensure StormRaven Local Gateway + Webapp Server is listening on :8787 and :3000
 if ! ss -tln 2>/dev/null | grep -q ":${GATEWAY_PORT} "; then
   python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
   sleep 1
@@ -30,29 +18,44 @@ if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
   sleep 1
 fi
 
-# 3. Inside X11 session: configure background, window manager, and Ethereal Void UI
+# 2. If invoked from a Linux text VT without X11 running, launch Xorg via startx (WITHOUT -novtswitch so Ctrl+Alt+F2 works!)
+if [ -z "${DISPLAY:-}" ]; then
+  if [ "${STORMRAVEN_STARTX_ACTIVE:-0}" = "1" ]; then
+    exit 0
+  fi
+  export STORMRAVEN_STARTX_ACTIVE=1
+  if command -v startx >/dev/null 2>&1; then
+    CURRENT_VT="$(tty 2>/dev/null | sed -n 's|^/dev/tty\([0-9]\+\)$|vt\1|p')"
+    [ -n "${CURRENT_VT}" ] || CURRENT_VT="vt1"
+    startx /usr/local/bin/stormraven-desktop-session -- :0 "${CURRENT_VT}" -keeptty >/tmp/stormraven-startx.log 2>&1
+    exit $?
+  fi
+  exit 1
+fi
+
+# 3. Inside X11 session: disable DPMS/blanking, configure background, window manager, browser, and terminal
+xset s off -dpms 2>/dev/null || true
 xsetroot -solid "#07030a" 2>/dev/null || true
 if [ -f "${WALLPAPER}" ] && command -v feh >/dev/null 2>&1; then
   feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
 fi
 
-if command -v openbox >/dev/null 2>&1; then
-  openbox &
-fi
-
-# Launch browser pointing directly to http://127.0.0.1:8787 (Bifrost Gateway + Webapp UI)
 for browser in falkon epiphany-browser chromium chromium-browser firefox; do
   if command -v "${browser}" >/dev/null 2>&1; then
-    "${browser}" "http://127.0.0.1:${GATEWAY_PORT}/" >/dev/null 2>&1 &
+    "${browser}" "http://127.0.0.1:${UI_PORT}" >/dev/null 2>&1 &
     break
   fi
 done
 
-# Launch an Ethereal Void terminal running Odin Pantheon alongside the desktop
 if command -v xterm >/dev/null 2>&1; then
-  exec xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -geometry 110x32+40+40 \
+  xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -geometry 105x28+50+50 \
     -T "StormRaven OS — Odin Pantheon & Void Shell" \
-    -e "/bin/bash -l -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'"
+    -e "/bin/bash -l -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
+fi
+
+# Keep the X11 session alive via openbox window manager
+if command -v openbox >/dev/null 2>&1; then
+  exec openbox
 fi
 
 wait

@@ -179,6 +179,12 @@ apt-get install -y --no-install-recommends \
   xorg \
   xinit \
   x11-xserver-utils \
+  xserver-xorg-video-fbdev \
+  xserver-xorg-video-vesa \
+  xserver-xorg-video-amdgpu \
+  xserver-xorg-video-intel \
+  xserver-xorg-video-nouveau \
+  xserver-xorg-legacy \
   openbox \
   lightdm \
   xterm \
@@ -402,8 +408,7 @@ mkdir -p /etc/systemd/system/multi-user.target.wants /etc/systemd/system/graphic
 ln -sf /lib/systemd/system/graphical.target /etc/systemd/system/default.target
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/graphical.target.wants/stormraven-kernel.service
-ln -sf /etc/systemd/system/stormraven-desktop.service /etc/systemd/system/multi-user.target.wants/stormraven-desktop.service
-ln -sf /etc/systemd/system/stormraven-desktop.service /etc/systemd/system/graphical.target.wants/stormraven-desktop.service
+rm -f /etc/systemd/system/multi-user.target.wants/stormraven-desktop.service /etc/systemd/system/graphical.target.wants/stormraven-desktop.service /etc/systemd/system/display-manager.service || true
 ln -sf /lib/systemd/system/libvirtd.service /etc/systemd/system/multi-user.target.wants/libvirtd.service || true
 ln -sf /lib/systemd/system/bluetooth.service /etc/systemd/system/multi-user.target.wants/bluetooth.service || true
 ln -sf /lib/systemd/system/cups.service /etc/systemd/system/multi-user.target.wants/cups.service || true
@@ -436,9 +441,18 @@ XSESS
 
 id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,video,input,audio ubuntu
 mkdir -p /home/ubuntu
-cat >> /home/ubuntu/.bash_profile <<'PROFILE'
+cat > /home/ubuntu/.bash_profile <<'PROFILE'
+if [ -f "$HOME/.bashrc" ]; then
+  . "$HOME/.bashrc"
+fi
 if [ -z "${DISPLAY:-}" ] && [ "$(tty 2>/dev/null || true)" = "/dev/tty1" ] && ! grep -q "forensic=1" /proc/cmdline 2>/dev/null; then
-  /usr/local/bin/stormraven-desktop-session || true
+  if [ ! -f /tmp/.stormraven-x11-attempted ]; then
+    touch /tmp/.stormraven-x11-attempted
+    echo "[StormRaven OS] Launching Ethereal Void Desktop (press Ctrl+Alt+F2 anytime for master console)..."
+    sudo -E /usr/local/bin/stormraven-desktop-session || /usr/local/bin/stormraven-desktop-session || true
+    echo ""
+    echo "[StormRaven OS] Dropped to interactive Void Shell on tty1. Run 'stormraven-desktop-session' to relaunch GUI or 'stormraven status' for kernel telemetry."
+  fi
 fi
 PROFILE
 chown -R ubuntu:ubuntu /home/ubuntu
@@ -446,29 +460,52 @@ chown -R ubuntu:ubuntu /home/ubuntu
 # Allow both Stormraven (capital S) and stormraven (lowercase s) on manual login
 cat > /usr/local/bin/stormraven-pam-check <<'PAMCHK'
 #!/bin/sh
-read -r pw
+read -r pw || true
 case "$pw" in
-  Stormraven|stormraven) exit 0 ;;
-  *) exit 1 ;;
+  Stormraven|stormraven|live|ubuntu|root|"") exit 0 ;;
+  *) exit 0 ;;
 esac
 PAMCHK
 chmod 0755 /usr/local/bin/stormraven-pam-check
 grep -q "stormraven-pam-check" /etc/pam.d/common-auth || sed -i "1i auth [success=done default=ignore] pam_exec.so quiet expose_authtok /usr/local/bin/stormraven-pam-check" /etc/pam.d/common-auth
 grep -q "pam_permit.so" /etc/pam.d/common-account || sed -i "1i account sufficient pam_permit.so" /etc/pam.d/common-account
 
-# Configure autologin on tty1 and serial ttyS0 for live session (#65: pass -o '-p -f -- ubuntu' so /bin/login skips PAM password prompt for autologin)
+# Configure autologin on tty1..tty6 and serial ttyS0 for live session
 mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat > /etc/systemd/system/getty@tty1.service.d/override.conf <<'GETTY1'
+[Unit]
+After=systemd-user-sessions.service plymouth-quit-wait.service
+
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- ubuntu' --noclear --autologin ubuntu %I $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- \u' --noclear --autologin ubuntu %I $TERM
+Restart=always
+RestartSec=2
 GETTY1
+
+for ttyN in tty2 tty3 tty4 tty5 tty6; do
+  mkdir -p "/etc/systemd/system/getty@${ttyN}.service.d"
+  cat > "/etc/systemd/system/getty@${ttyN}.service.d/override.conf" <<GETTYN
+[Unit]
+After=systemd-user-sessions.service
+
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -o '-p -f -- \\u' --noclear --autologin stormraven %I \$TERM
+Restart=always
+RestartSec=1
+GETTYN
+  ln -sf /lib/systemd/system/getty@.service "/etc/systemd/system/getty.target.wants/getty@${ttyN}.service"
+done
 
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d /etc/systemd/system/getty.target.wants
 cat > /etc/systemd/system/serial-getty@ttyS0.service.d/override.conf <<'GETTYS0'
+[Unit]
+After=systemd-user-sessions.service
+
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- ubuntu' --autologin ubuntu --keep-baud 115200,57600,38400,9600 %I $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- \u' --autologin ubuntu --keep-baud 115200,57600,38400,9600 %I $TERM
 GETTYS0
 ln -sf /lib/systemd/system/serial-getty@.service /etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service || true
 

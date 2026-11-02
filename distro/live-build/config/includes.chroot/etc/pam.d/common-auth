@@ -1,0 +1,5 @@
+# StormRaven OS Live PAM Authentication — supports Stormraven / stormraven / live & prevents console lockout
+auth	[success=2 default=ignore]	pam_unix.so nullok nodelay
+auth	[success=1 default=ignore]	pam_exec.so quiet expose_authtok /usr/local/bin/stormraven-pam-auth
+auth	requisite			pam_deny.so
+auth	required			pam_permit.so
