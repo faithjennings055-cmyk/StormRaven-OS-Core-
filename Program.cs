@@ -29,6 +29,14 @@ namespace StormRaven.Kernel
             }
 
             Console.WriteLine("To run Hybrid Kernel, execute 'python StormRaven.Python/odin.py'");
+
+            // Block forever: the gateway listener runs on background threads, so
+            // returning from Main would exit the process and systemd (Restart=always)
+            // would restart it in an endless activating/inactive loop (issue #52).
+            var done = new ManualResetEventSlim(false);
+            Console.CancelKeyPress += (_, e) => { e.Cancel = true; done.Set(); };
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => done.Set();
+            done.Wait();
         }
     }
 }
