@@ -448,14 +448,14 @@ mkdir -p /etc/systemd/system/getty@tty1.service.d
 cat > /etc/systemd/system/getty@tty1.service.d/override.conf <<'GETTY1'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- \\u' --noclear --autologin ubuntu %I $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- \u' --noclear --autologin ubuntu %I $TERM
 GETTY1
 
 mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d /etc/systemd/system/getty.target.wants
 cat > /etc/systemd/system/serial-getty@ttyS0.service.d/override.conf <<'GETTYS0'
 [Service]
 ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- \\u' --autologin ubuntu --keep-baud 115200,57600,38400,9600 %I $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- \u' --autologin ubuntu --keep-baud 115200,57600,38400,9600 %I $TERM
 GETTYS0
 ln -sf /lib/systemd/system/serial-getty@.service /etc/systemd/system/getty.target.wants/serial-getty@ttyS0.service || true
 
