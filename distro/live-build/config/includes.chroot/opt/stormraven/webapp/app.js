@@ -6,9 +6,6 @@
   var defaultOrigin = (function () {
     if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.indexOf('http') === 0) {
       var host = window.location.hostname || '';
-      if (host === '127.0.0.1' || host === 'localhost') {
-        return 'http://127.0.0.1:8787';
-      }
       if (host.indexOf('.vercel.app') !== -1 || host.indexOf('github.io') !== -1) {
         return 'https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app';
       }
@@ -489,6 +486,171 @@
   });
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+
+  /* ---------- StormRaven Desktop App Grid (29 Apps + Ubuntu/Win11 Mode) ---------- */
+  var desktopApps = [
+    { id: 'calc', label: 'Calculator', icon: '🧮', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
+    { id: 'calendar', label: 'Calendar', icon: '📅', bg: 'linear-gradient(135deg,#10b981,#059669)' },
+    { id: 'docviewer', label: 'Document Viewer', icon: '📄', bg: 'linear-gradient(135deg,#ef4444,#b91c1c)' },
+    { id: 'clocks', label: 'Clocks', icon: '🕒', bg: 'linear-gradient(135deg,#64748b,#334155)' },
+    { id: 'firmware', label: 'Firmware', icon: '🟩', bg: 'linear-gradient(135deg,#22c55e,#15803d)' },
+    { id: 'browser', label: 'Web Browser', icon: '🌐', bg: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
+    { id: 'language', label: 'Language Support', icon: '🈵', bg: 'linear-gradient(135deg,#0ea5e9,#0369a1)' },
+    { id: 'settings', label: 'Settings', icon: '⚙️', bg: 'linear-gradient(135deg,#475569,#1e293b)' },
+    { id: 'video', label: 'Video Player', icon: '▶️', bg: 'linear-gradient(135deg,#ec4899,#8b5cf6)' },
+    { id: 'lowriter', label: 'LibreOffice Writer', icon: '📝', bg: 'linear-gradient(135deg,#3b82f6,#1e40af)' },
+    { id: 'camera', label: 'Camera', icon: '📷', bg: 'linear-gradient(135deg,#6366f1,#4338ca)' },
+    { id: 'characters', label: 'Characters', icon: '🔤', bg: 'linear-gradient(135deg,#06b6d4,#0e7490)' },
+    { id: 'utilities', label: 'Utilities', icon: '🧰', bg: 'linear-gradient(135deg,#334155,#0f172a)' },
+    { id: 'system', label: 'System', icon: '🖥️', bg: 'linear-gradient(135deg,#475569,#1e293b)' },
+    { id: 'localc', label: 'LibreOffice Calc', icon: '📊', bg: 'linear-gradient(135deg,#22c55e,#15803d)' },
+    { id: 'lodraw', label: 'LibreOffice Draw', icon: '🎨', bg: 'linear-gradient(135deg,#eab308,#ca8a04)' },
+    { id: 'loimpress', label: 'LibreOffice Impress', icon: '📽️', bg: 'linear-gradient(135deg,#f97316,#c2410c)' },
+    { id: 'lomath', label: 'LibreOffice Math', icon: '√x', bg: 'linear-gradient(135deg,#ec4899,#be185d)' },
+    { id: 'remmina', label: 'Remmina', icon: '🖧', bg: 'linear-gradient(135deg,#14b8a6,#0f766e)' },
+    { id: 'resources', label: 'Resources', icon: '📈', bg: 'linear-gradient(135deg,#06b6d4,#3b82f6)' },
+    { id: 'security', label: 'Security Center', icon: '🛡️', bg: 'linear-gradient(135deg,#f59e0b,#d97706)' },
+    { id: 'shotwell', label: 'Shotwell', icon: '🖼️', bg: 'linear-gradient(135deg,#0ea5e9,#0284c7)' },
+    { id: 'software', label: 'Software Center', icon: '🅰️', bg: 'linear-gradient(135deg,#64748b,#334155)' },
+    { id: 'startupdisk', label: 'Startup Disk', icon: '💾', bg: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
+    { id: 'texteditor', label: 'Text Editor', icon: '✏️', bg: 'linear-gradient(135deg,#38bdf8,#0284c7)' },
+    { id: 'transmission', label: 'Transmission', icon: '⏬', bg: 'linear-gradient(135deg,#ef4444,#991b1b)' },
+    { id: 'sovereign', label: 'Sovereign AI', icon: '🐦‍⬛', bg: 'linear-gradient(135deg,#a855f7,#06b6d4)' },
+    { id: 'virtmanager', label: 'Virtual Machine Mgr', icon: 'VM', bg: 'linear-gradient(135deg,#06b6d4,#0f766e)' },
+    { id: 'boxes', label: 'Boxes', icon: '🧊', bg: 'linear-gradient(135deg,#475569,#0f172a)' }
+  ];
+
+  function updateDesktopClock() {
+    var el = $('srTopClock');
+    if (!el) return;
+    var d = new Date();
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var hh = ('0' + d.getHours()).slice(-2);
+    var mm = ('0' + d.getMinutes()).slice(-2);
+    el.textContent = months[d.getMonth()] + ' ' + d.getDate() + '  ' + hh + ':' + mm;
+  }
+  updateDesktopClock();
+  setInterval(updateDesktopClock, 15000);
+
+  function openDesktopApp(appId, label) {
+    if (appId === 'files' || appId === 'ssd') { switchView('fafnir'); return; }
+    if (appId === 'terminal') { switchView('console'); return; }
+    var win = $('srAppWindow');
+    var title = $('srWinTitle');
+    var body = $('srWinBody');
+    if (!win || !title || !body) return;
+    title.textContent = (label || appId) + ' — StormRaven OS';
+    win.classList.remove('hidden');
+
+    if (appId === 'calc') {
+      body.innerHTML =
+        '<div style="max-width:260px;margin:0 auto">' +
+        '<input id="srCalcDisp" type="text" readonly value="0" style="width:100%;padding:10px;font-size:20px;text-align:right;background:#07030a;color:#06b6d4;border:1px solid #06b6d4;border-radius:8px;margin-bottom:10px;font-family:monospace">' +
+        '<div id="srCalcKeys" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div></div>';
+      var keys = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+','C'];
+      var disp = $('srCalcDisp');
+      var expr = '';
+      keys.forEach(function (k) {
+        var b = document.createElement('button');
+        b.className = 'btn small';
+        b.textContent = k;
+        b.addEventListener('click', function () {
+          if (k === 'C') { expr = ''; disp.value = '0'; }
+          else if (k === '=') {
+            try { expr = String(Function('"use strict";return (' + expr.replace(/[^0-9+\-*/.()]/g, '') + ')')()); disp.value = expr; }
+            catch (e) { disp.value = 'Error'; expr = ''; }
+          } else { expr += k; disp.value = expr; }
+        });
+        $('srCalcKeys').appendChild(b);
+      });
+    } else if (appId === 'lowriter' || appId === 'texteditor' || appId === 'docviewer') {
+      body.innerHTML =
+        '<div class="row-between"><span class="muted">Document Buffer · UTF-8 · StormRaven Office Suite</span><span class="badge ok">SAVED IN MEMORY</span></div>' +
+        '<textarea style="width:100%;height:340px;background:#07030a;color:#e2e8f0;border:1px solid rgba(6,182,212,0.35);border-radius:8px;padding:12px;font-family:monospace;font-size:13px"># StormRaven OS — Sovereign Document\n\nAll 9 Realms nominal.\nMaster Password: Stormraven\nLuci Key: AUTHORIZED (/etc/stormraven/Luci.key)\n</textarea>';
+    } else if (appId === 'security') {
+      body.innerHTML =
+        '<h3>Heimdall &amp; Luci Security Center</h3>' +
+        '<p class="muted" style="margin:6px 0 12px">Zero-Trust 7-Step Gatekeeper · WireGuard Kill-Switch · Luci Hardware Seal</p>' +
+        '<pre class="code-box">Luci Status:     [AUTHORIZED]\nKey Path:        /etc/stormraven/Luci.key\nKey Token:       SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3\nMaster Password: Stormraven (NOPASSWD live sudo enabled)\nSSH Policy:      Key-Only (Faith GitHub ECDSA + Ed25519 authorized)\nWireGuard VPN:   wg0 + STORMRAVEN_KILLSWITCH ready</pre>';
+    } else if (appId === 'sovereign') {
+      body.innerHTML =
+        '<h3>Freya &amp; Odin Onboard AI (Local Pantheon Mind)</h3>' +
+        '<p class="muted" style="margin:6px 0 10px">No external API key required. Connected to local StormRaven Kernel (:8787).</p>' +
+        '<div style="display:flex;gap:8px;margin-bottom:10px"><input id="srAiPrompt" type="text" placeholder="Ask Freya or Odin..." style="flex:1;background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:8px;padding:8px"><button id="srAiSend" class="btn small">Ask AI</button></div>' +
+        '<pre id="srAiReply" class="code-box">[Freya]: I am listening, Faith. All 9 Realms are online and your Luci Key is sealed.</pre>';
+      $('srAiSend').addEventListener('click', function () {
+        var q = $('srAiPrompt').value.trim() || 'status';
+        $('srAiReply').textContent = 'Querying Freya & Odin…';
+        runCommand('odin freya_think', false).then(function (r) {
+          $('srAiReply').textContent = JSON.stringify(r, null, 2);
+        });
+      });
+    } else if (appId === 'virtmanager' || appId === 'boxes') {
+      body.innerHTML =
+        '<h3>KVM / QEMU Hypervisor &amp; Virtual Machine Manager</h3>' +
+        '<pre id="srVmBox" class="code-box">Loading hypervisor status…</pre>' +
+        '<p class="muted" style="margin-top:8px">Windows 11 Edition 1-Command Installer (PowerShell Admin):</p>' +
+        '<code class="install-cmd">irm ' + baseUrl() + '/install-win11.ps1 | iex</code>';
+      runCommand('odin vm_status', false).then(function (r) {
+        if ($('srVmBox')) $('srVmBox').textContent = JSON.stringify(r, null, 2);
+      });
+    } else if (appId === 'resources' || appId === 'system') {
+      body.innerHTML =
+        '<h3>System Resources &amp; Nine Realms Telemetry</h3>' +
+        '<pre id="srResBox" class="code-box">Sampling host sensors…</pre>';
+      runCommand('odin telemetry', false).then(function (r) {
+        if ($('srResBox')) $('srResBox').textContent = JSON.stringify(r, null, 2);
+      });
+    } else {
+      body.innerHTML =
+        '<h3>' + esc(label || appId) + '</h3>' +
+        '<p class="muted" style="margin:6px 0 12px">StormRaven OS 24.04 LTS (Noble Numbat) · Native Subsystem Ready</p>' +
+        '<pre class="code-box">Application: ' + esc(label || appId) + '\nStatus:      ONLINE (Ethereal Void Desktop)\nKernel:      http://127.0.0.1:8787 (Bifrost v1)</pre>';
+    }
+  }
+
+  function renderDesktopGrid(filterText) {
+    var grid = $('srAppGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    var q = (filterText || '').trim().toLowerCase();
+    desktopApps.filter(function (a) { return !q || a.label.toLowerCase().indexOf(q) !== -1; }).forEach(function (a) {
+      var tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'sr-app-tile';
+      tile.innerHTML =
+        '<div class="sr-app-icon" style="background:' + a.bg + '">' + a.icon + '</div>' +
+        '<div class="sr-app-label">' + esc(a.label) + '</div>';
+      tile.addEventListener('click', function () { openDesktopApp(a.id, a.label); });
+      grid.appendChild(tile);
+    });
+  }
+  renderDesktopGrid('');
+
+  if ($('srAppSearch')) {
+    $('srAppSearch').addEventListener('input', function (e) { renderDesktopGrid(e.target.value); });
+  }
+  if ($('srWinClose')) {
+    $('srWinClose').addEventListener('click', function () { $('srAppWindow').classList.add('hidden'); });
+  }
+  if ($('srModeToggleBtn')) {
+    $('srModeToggleBtn').addEventListener('click', function () {
+      var sh = $('srDesktopShell');
+      if (!sh) return;
+      var isWin = sh.classList.toggle('mode-win11');
+      $('srModeToggleBtn').textContent = isWin ? 'Switch to Ubuntu Mode' : 'Switch to Windows 11 Mode';
+    });
+  }
+  document.querySelectorAll('#srDock .sr-dock-item').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var app = btn.getAttribute('data-app');
+      if (app === 'grid') {
+        if ($('srAppWindow')) $('srAppWindow').classList.add('hidden');
+      } else {
+        openDesktopApp(app, btn.getAttribute('title') || app);
+      }
+    });
+  });
 
   // Connect immediately to same-origin (or saved URL) with zero modal pop-up!
   refreshStatus();

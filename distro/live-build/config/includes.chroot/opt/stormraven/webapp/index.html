@@ -30,7 +30,8 @@
   </header>
 
   <nav class="tabbar">
-    <button class="tab active" data-view="status">Status</button>
+    <button class="tab active" data-view="desktop">Desktop</button>
+    <button class="tab" data-view="status">Status</button>
     <button class="tab" data-view="tabs">Tabs</button>
     <button class="tab" data-view="fafnir">Fafnir</button>
     <button class="tab" data-view="realms">Realms</button>
@@ -40,8 +41,64 @@
   </nav>
 
   <main>
+    <!-- DESKTOP APP GRID (Ubuntu GNOME Dock + Top Bar + 8x4 App Grid + Win11 Mode Toggle) -->
+    <section id="view-desktop" class="view active">
+      <div id="srDesktopShell" class="sr-desktop-shell mode-ubuntu">
+        <!-- Top Bar -->
+        <div class="sr-top-panel">
+          <div class="sr-top-left">
+            <span class="sr-activities-pill">━ ●</span>
+            <span class="sr-top-brand">StormRaven OS 24.04</span>
+          </div>
+          <div id="srTopClock" class="sr-top-clock">Nov 2 &nbsp;00:10</div>
+          <div class="sr-top-right">
+            <button id="srModeToggleBtn" class="btn small accent-outline" style="padding:3px 8px;font-size:10px">Switch to Windows 11 Mode</button>
+            <span>🖧</span><span>🔊</span><span>⏻</span>
+          </div>
+        </div>
+
+        <div class="sr-desktop-body">
+          <!-- Left Vertical Dock (Ubuntu Mode) / Bottom Centered Taskbar (Win11 Mode) -->
+          <aside id="srDock" class="sr-left-dock">
+            <button class="sr-dock-item" data-app="files" title="Files (Fafnir)">📁</button>
+            <button class="sr-dock-item" data-app="music" title="Rhythmbox Music">💿</button>
+            <button class="sr-dock-item" data-app="mail" title="Thunderbird Mail">✉️</button>
+            <button class="sr-dock-item" data-app="software" title="App Center">🅰️</button>
+            <button class="sr-dock-item" data-app="help" title="StormRaven Help">❓</button>
+            <button class="sr-dock-item" data-app="terminal" title="Terminal (Void Shell)">❯_</button>
+            <button class="sr-dock-item" data-app="browser" title="Web Browser">🌐</button>
+            <div class="sr-dock-sep"></div>
+            <button class="sr-dock-item" data-app="ssd" title="512GB NVMe SSD">🖴</button>
+            <button class="sr-dock-item" data-app="iso" title="StormRaven Live ISO">📀</button>
+            <button class="sr-dock-item" data-app="usb" title="USB Drive">🔌</button>
+            <button class="sr-dock-item" data-app="trash" title="Trash">🗑️</button>
+            <button class="sr-dock-item sr-apps-btn active" data-app="grid" title="Show Applications">⠿</button>
+          </aside>
+
+          <!-- Main App Grid Canvas -->
+          <div class="sr-grid-canvas">
+            <div class="sr-search-wrap">
+              <span class="sr-search-icon">🔍</span>
+              <input id="srAppSearch" type="text" placeholder="Type to search" autocomplete="off">
+            </div>
+
+            <div id="srAppGrid" class="sr-app-grid"></div>
+
+            <!-- Interactive App Window Overlay -->
+            <div id="srAppWindow" class="sr-app-window hidden">
+              <div class="sr-win-titlebar">
+                <span id="srWinTitle">Application</span>
+                <button id="srWinClose" class="sr-win-close">✕</button>
+              </div>
+              <div id="srWinBody" class="sr-win-body"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- STATUS -->
-    <section id="view-status" class="view active">
+    <section id="view-status" class="view">
       <div class="card hero">
         <div class="hero-row">
           <div class="pulse-dot" id="pulseDot"></div>

@@ -146,3 +146,36 @@ code{font-family:ui-monospace,monospace;font-size:.9em}
 .fafnir-table tr:hover td{background:rgba(157,80,187,0.12);cursor:pointer}
 .fafnir-sub{font-size:9px;color:var(--muted);display:block}
 .chip-btn.active{border-color:#00ffff;color:#00ffff;background:rgba(0,255,255,0.1)}
+
+/* StormRaven Desktop Shell (Ubuntu Dock + 8x4 App Grid + Win11 Mode) */
+.sr-desktop-shell{background:radial-gradient(circle at 50% 25%, #161026 0%, #07030a 75%);border:1px solid rgba(6,182,212,0.28);border-radius:14px;min-height:560px;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.65)}
+.sr-top-panel{height:32px;background:rgba(7,3,10,0.92);border-bottom:1px solid rgba(6,182,212,0.22);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;color:#e2e8f0}
+.sr-top-left,.sr-top-right{display:flex;align-items:center;gap:10px}
+.sr-activities-pill{background:rgba(6,182,212,0.18);color:#06b6d4;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
+.sr-top-brand{font-weight:600;color:#cbd5e1;font-size:11px}
+.sr-top-clock{font-weight:600;font-size:12px;color:#f8fafc}
+.sr-desktop-body{flex:1;display:flex;position:relative;min-height:520px}
+.sr-left-dock{width:54px;background:rgba(12,8,20,0.78);border-right:1px solid rgba(6,182,212,0.2);display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:6px;z-index:10}
+.sr-dock-item{width:38px;height:38px;border-radius:10px;border:1px solid transparent;background:rgba(255,255,255,0.05);color:#f8fafc;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}
+.sr-dock-item:hover,.sr-dock-item.active{background:rgba(6,182,212,0.2);border-color:#06b6d4;transform:scale(1.06)}
+.sr-dock-sep{width:28px;height:1px;background:rgba(148,163,184,0.25);margin:2px 0}
+.sr-apps-btn{margin-top:auto;background:rgba(168,85,247,0.22);border-color:rgba(168,85,247,0.45)}
+.sr-grid-canvas{flex:1;display:flex;flex-direction:column;align-items:center;padding:18px 20px;position:relative;overflow-y:auto}
+.sr-search-wrap{width:100%;max-width:340px;background:rgba(30,27,46,0.85);border:1px solid rgba(6,182,212,0.35);border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.sr-search-wrap input{background:transparent;border:none;outline:none;color:#f8fafc;font-size:13px;width:100%}
+.sr-app-grid{width:100%;max-width:860px;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:16px 12px;justify-items:center}
+.sr-app-tile{display:flex;flex-direction:column;align-items:center;gap:6px;width:88px;padding:8px 4px;border-radius:12px;cursor:pointer;transition:background .15s ease,transform .15s ease;text-align:center;border:1px solid transparent}
+.sr-app-tile:hover{background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);transform:translateY(-2px)}
+.sr-app-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12)}
+.sr-app-label{font-size:11px;color:#e2e8f0;line-height:1.2;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-app-window{position:absolute;inset:16px;background:rgba(10,7,18,0.96);backdrop-filter:blur(14px);border:1px solid #06b6d4;border-radius:12px;display:flex;flex-direction:column;z-index:20;box-shadow:0 16px 50px rgba(0,0,0,0.8)}
+.sr-app-window.hidden{display:none}
+.sr-win-titlebar{height:36px;background:rgba(6,182,212,0.14);border-bottom:1px solid rgba(6,182,212,0.3);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;font-weight:700;color:#06b6d4}
+.sr-win-close{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;border-radius:6px;width:24px;height:24px;cursor:pointer}
+.sr-win-body{flex:1;padding:16px;overflow-y:auto;font-size:13px;color:#e2e8f0}
+
+/* Windows 11 Edition Mode (.mode-win11) */
+.sr-desktop-shell.mode-win11 .sr-desktop-body{flex-direction:column;padding-bottom:58px}
+.sr-desktop-shell.mode-win11 .sr-left-dock{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:auto;height:48px;flex-direction:row;border:1px solid rgba(6,182,212,0.35);border-radius:14px;padding:4px 10px;background:rgba(10,14,26,0.88);backdrop-filter:blur(16px)}
+.sr-desktop-shell.mode-win11 .sr-dock-sep{width:1px;height:26px;margin:0 4px}
+.sr-desktop-shell.mode-win11 .sr-apps-btn{margin-top:0}
