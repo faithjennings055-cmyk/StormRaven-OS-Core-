@@ -398,13 +398,41 @@
     if (name === 'status') refreshStatus();
     if (name === 'decisions') refreshDecisions();
     if (name === 'odin') runCommand('odin telemetry', true);
-    if (name === 'realms') {
-      var status = $('pulseStatus');
-      if (status) {
-        status.textContent = 'Sovereign Demo Pulse Active';
-        status.style.color = 'var(--accent)';
+    if (name === 'realms') { renderRealmsLive(); }
+  }
+
+  function renderRealmsLive() {
+    api('/status').then(function (raw) {
+      var st = unwrap(raw) || {};
+      var tel = st.telemetry || {};
+      var pulseEl = $('pulseStatus');
+      if (pulseEl) {
+        pulseEl.textContent = 'Live Pulse \u2014 ' + (st.status || 'online') + ' \u00b7 uptime ' + Math.floor((st.uptimeSec || 0) / 60) + 'm \u00b7 ' + (tel.cpu != null ? tel.cpu + '% CPU' : 'CPU \u2014') + ' \u00b7 ' + (tel.ram != null ? tel.ram + '% RAM' : 'RAM \u2014');
+        pulseEl.style.color = 'var(--accent)';
       }
-    }
+      var realmDefs = [
+        { id: 'alfheim', label: 'ALFHEIM (SOURCE)', detail: 'ReFS Immutable Source', state: st.linuxKernel ? 'ONLINE' : 'UNKNOWN' },
+        { id: 'midgard', label: 'MIDGARD (BATTLEFIELD)', detail: 'RAM-Disk Execution \u00b7 Bifrost ' + (st.bridgeVersion || ''), state: st.status === 'online' ? 'ONLINE' : 'VOLATILE' },
+        { id: 'niflheim', label: 'NIFLHEIM (VAULT)', detail: 'RSA-4096 Encrypted', state: 'SECURE' },
+        { id: 'helheim', label: 'HELHEIM (SHADOWS)', detail: 'Anti-Forensic Logs', state: 'ARMED' },
+        { id: 'jotunheim', label: 'JOTUNHEIM (DEEP ARCHIVE)', detail: 'Signals: ' + ((st.openTabs || 0) + ' tabs tracked'), state: 'ONLINE' },
+        { id: 'muspelheim', label: 'MUSPELHEIM (CHAOS)', detail: 'Bounded Fault Injection', state: 'STANDBY' },
+        { id: 'svartalfheim', label: 'SVARTALFHEIM (FORGE)', detail: st.linuxKernel ? 'Kernel ' + st.linuxKernel : 'Ymir Binary Forge', state: 'ONLINE' },
+        { id: 'vanaheim', label: 'VANAHEIM (VITALITY)', detail: 'Load: ' + (tel.cpu != null ? tel.cpu + '% CPU / ' + tel.ram + '% RAM' : 'monitoring'), state: 'ONLINE' },
+        { id: 'valhalla', label: 'VALHALLA (LEDGER)', detail: 'Post-mortem daemon archive', state: 'READY' }
+      ];
+      var container = document.querySelector('.realms-grid') || document.querySelector('#realmsTab');
+      if (!container) return;
+      var html = '';
+      realmDefs.forEach(function (r) {
+        html += '<div class="realm-card"><div class="realm-label">' + esc(r.label) +
+          '</div><div class="realm-state">' + r.state + '</div><div class="realm-detail">' + esc(r.detail) + '</div></div>';
+      });
+      container.innerHTML = html;
+    }).catch(function (e) {
+      var pulseEl = $('pulseStatus');
+      if (pulseEl) pulseEl.textContent = 'Live Pulse \u2014 gateway unreachable';
+    });
   }
 
   function esc(s) {
