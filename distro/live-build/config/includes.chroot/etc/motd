@@ -9,7 +9,7 @@
  Welcome to StormRaven OS 24.04 LTS (Ubuntu Noble Numbat)
  Ethereal Void GUI:  Auto-starts on tty1 (or run: stormraven-desktop-session)
  Bifrost Gateway:    http://localhost:8787/health  |  Desktop UI: http://localhost:3000
- Kernel service:     systemctl status stormraven-kernel
- StormRaven CLI:     stormraven status | stormraven health | stormraven decisions | stormraven odin
- Pantheon Core:      python3 /opt/stormraven/python/odin.py
+ Onboard AI (Freya): No external key required — run: stormraven ai  or  stormraven odin
+ Luci Hardware Key:  Optional (VIRTUAL_KEY_ACTIVE) — run: stormraven luci authorize
+ StormRaven CLI:     stormraven status | stormraven realms | stormraven baseline-audit | stormraven voice
  Built-in Systems:   stormraven-vpn status | stormraven-vm status | stormraven-forensics status

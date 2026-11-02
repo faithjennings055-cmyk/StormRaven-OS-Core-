@@ -3,6 +3,7 @@ set -euo pipefail
 
 GATEWAY_URL="${STORMRAVEN_GATEWAY_URL:-http://127.0.0.1:8787}"
 VOICE_CONF="${STORMRAVEN_VOICE_CONF:-/etc/stormraven/voice.conf}"
+LUCI_KEY_FILE="${STORMRAVEN_LUCI_KEY:-/etc/stormraven/Luci.key}"
 STORMRAVEN_VOICE="${STORMRAVEN_VOICE:-1}"
 [ -f "$VOICE_CONF" ] && . "$VOICE_CONF"
 
@@ -21,6 +22,10 @@ voice_say() {
   fi
 }
 
+gw_curl() {
+  curl --retry 3 --retry-delay 1 --retry-connrefused -fsS "${AUTH_ARGS[@]}" "$@"
+}
+
 CMD="${1:-status}"
 
 case "$CMD" in
@@ -32,23 +37,62 @@ case "$CMD" in
     fi
     echo "Kernel:   $(uname -srm)"
     echo "Voice:    $([ "${STORMRAVEN_VOICE:-1}" = "0" ] && echo "plain (STORMRAVEN_VOICE=0)" || echo "sovereign (/etc/stormraven/voice.conf)")"
+    echo "Luci Key: $([ -s "$LUCI_KEY_FILE" ] && echo "AUTHORIZED (${LUCI_KEY_FILE})" || echo "VIRTUAL_KEY_ACTIVE (no external key required; run 'stormraven luci authorize' to seal)")"
     SVC_STATE="$(systemctl is-active stormraven-kernel.service 2>/dev/null || echo inactive)"
     echo "Service:  stormraven-kernel.service ($SVC_STATE)"
     echo -n "Health:   "
-    curl -fsS "${AUTH_ARGS[@]}" "${GATEWAY_URL}/health" && echo "" || echo "unreachable"
+    gw_curl "${GATEWAY_URL}/health" && echo "" || echo "unreachable"
     echo -n "State:    "
-    curl -fsS "${AUTH_ARGS[@]}" "${GATEWAY_URL}/state" && echo "" || echo "unreachable"
+    gw_curl "${GATEWAY_URL}/state" && echo "" || echo "unreachable"
+    ;;
+  luci|key)
+    SUB="${2:-status}"
+    case "$SUB" in
+      authorize|init|generate)
+        TOKEN="${3:-SR-LUCI-$(openssl rand -hex 12 2>/dev/null || date +%s)}"
+        mkdir -p "$(dirname "$LUCI_KEY_FILE")" 2>/dev/null || true
+        if printf "%s\n" "$TOKEN" > "$LUCI_KEY_FILE" 2>/dev/null; then
+          chmod 0644 "$LUCI_KEY_FILE" 2>/dev/null || true
+        else
+          printf "%s\n" "$TOKEN" > "${HOME}/.stormraven_luci.key"
+          LUCI_KEY_FILE="${HOME}/.stormraven_luci.key"
+        fi
+        echo "[*] LUCI: AUTHORIZED (${LUCI_KEY_FILE})"
+        echo "    Key Seal: ${TOKEN}"
+        ;;
+      status|*)
+        if [ -s "$LUCI_KEY_FILE" ]; then
+          echo "[*] LUCI: AUTHORIZED (${LUCI_KEY_FILE})"
+        else
+          echo "[*] LUCI: VIRTUAL_KEY_ACTIVE (no external key required)"
+          echo "    To mint a hardware seal: stormraven luci authorize"
+        fi
+        echo "[*] FREYA (Onboard AI): Local Pantheon Mind online — run 'stormraven ai' or 'stormraven odin'"
+        ;;
+    esac
+    ;;
+  ai|freya)
+    shift || true
+    PROMPT="${*:-status}"
+    echo "=== [Freya] StormRaven Onboard AI (Local Pantheon Mind — No API Key Required) ==="
+    gw_curl -X POST "${GATEWAY_URL}/commands" \
+      -H "Content-Type: application/json" \
+      -d "{\"command\":\"odin freya_think\",\"prompt\":\"${PROMPT}\"}"
+    echo ""
     ;;
   voice)
     MODE="${2:-status}"
+    if [ ! -w "$(dirname "$VOICE_CONF")" ] && [ ! -w "$VOICE_CONF" ]; then
+      VOICE_CONF="${HOME}/.stormraven_voice.conf"
+    fi
     case "$MODE" in
       on|1|sovereign)
-        mkdir -p "$(dirname "$VOICE_CONF")"
+        mkdir -p "$(dirname "$VOICE_CONF")" 2>/dev/null || true
         printf "STORMRAVEN_VOICE=1\nSTORMRAVEN_TONE=\"sovereign\"\n" > "$VOICE_CONF"
         echo "[Hlidskjalf] The raven speaks. Sovereign voice enabled in ${VOICE_CONF}."
         ;;
       off|0|plain)
-        mkdir -p "$(dirname "$VOICE_CONF")"
+        mkdir -p "$(dirname "$VOICE_CONF")" 2>/dev/null || true
         printf "STORMRAVEN_VOICE=0\nSTORMRAVEN_TONE=\"plain\"\n" > "$VOICE_CONF"
         echo "StormRaven voice disabled (plain technical output enabled in ${VOICE_CONF})."
         ;;
@@ -96,23 +140,23 @@ case "$CMD" in
     echo "  Helheim      [ARMED]   Isolation Vault & Process Quarantine"
     ;;
   health)
-    curl -fsS "${AUTH_ARGS[@]}" "${GATEWAY_URL}/health"
+    gw_curl "${GATEWAY_URL}/health"
     echo ""
     ;;
   state)
-    curl -fsS "${AUTH_ARGS[@]}" "${GATEWAY_URL}/state"
+    gw_curl "${GATEWAY_URL}/state"
     echo ""
     ;;
   decisions)
-    curl -fsS "${AUTH_ARGS[@]}" "${GATEWAY_URL}/decisions"
+    gw_curl "${GATEWAY_URL}/decisions"
     echo ""
     ;;
   tabs)
-    curl -fsS "${AUTH_ARGS[@]}" "${GATEWAY_URL}/tabs"
+    gw_curl "${GATEWAY_URL}/tabs"
     echo ""
     ;;
   ping)
-    curl -fsS "${AUTH_ARGS[@]}" -X POST "${GATEWAY_URL}/commands" \
+    gw_curl -X POST "${GATEWAY_URL}/commands" \
       -H "Content-Type: application/json" \
       -d '{"intent":"ping"}'
     echo ""
@@ -123,7 +167,7 @@ case "$CMD" in
     exec python3 /opt/stormraven/python/odin.py "$@"
     ;;
   *)
-    echo "Usage: stormraven {status|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin}"
+    echo "Usage: stormraven {status|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin}"
     exit 1
     ;;
 esac
