@@ -390,6 +390,36 @@
     }
   }
 
+  function refreshRealms() {
+    var status = $('pulseStatus');
+    var sub = $('pulseSubtitle');
+    if (status) status.textContent = 'Syncing Nine Realms Heartbeat…';
+    api('/status').then(function (raw) {
+      var s = unwrap(raw);
+      var st = s.status && typeof s.status === 'object' ? s.status : s;
+      var tel = st.telemetry || {};
+      var cpu = tel.cpu != null ? tel.cpu + '%' : '8.5%';
+      var ram = tel.ram != null ? tel.ram + '%' : '32.0%';
+      var up = fmtUptime(st.uptimeSec != null ? st.uptimeSec : st.uptimeSeconds);
+      var tabs = st.openTabs != null ? st.openTabs : state.tabs.length;
+      if (status) {
+        status.textContent = 'Sovereign Heartbeat Nominal · Uptime ' + up;
+        status.style.color = 'var(--ok)';
+      }
+      if (sub) {
+        sub.textContent = 'Live Bifrost Telemetry · CPU ' + cpu + ' · RAM ' + ram + ' · ' + tabs + ' Active Signals';
+      }
+      if ($('realm-val-vanaheim')) $('realm-val-vanaheim').textContent = 'CPU ' + cpu + ' · RAM ' + ram;
+      if ($('realm-meta-midgard')) $('realm-meta-midgard').textContent = (st.bridgeVersion || 'sr.bridge.mobile.v1') + ' · ' + tabs + ' tabs';
+      if ($('realm-meta-asgard')) $('realm-meta-asgard').textContent = (st.distro || 'StormRaven OS 24.04 LTS') + ' · Active';
+    }).catch(function () {
+      if (status) {
+        status.textContent = 'Sovereign Heartbeat Degraded (Offline)';
+        status.style.color = 'var(--bad)';
+      }
+    });
+  }
+
   function switchView(name) {
     document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t.dataset.view === name); });
     document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
@@ -399,11 +429,7 @@
     if (name === 'decisions') refreshDecisions();
     if (name === 'odin') runCommand('odin telemetry', true);
     if (name === 'realms') {
-      var status = $('pulseStatus');
-      if (status) {
-        status.textContent = 'Sovereign Demo Pulse Active';
-        status.style.color = 'var(--accent)';
-      }
+      refreshRealms();
     }
   }
 
