@@ -18,6 +18,8 @@ apps:
     command: bin/stormraven-genesis
   gateway:
     command: bin/stormraven-local-gateway
+    daemon: simple
+    restart-condition: always
 
 parts:
   stormraven:

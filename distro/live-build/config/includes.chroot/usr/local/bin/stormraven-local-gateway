@@ -22,8 +22,15 @@ from urllib.parse import urlparse
 
 STARTED_TS = time.time()
 STARTED_UTC = datetime.now(timezone.utc).isoformat()
-WEBAPP_DIR = os.environ.get("STORMRAVEN_WEBAPP_DIR", "/opt/stormraven/webapp")
-PYTHON_DIR = os.environ.get("STORMRAVEN_PYTHON_DIR", "/opt/stormraven/python")
+SNAP_ROOT = os.environ.get("SNAP", "")
+WEBAPP_DIR = os.environ.get(
+    "STORMRAVEN_WEBAPP_DIR",
+    f"{SNAP_ROOT}/opt/stormraven/webapp" if SNAP_ROOT and os.path.isdir(f"{SNAP_ROOT}/opt/stormraven/webapp") else "/opt/stormraven/webapp",
+)
+PYTHON_DIR = os.environ.get(
+    "STORMRAVEN_PYTHON_DIR",
+    f"{SNAP_ROOT}/opt/stormraven/python" if SNAP_ROOT and os.path.isdir(f"{SNAP_ROOT}/opt/stormraven/python") else "/opt/stormraven/python",
+)
 if os.path.isdir(PYTHON_DIR) and PYTHON_DIR not in sys.path:
     sys.path.insert(0, PYTHON_DIR)
 
@@ -79,8 +86,13 @@ def read_telemetry():
 
 
 def run_cli_json(script_name, *args):
-    path = f"/usr/local/bin/{script_name}"
-    if not os.path.isfile(path):
+    candidates = [
+        f"{SNAP_ROOT}/bin/{script_name}" if SNAP_ROOT else "",
+        f"/usr/local/bin/{script_name}",
+        f"/snap/stormraven-os/current/bin/{script_name}",
+    ]
+    path = next((p for p in candidates if p and os.path.isfile(p)), "")
+    if not path:
         return {"script": script_name, "status": "unavailable"}
     try:
         proc = subprocess.run(
@@ -104,8 +116,8 @@ def health_payload():
     tel = read_telemetry()
     return {
         "kernel": "StormRaven OS",
-        "distro": "StormRaven OS 24.04 LTS",
-        "distroVersion": "24.04 Noble",
+        "distro": "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)",
+        "distroVersion": "24.04 Noble · Infinity Protocol v3.9.0",
         "status": "online",
         "health": "online",
         "version": "3.9.0",
