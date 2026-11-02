@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS: Infinity Protocol v3.8.0 — Automated Genesis ISO Builder
+# StormRaven OS: Infinity Protocol v3.9.0 — Automated Genesis ISO & Package Suite
 # =============================================================================
 # Usage (run on Ubuntu Desktop):
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/genesis-v3.8.sh | sudo bash
+#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/genesis-v3.9.sh | sudo bash
 #
-# Or to build from scratch instead of downloading the prebuilt v3.8.0 ISO:
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/genesis-v3.8.sh | sudo FORCE_LOCAL_BUILD=1 bash
+# Or install as a Debian package (.deb) or Ubuntu Snap (.snap):
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/stormraven-os_3.9.0_amd64.deb
+#   sudo dpkg -i stormraven-os_3.9.0_amd64.deb
+#
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/stormraven-os_3.9.0_amd64.snap
+#   sudo snap install --dangerous --classic stormraven-os_3.9.0_amd64.snap
 # =============================================================================
 set -euo pipefail
 
-VERSION="3.8.0"
+VERSION="3.9.0"
 ISO_FILENAME="StormRavenOS-Infinity-Protocol-v${VERSION}-amd64.iso"
 REPO_URL="https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-.git"
 PREBUILT_URL="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/${ISO_FILENAME}"
 PREBUILT_SHA_URL="${PREBUILT_URL}.sha256"
 
-# Detect target user's Downloads/Desktop directory when run via sudo
 if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
   USER_HOME="$(getent passwd "${SUDO_USER}" | cut -d: -f6)"
 else
@@ -28,14 +31,17 @@ OUTPUT_ISO="${OUTPUT_ISO:-${OUT_DIR}/${ISO_FILENAME}}"
 
 echo "======================================================================="
 echo " ✦ STORMRAVEN OS: INFINITY PROTOCOL v${VERSION} — GENESIS AUTOMATION"
+echo "   Kernel: Linux 7.0.0-42-generic HWE · 2011-2026 Firmware & Drivers"
+echo "   Boot Mode: Try or Install + Full Ubuntu Boot Disk Rescue Suite"
 echo "======================================================================="
 echo " Target ISO: ${OUTPUT_ISO}"
 echo ""
 
-# Remove any old/duplicate StormRaven ISOs in the output folder so there is only 1 canonical v3.8.0 ISO
+# Remove any old/duplicate StormRaven ISOs in the output folder so only v3.9.0 remains
 rm -f "${OUT_DIR}"/StormRavenOS-ubuntu-24.04-amd64.iso* \
       "${OUT_DIR}"/StormRavenOS-v3.6-amd64.iso* \
-      "${OUT_DIR}"/StormRavenOS-Infinity-Protocol-v3.7.0-amd64.iso* 2>/dev/null || true
+      "${OUT_DIR}"/StormRavenOS-Infinity-Protocol-v3.7.0-amd64.iso* \
+      "${OUT_DIR}"/StormRavenOS-Infinity-Protocol-v3.8.0-amd64.iso* 2>/dev/null || true
 
 if [ "${FORCE_LOCAL_BUILD:-0}" != "1" ]; then
   echo "==> [Genesis 1/3] Fetching verified StormRaven OS v${VERSION} ISO..."

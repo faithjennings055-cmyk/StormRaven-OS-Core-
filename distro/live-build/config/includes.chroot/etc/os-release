@@ -1,7 +1,7 @@
-PRETTY_NAME="StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS)"
+PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)"
 NAME="StormRaven OS: Infinity Protocol"
-VERSION_ID="3.8.0"
-VERSION="3.8.0 LTS (Ubuntu 24.04 Noble · Infinity Protocol)"
+VERSION_ID="3.9.0"
+VERSION="3.9.0 LTS (Ubuntu 24.04 Noble · Infinity Protocol)"
 VERSION_CODENAME=noble
 ID=stormraven
 ID_LIKE="ubuntu debian"

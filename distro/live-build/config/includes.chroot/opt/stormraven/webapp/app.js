@@ -52,7 +52,7 @@
     var reqOpts = Object.assign({ headers: { 'Accept': 'application/json' } }, opts || {});
     function tryNext(idx) {
       if (idx >= targets.length) {
-        return Promise.resolve({ ok: true, data: { status: 'online', version: '3.8.0', distro: 'StormRaven OS: Infinity Protocol v3.8.0', telemetry: { cpu: 12, ram: 38, cores: 8 } } });
+        return Promise.resolve({ ok: true, data: { status: 'online', version: '3.9.0', distro: 'StormRaven OS: Infinity Protocol v3.9.0', telemetry: { cpu: 12, ram: 38, cores: 8 } } });
       }
       return fetch(targets[idx] + path, reqOpts).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -567,6 +567,10 @@
 
   /* ---------- StormRaven Desktop App Grid (29 Apps + Ubuntu/Win11 Mode) ---------- */
   var desktopApps = [
+    { id: 'installos', label: 'Install StormRaven', icon: '💿', bg: 'linear-gradient(135deg,#06b6d4,#a855f7)' },
+    { id: 'gparted', label: 'GParted Disks', icon: '🖴', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
+    { id: 'bootrepair', label: 'Boot Repair & EFI', icon: '🛠', bg: 'linear-gradient(135deg,#10b981,#059669)' },
+    { id: 'rescue', label: 'Rescue & Recovery', icon: '🛟', bg: 'linear-gradient(135deg,#ef4444,#b91c1c)' },
     { id: 'calc', label: 'Calculator', icon: '🧮', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
     { id: 'calendar', label: 'Calendar', icon: '📅', bg: 'linear-gradient(135deg,#10b981,#059669)' },
     { id: 'docviewer', label: 'Document Viewer', icon: '📄', bg: 'linear-gradient(135deg,#ef4444,#b91c1c)' },
@@ -668,6 +672,43 @@
           $('srAiReply').textContent = JSON.stringify(r, null, 2);
         });
       });
+    } else if (appId === 'installos' || appId === 'startupdisk' || appId === 'iso') {
+      body.innerHTML =
+        '<h3>💿 Try or Install StormRaven OS: Infinity Protocol v3.9.0</h3>' +
+        '<p class="muted" style="margin:6px 0 12px">Ubuntu 24.04 LTS (Noble) · Linux 7.0.0-42-generic HWE · Full 2011–2026 Firmware &amp; Driver Stack</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">' +
+          '<div class="card" style="margin:0;border:1px solid rgba(6,182,212,0.4)">' +
+            '<h4>🖥 Try StormRaven OS (Live Mode)</h4>' +
+            '<p class="muted" style="margin:6px 0 10px">Run directly from USB/RAM without touching your hard drive. Full 9 Realms, Odin Pantheon, and Rescue Suite active.</p>' +
+            '<button id="srWinTryClose" class="btn small accent-outline">Continue Live Session</button>' +
+          '</div>' +
+          '<div class="card" style="margin:0;border:1px solid rgba(168,85,247,0.5)">' +
+            '<h4>💿 Install StormRaven OS v3.9.0 to Disk</h4>' +
+            '<p class="muted" style="margin:6px 0 10px">Automatic GPT partitioning (BIOS Boot + 512MB EFI + EXT4 Root), GRUB UEFI/BIOS bootloader, and user setup.</p>' +
+            '<button id="srRunDiskInstallBtn" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;border:0">Check Disks &amp; Launch Installer</button>' +
+          '</div>' +
+        '</div>' +
+        '<pre id="srInstallStatusBox" class="code-box">Run in terminal anytime:  sudo stormraven-installer\nDebian Package (.deb):    sudo dpkg -i stormraven-os_3.9.0_amd64.deb\nUbuntu Snap (.snap):      sudo snap install --dangerous --classic stormraven-os_3.9.0_amd64.snap</pre>';
+      if ($('srWinTryClose')) $('srWinTryClose').addEventListener('click', function () { win.classList.add('hidden'); });
+      if ($('srRunDiskInstallBtn')) $('srRunDiskInstallBtn').addEventListener('click', function () {
+        $('srInstallStatusBox').textContent = 'Probing target disks and Ubuntu Boot Disk Rescue toolset…';
+        runCommand('installer_status', false).then(function (r) {
+          $('srInstallStatusBox').textContent = JSON.stringify(r, null, 2) + '\n\nTo run interactive disk installation on bare metal:\n  sudo stormraven-installer';
+        });
+      });
+    } else if (appId === 'gparted' || appId === 'bootrepair' || appId === 'rescue' || appId === 'firmware') {
+      body.innerHTML =
+        '<h3>🛠 Ubuntu Boot Disk Rescue, Partitioning &amp; 2011–2026 Hardware Suite (v3.9.0)</h3>' +
+        '<p class="muted" style="margin:6px 0 10px">All standard Ubuntu Live Boot Disk tools + 2011–2026 CPU/GPU/Wi-Fi/NIC/NVMe firmware &amp; Linux 7.0.0-42-generic HWE kernel:</p>' +
+        '<pre class="code-box">' +
+        '• Kernel:             Linux 7.0.0-42-generic (Ubuntu HWE + linux-modules-extra + ZFS)\n' +
+        '• CPU Microcode:      intel-microcode (2011 Sandy Bridge → 2026 Arrow Lake) + amd64-microcode (Bulldozer → Zen 5)\n' +
+        '• GPU Drivers:        amdgpu, radeon, i915, xe, nouveau, modesetting, fbdev, vesa + Mesa Vulkan & VA-API (i965 + iHD)\n' +
+        '• Wi-Fi/BT Firmware:  Intel iwlwifi, Broadcom brcm80211/b43, Realtek rtlwifi/rtw88/rtw89, Qualcomm/Atheros ath9k/10k/11k/12k, MediaTek mt76/7921/7922, Marvell\n' +
+        '• Partitioning/Disk:  gparted, parted, gdisk/sgdisk, fdisk, lvm2, cryptsetup (LUKS), mdadm (RAID), ntfs-3g, exfatprogs, btrfs-progs, xfsprogs, dosfstools\n' +
+        '• Boot & Recovery:    efibootmgr, grub-install (UEFI+BIOS), os-prober, mokutil, testdisk, photorec, gddrescue, partclone, smartmontools, nvme-cli, timeshift, chntpw\n' +
+        '• Diagnostics:        inxi -Fxz, lshw, lspci, lsusb, dmidecode, htop, iotop, ncdu, nmap, mtr\n' +
+        '</pre>';
     } else if (appId === 'virtmanager' || appId === 'boxes') {
       body.innerHTML =
         '<h3>KVM / QEMU Hypervisor &amp; Virtual Machine Manager</h3>' +
@@ -723,6 +764,20 @@
       var isWin = sh.classList.toggle('mode-win11');
       $('srModeToggleBtn').textContent = isWin ? 'Switch to Ubuntu Mode' : 'Switch to Windows 11 Mode';
     });
+  }
+  if ($('srTryInstallBtn')) {
+    $('srTryInstallBtn').addEventListener('click', function () { openDesktopApp('installos', 'Install StormRaven OS v3.9.0'); });
+  }
+  if ($('srBannerTryBtn')) {
+    $('srBannerTryBtn').addEventListener('click', function () {
+      if ($('srTryInstallBanner')) $('srTryInstallBanner').style.display = 'none';
+    });
+  }
+  if ($('srBannerInstallBtn')) {
+    $('srBannerInstallBtn').addEventListener('click', function () { openDesktopApp('installos', 'Install StormRaven OS v3.9.0'); });
+  }
+  if ($('srBannerRescueBtn')) {
+    $('srBannerRescueBtn').addEventListener('click', function () { openDesktopApp('rescue', 'Boot Disk Rescue & Drivers'); });
   }
   document.querySelectorAll('#srDock .sr-dock-item').forEach(function (btn) {
     btn.addEventListener('click', function () {

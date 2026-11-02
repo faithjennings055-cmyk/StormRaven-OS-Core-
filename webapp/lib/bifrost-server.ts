@@ -9,7 +9,7 @@ export const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization",
   "X-Bifrost-Bridge": "sr.bridge.mobile.v1",
-  "X-StormRaven-Protocol": "Infinity-Protocol-v3.8.0",
+  "X-StormRaven-Protocol": "Infinity-Protocol-v3.9.0",
 }
 
 export function readTelemetry() {
@@ -25,7 +25,7 @@ export function readTelemetry() {
 export const DEFAULT_TABS = [
   {
     id: "sr-oddities",
-    title: "stormravenoddities.com — StormRaven OS Infinity Protocol v3.8.0 Hub",
+    title: "stormravenoddities.com — StormRaven OS Infinity Protocol v3.9.0 Hub",
     url: "https://stormravenoddities.com/",
     isCurrent: true,
     isAudible: false,
@@ -54,9 +54,9 @@ export const DEFAULT_DECISIONS = [
     id: "DEC-INF-370",
     time: STARTED_UTC,
     severity: "info",
-    summary: "StormRaven OS: Infinity Protocol v3.8.0 multi-purpose server & iCloud identity linked (faithjennings055@icloud.com)",
-    ruleId: "sr.rule.infinity.v3.8",
-    explainability: { ruleId: "sr.rule.infinity.v3.8" },
+    summary: "StormRaven OS: Infinity Protocol v3.9.0 multi-purpose server & iCloud identity linked (faithjennings055@icloud.com)",
+    ruleId: "sr.rule.infinity.v3.9",
+    explainability: { ruleId: "sr.rule.infinity.v3.9" },
   },
 ]
 
@@ -66,9 +66,9 @@ export function buildStatusPayload() {
   return {
     ok: true,
     kernel: "StormRaven OS: Infinity Protocol",
-    distro: "StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS)",
-    distroVersion: "24.04 Noble · Infinity Protocol v3.8.0",
-    version: "3.8.0",
+    distro: "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)",
+    distroVersion: "24.04 Noble · Infinity Protocol v3.9.0",
+    version: "3.9.0",
     status: "online",
     health: "online",
     uptimeSec,
@@ -85,7 +85,7 @@ export function buildStatusPayload() {
       hub: "https://stormravenoddities.com",
       mobileGateway: "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app",
       voidMirror: "https://sugarplum-at-faith-s-workspace.skydive.app",
-      isoDownload: "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/StormRavenOS-Infinity-Protocol-v3.8.0-amd64.iso",
+      isoDownload: "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso",
       win11Installer: "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1",
       mobileInstaller: "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh",
     },
@@ -93,7 +93,7 @@ export function buildStatusPayload() {
     checks: [
       { name: "stormravenoddities.com Multi-Purpose Gateway", state: "ok" },
       { name: "Bifrost Mobile Gateway (:8787)", state: "ok" },
-      { name: "Ubuntu 24.04 LTS (Infinity Protocol v3.8.0)", state: "ok" },
+      { name: "Ubuntu 24.04 LTS (Infinity Protocol v3.9.0)", state: "ok" },
       { name: "iCloud Identity Bridge (faithjennings055@icloud.com)", state: "ok" },
       { name: "Odin Pantheon & Luci Seal", state: "ok" },
     ],
@@ -104,7 +104,7 @@ export function buildStatePayload() {
   const tel = readTelemetry()
   return {
     timeUtc: new Date().toISOString(),
-    version: "3.8.0",
+    version: "3.9.0",
     protocol: "Infinity Protocol",
     icloudAccount: "faithjennings055@icloud.com",
     focus: { attention: "focused", foregroundActivity: "stormraven-infinity" },
@@ -124,8 +124,8 @@ export function buildRealmsPayload() {
   const tel = readTelemetry()
   return {
     ok: true,
-    version: "3.8.0",
-    protocol: "StormRaven OS: Infinity Protocol v3.8.0",
+    version: "3.9.0",
+    protocol: "StormRaven OS: Infinity Protocol v3.9.0",
     icloudAccount: "faithjennings055@icloud.com",
     pulseUtc: new Date().toISOString(),
     telemetry: tel,
@@ -156,7 +156,7 @@ export function executeCommandPayload(body: Record<string, any>) {
   switch (norm) {
     case "ping":
     case "odin_ping":
-      payload = { pong: true, timeUtc: now, version: "3.8.0", telemetry: tel }
+      payload = { pong: true, timeUtc: now, version: "3.9.0", telemetry: tel }
       break
     case "odin":
     case "odin_telemetry":
@@ -165,7 +165,7 @@ export function executeCommandPayload(body: Record<string, any>) {
     case "get_state":
       payload = {
         timeUtc: now,
-        deity: "Odin Leviathan Core v5.0 — Infinity Protocol v3.8.0",
+        deity: "Odin Leviathan Core v5.0 — Infinity Protocol v3.9.0",
         status: "online",
         icloudAccount: "faithjennings055@icloud.com",
         telemetry: tel,
@@ -187,7 +187,7 @@ export function executeCommandPayload(body: Record<string, any>) {
       payload = {
         timeUtc: now,
         verdict: "clean",
-        gatekeeper: "Heimdall 7-Step Zero-Trust Gate v3.8",
+        gatekeeper: "Heimdall 7-Step Zero-Trust Gate v3.9",
         cwe77Blocked: true,
         telemetry: tel,
       }
@@ -197,7 +197,7 @@ export function executeCommandPayload(body: Record<string, any>) {
     case "freya":
       payload = {
         timeUtc: now,
-        deity: "Freya Autonomous Mind (Infinity Protocol v3.8.0)",
+        deity: "Freya Autonomous Mind (Infinity Protocol v3.9.0)",
         directive: `Live sensors nominal (CPU ${tel.cpu}%, RAM ${tel.ram}%). All 9 Realms online and linked to faithjennings055@icloud.com.`,
         telemetry: tel,
       }
@@ -220,7 +220,7 @@ export function executeCommandPayload(body: Record<string, any>) {
         timeUtc: now,
         intent: norm,
         target,
-        version: "3.8.0",
+        version: "3.9.0",
         icloudAccount: "faithjennings055@icloud.com",
         status: "completed",
         telemetry: tel,
@@ -234,7 +234,7 @@ export function executeCommandPayload(body: Record<string, any>) {
       intent: norm,
       target,
       status: "accepted",
-      detail: `${norm} executed on StormRaven Infinity Protocol v3.8.0 Server`,
+      detail: `${norm} executed on StormRaven Infinity Protocol v3.9.0 Server`,
       result: payload,
     },
     result: payload,

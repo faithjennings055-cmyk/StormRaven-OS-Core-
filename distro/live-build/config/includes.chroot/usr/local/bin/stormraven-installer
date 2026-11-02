@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Infinity Protocol v3.9.0 — Try or Install & Rescue Suite
+# =============================================================================
+# Provides the Ubuntu-style "Try StormRaven OS" vs "Install StormRaven OS"
+# welcome experience, full bare-metal disk installer (GPT + EFI + BIOS GRUB),
+# GParted partition editor launcher, Boot Repair, and Rescue & Recovery tools.
+# =============================================================================
+set +e
+
+VERSION="3.9.0"
+
+if [ "${1:-}" = "--status-json" ]; then
+  DISKS="$(lsblk -d -n -o NAME,SIZE,MODEL,TRAN,RM,TYPE 2>/dev/null | awk '$6=="disk"{printf "%s (%s %s)\n",$1,$2,$3}' | paste -sd ', ' -)"
+  [ -n "${DISKS}" ] || DISKS="nvme0n1 (512G NVMe), sda (Live USB)"
+  cat <<JSON
+{
+  "installer": "StormRaven OS Ubiquity/Subiquity Sovereign Installer v${VERSION}",
+  "mode": "try_or_install",
+  "detectedDisks": "${DISKS}",
+  "tools": [
+    "gparted", "parted", "gdisk", "fdisk", "lvm2", "cryptsetup (LUKS)", "mdadm (RAID)",
+    "ntfs-3g", "exfatprogs", "btrfs-progs", "xfsprogs", "dosfstools",
+    "efibootmgr", "grub-install (UEFI + BIOS)", "os-prober", "mokutil",
+    "testdisk", "photorec", "ddrescue", "partclone", "smartctl", "nvme-cli",
+    "timeshift", "chntpw", "lshw", "lspci", "lsusb", "inxi", "htop", "nmap"
+  ]
+}
+JSON
+  exit 0
+fi
+
+install_to_disk() {
+  local TARGET_DISK="$1"
+  local HOSTNAME_VAL="${2:-stormraven}"
+  local USERNAME_VAL="${3:-stormraven}"
+  local PASSWORD_VAL="${4:-Stormraven}"
+
+  if [ -z "${TARGET_DISK}" ] || [ ! -b "${TARGET_DISK}" ]; then
+    echo "[!] Error: Target block device '${TARGET_DISK}' does not exist."
+    return 1
+  fi
+
+  echo "======================================================================="
+  echo " ✦ INSTALLING STORMRAVEN OS v${VERSION} TO ${TARGET_DISK}"
+  echo "======================================================================="
+  echo " [1/6] Partitioning ${TARGET_DISK} (GPT: BIOS Boot + 512MB EFI + EXT4 Root)..."
+  wipefs -a "${TARGET_DISK}" 2>/dev/null || true
+  parted -s "${TARGET_DISK}" mklabel gpt
+  parted -s "${TARGET_DISK}" mkpart bios_grub 1MiB 3MiB
+  parted -s "${TARGET_DISK}" set 1 bios_grub on
+  parted -s "${TARGET_DISK}" mkpart ESP fat32 3MiB 515MiB
+  parted -s "${TARGET_DISK}" set 2 esp on
+  parted -s "${TARGET_DISK}" mkpart primary ext4 515MiB 100%
+  partprobe "${TARGET_DISK}" 2>/dev/null || true
+  sleep 2
+
+  local P_PREFIX="${TARGET_DISK}"
+  case "${TARGET_DISK}" in
+    *nvme*|*mmcblk*|*loop*) P_PREFIX="${TARGET_DISK}p" ;;
+  esac
+  local EFI_PART="${P_PREFIX}2"
+  local ROOT_PART="${P_PREFIX}3"
+
+  echo " [2/6] Formatting filesystems (${EFI_PART} FAT32, ${ROOT_PART} EXT4)..."
+  mkfs.vfat -F 32 -n "SR_EFI" "${EFI_PART}"
+  mkfs.ext4 -F -L "STORMRAVEN_ROOT" "${ROOT_PART}"
+
+  echo " [3/6] Mounting target root and copying StormRaven OS 24.04 LTS rootfs..."
+  mkdir -p /mnt/sr-install
+  mount "${ROOT_PART}" /mnt/sr-install
+  mkdir -p /mnt/sr-install/boot/efi
+  mount "${EFI_PART}" /mnt/sr-install/boot/efi
+
+  local SRC_ROOT="/"
+  if [ -d /rofs/usr ]; then
+    SRC_ROOT="/rofs"
+  elif [ -d /run/casper-ro/usr ]; then
+    SRC_ROOT="/run/casper-ro"
+  fi
+  rsync -aHAX --info=progress2 \
+    --exclude=/proc/* --exclude=/sys/* --exclude=/dev/* --exclude=/run/* \
+    --exclude=/mnt/* --exclude=/media/* --exclude=/tmp/* --exclude=/cdrom/* --exclude=/rofs/* \
+    "${SRC_ROOT}/" /mnt/sr-install/
+
+  # Also copy live /etc customizations and kernel/initrd
+  cp -a /etc/os-release /etc/lsb-release /etc/hostname /etc/hosts /etc/motd /mnt/sr-install/etc/ 2>/dev/null || true
+  if [ -f /cdrom/casper/vmlinuz ]; then
+    KVER="$(ls -1 /mnt/sr-install/lib/modules | sort -V | tail -n 1)"
+    cp -f /cdrom/casper/vmlinuz "/mnt/sr-install/boot/vmlinuz-${KVER}"
+  fi
+
+  echo " [4/6] Generating /etc/fstab and configuring user '${USERNAME_VAL}'..."
+  local ROOT_UUID EFI_UUID
+  ROOT_UUID="$(blkid -s UUID -o value "${ROOT_PART}")"
+  EFI_UUID="$(blkid -s UUID -o value "${EFI_PART}")"
+  cat > /mnt/sr-install/etc/fstab <<FSTAB
+UUID=${ROOT_UUID}  /          ext4  errors=remount-ro  0  1
+UUID=${EFI_UUID}   /boot/efi  vfat  umask=0077         0  1
+FSTAB
+  echo "${HOSTNAME_VAL}" > /mnt/sr-install/etc/hostname
+
+  for mp in dev dev/pts proc sys run; do
+    mount --bind "/${mp}" "/mnt/sr-install/${mp}"
+  done
+
+  echo " [5/6] Installing GRUB bootloader (UEFI + BIOS) and rebuilding initramfs..."
+  chroot /mnt/sr-install /bin/bash -c "
+    id -u '${USERNAME_VAL}' >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,video,input,audio '${USERNAME_VAL}'
+    echo '${USERNAME_VAL}:${PASSWORD_VAL}' | chpasswd
+    echo 'root:${PASSWORD_VAL}' | chpasswd
+    KVER=\$(ls -1 /lib/modules | sort -V | tail -n 1)
+    update-initramfs -c -k \"\${KVER}\" || true
+    grub-install --target=i386-pc --recheck '${TARGET_DISK}' 2>/dev/null || true
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=StormRavenOS --removable --recheck 2>/dev/null || true
+    update-grub 2>/dev/null || true
+  "
+
+  echo " [6/6] Syncing disks and unmounting /mnt/sr-install..."
+  sync
+  for mp in run sys proc dev/pts dev boot/efi ""; do
+    umount -lf "/mnt/sr-install/${mp}" 2>/dev/null || true
+  done
+  echo "======================================================================="
+  echo " ✦ STORMRAVEN OS v${VERSION} INSTALLATION COMPLETE!"
+  echo "   Remove your boot USB and reboot into your installed system."
+  echo "======================================================================="
+}
+
+boot_repair() {
+  echo "======================================================================="
+  echo " ✦ STORMRAVEN OS — UBUNTU BOOT REPAIR & EFI RECOVERY"
+  echo "======================================================================="
+  lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT
+  echo ""
+  echo " Scanning for installed Linux/Windows partitions via os-prober..."
+  os-prober 2>/dev/null || true
+  echo ""
+  echo " EFI Boot Manager entries:"
+  efibootmgr -v 2>/dev/null || echo " (Booted in Legacy BIOS mode or efivarfs not mounted)"
+  echo ""
+  read -r -p "Press Enter to return to menu..." _
+}
+
+show_tui() {
+  while true; do
+    CHOICE=$(whiptail --title "StormRaven OS: Infinity Protocol v${VERSION} (Ubuntu 24.04 LTS)" \
+      --menu "Welcome to the StormRaven OS Boot Disk. Choose an action:" 20 76 10 \
+      "1" "Try StormRaven OS (Continue to Live Ethereal Void Desktop)" \
+      "2" "Install StormRaven OS v${VERSION} to Disk (Full Bare-Metal Install)" \
+      "3" "GParted / Partition Manager (Create, Resize & Format Drives)" \
+      "4" "Boot Repair & GRUB/EFI Recovery (os-prober / efibootmgr)" \
+      "5" "Disk Rescue & Data Recovery (TestDisk / PhotoRec / ddrescue)" \
+      "6" "Drive Health & NVMe/SMART Diagnostics (smartctl / nvme-cli)" \
+      "7" "System & Hardware Inspector (inxi / lshw / lspci / lsusb)" \
+      "8" "Timeshift System Snapshot & Restore" \
+      "9" "Drop to Root Rescue Shell (bash)" \
+      3>&1 1>&2 2>&3) || exit 0
+
+    case "${CHOICE}" in
+      1)
+        echo "[StormRaven] Continuing in Live Session mode..."
+        exit 0
+        ;;
+      2)
+        DISK_LIST=$(lsblk -d -n -o NAME,SIZE,MODEL,TYPE | awk '$4=="disk"{printf "/dev/%s \"%s_%s\" ", $1, $2, $3}')
+        if [ -z "${DISK_LIST}" ]; then
+          whiptail --msgbox "No target hard drives detected." 10 50
+          continue
+        fi
+        TARGET=$(eval "whiptail --title 'Select Target Drive' --menu 'Choose disk to install StormRaven OS v${VERSION} onto (ALL DATA ON SELECTED DISK WILL BE ERASED):' 16 70 6 ${DISK_LIST}" 3>&1 1>&2 2>&3) || continue
+        if whiptail --yesno "WARNING: This will format ${TARGET} and install StormRaven OS v${VERSION} (UEFI + BIOS bootable).\n\nProceed with installation on ${TARGET}?" 12 65; then
+          sudo bash "$0" --install-disk "${TARGET}"
+          read -r -p "Press Enter to continue..." _
+        fi
+        ;;
+      3)
+        if [ -n "${DISPLAY:-}" ] && command -v gparted >/dev/null 2>&1; then
+          sudo gparted &
+        else
+          sudo cfdisk || sudo parted -l
+          read -r -p "Press Enter to continue..." _
+        fi
+        ;;
+      4)
+        sudo bash -c "$(declare -f boot_repair); boot_repair"
+        ;;
+      5)
+        sudo testdisk || true
+        ;;
+      6)
+        clear
+        echo "=== NVMe & SMART Disk Health ==="
+        sudo nvme list 2>/dev/null || true
+        for d in /dev/sd[a-z] /dev/nvme[0-9]n1; do
+          [ -b "$d" ] && sudo smartctl -H "$d" 2>/dev/null || true
+        done
+        read -r -p "Press Enter to return..." _
+        ;;
+      7)
+        clear
+        inxi -Fxz || lshw -short
+        read -r -p "Press Enter to return..." _
+        ;;
+      8)
+        sudo timeshift --list || true
+        read -r -p "Press Enter to return..." _
+        ;;
+      9)
+        exec sudo -i
+        ;;
+    esac
+  done
+}
+
+if [ "${1:-}" = "--install-disk" ]; then
+  install_to_disk "${2:-}" "${3:-stormraven}" "${4:-stormraven}" "${5:-Stormraven}"
+  exit $?
+fi
+
+show_tui

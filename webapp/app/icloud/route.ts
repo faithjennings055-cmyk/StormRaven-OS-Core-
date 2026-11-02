@@ -2,7 +2,7 @@ import { CORS_HEADERS, jsonOk, optionsOk } from "@/lib/bifrost-server"
 
 const ICLOUD_DATA = {
   ok: true,
-  protocol: "StormRaven OS: Infinity Protocol v3.8.0",
+  protocol: "StormRaven OS: Infinity Protocol v3.9.0",
   appleId: "faithjennings055@icloud.com",
   customEmail: "mrstormraven@stormravenoddities.com",
   domain: "stormravenoddities.com",
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
   <div class="wrap">
     <div class="card top">
       <div>
-        <h1>✦ STORMRAVEN OS · INFINITY PROTOCOL v3.8.0</h1>
+        <h1>✦ STORMRAVEN OS · INFINITY PROTOCOL v3.9.0</h1>
         <div style="font-size:12px;color:var(--muted);margin-top:4px">iCloud Sovereign Bridge &amp; Custom Email Server Hub</div>
       </div>
       <span class="badge">● ALL 5 DNS RECORDS LIVE IN CLOUDFLARE</span>
@@ -96,7 +96,7 @@ export async function GET(req: Request) {
       <div class="btns">
         <a class="btn" href="/">Álfheimr Web OS Dashboard</a>
         <a class="btn" href="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app" target="_blank" rel="noreferrer">Mobile PWA &amp; Kernel Gateway ↗</a>
-        <a class="btn secondary" href="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/StormRavenOS-Infinity-Protocol-v3.8.0-amd64.iso">Download Infinity Protocol v3.8.0 ISO ⬇</a>
+        <a class="btn secondary" href="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso">Download Infinity Protocol v3.9.0 ISO ⬇</a>
         <a class="btn secondary" href="/icloud?format=json">View Raw JSON API</a>
       </div>
     </div>

@@ -108,7 +108,7 @@ def health_payload():
         "distroVersion": "24.04 Noble",
         "status": "online",
         "health": "online",
-        "version": "3.2.0",
+        "version": "3.9.0",
         "bridge": "bifrost",
         "bridgeVersion": "sr.bridge.mobile.v1",
         "startedUtc": STARTED_UTC,
@@ -194,6 +194,8 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-vm", "status"), "telemetry": tel}
     elif norm in ("forensics_status", "odin_forensics_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-forensics", "status"), "telemetry": tel}
+    elif norm in ("installer", "installer_status", "install_status"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-installer", "--status-json"), "telemetry": tel}
     elif norm == "evaluate":
         dec = {
             "id": f"DEC-{int(time.time())}",

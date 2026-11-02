@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>StormRaven OS: Infinity Protocol v3.8.0</title>
+<title>StormRaven OS: Infinity Protocol v3.9.0</title>
 <meta name="description" content="StormRaven OS Mobile — Ubuntu 24.04 LTS (Noble Numbat) kernel status, Edge tabs, Odin Python Pantheon, and decision console.">
 <!-- iOS & Android PWA meta -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,7 +22,7 @@
     <div class="brand">
       <span class="sigil">✦</span>
       <div>
-        <h1>STORMRAVEN <span class="os">INFINITY PROTOCOL v3.8.0</span></h1>
+        <h1>STORMRAVEN <span class="os">INFINITY PROTOCOL v3.9.0</span></h1>
         <div id="connState" class="conn-state">connecting…</div>
       </div>
     </div>
@@ -48,10 +48,11 @@
         <div class="sr-top-panel">
           <div class="sr-top-left">
             <span class="sr-activities-pill">━ ●</span>
-            <span class="sr-top-brand">StormRaven OS · Infinity Protocol v3.8.0</span>
+            <span class="sr-top-brand">StormRaven OS · Infinity Protocol v3.9.0</span>
           </div>
           <div id="srTopClock" class="sr-top-clock">Nov 2 &nbsp;00:10</div>
           <div class="sr-top-right">
+            <button id="srTryInstallBtn" class="btn small" style="padding:3px 10px;font-size:10.5px;background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff">💿 Install StormRaven OS</button>
             <button id="srModeToggleBtn" class="btn small accent-outline" style="padding:3px 8px;font-size:10px">Switch to Windows 11 Mode</button>
             <span>🖧</span><span>🔊</span><span>⏻</span>
           </div>
@@ -60,6 +61,8 @@
         <div class="sr-desktop-body">
           <!-- Left Vertical Dock (Ubuntu Mode) / Bottom Centered Taskbar (Win11 Mode) -->
           <aside id="srDock" class="sr-left-dock">
+            <button class="sr-dock-item" data-app="installos" title="Install StormRaven OS v3.9.0">💿</button>
+            <button class="sr-dock-item" data-app="gparted" title="GParted Partition Editor">🖴</button>
             <button class="sr-dock-item" data-app="files" title="Files (Fafnir)">📁</button>
             <button class="sr-dock-item" data-app="music" title="Rhythmbox Music">💿</button>
             <button class="sr-dock-item" data-app="mail" title="Thunderbird Mail">✉️</button>
@@ -77,6 +80,21 @@
 
           <!-- Main App Grid Canvas -->
           <div class="sr-grid-canvas">
+            <!-- Try or Install Welcome Banner (Ubuntu Boot Disk Style) -->
+            <div id="srTryInstallBanner" class="card" style="background:linear-gradient(135deg,rgba(6,182,212,0.16),rgba(168,85,247,0.18));border:1px solid rgba(6,182,212,0.45);margin-bottom:14px;padding:14px 16px">
+              <div class="row-between" style="flex-wrap:wrap;gap:12px">
+                <div>
+                  <div style="font-size:15px;font-weight:700;color:#fff">✦ Welcome to StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS Boot Disk)</div>
+                  <div class="muted" style="font-size:12px;margin-top:3px">Includes full Ubuntu Live Rescue Suite: <code>GParted</code> · <code>TestDisk/PhotoRec</code> · <code>ddrescue</code> · <code>LVM2/LUKS/RAID</code> · <code>EFIBootMgr/Boot-Repair</code> · <code>NVMe/SMART</code></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button id="srBannerTryBtn" class="btn small accent-outline">🖥 Try StormRaven OS (Live)</button>
+                  <button id="srBannerInstallBtn" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;border:0">💿 Install StormRaven OS to Disk</button>
+                  <button id="srBannerRescueBtn" class="btn small">🛠 Boot Disk Rescue Tools</button>
+                </div>
+              </div>
+            </div>
+
             <div class="sr-search-wrap">
               <span class="sr-search-icon">🔍</span>
               <input id="srAppSearch" type="text" placeholder="Type to search" autocomplete="off">
@@ -103,7 +121,7 @@
         <div class="hero-row">
           <div class="pulse-dot" id="pulseDot"></div>
           <div>
-            <div id="kernelName" class="kernel-name">StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 Noble)</div>
+            <div id="kernelName" class="kernel-name">StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 Noble)</div>
             <div id="kernelUptime" class="muted">uptime —</div>
           </div>
           <div id="healthBadge" class="badge">unknown</div>

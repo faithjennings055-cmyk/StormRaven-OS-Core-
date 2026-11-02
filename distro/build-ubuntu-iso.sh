@@ -17,11 +17,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 WORK_DIR="${WORK_DIR:-/tmp/stormraven-ubuntu-build}"
 CHROOT_DIR="${WORK_DIR}/chroot"
 ISO_STAGING="${WORK_DIR}/iso"
-OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Infinity-Protocol-v3.8.0-amd64.iso}"
+OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso}"
 UBUNTU_SUITE="noble"
 UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}"
 UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}"
-KERNEL_PKG="${KERNEL_PKG:-linux-image-virtual}"
+KERNEL_PKG="${KERNEL_PKG:-linux-image-generic-hwe-24.04}"
 CLEAN_BUILD="${CLEAN_BUILD:-0}"
 
 echo "==> [1/7] Checking host build dependencies..."
@@ -516,12 +516,12 @@ cat > /etc/hosts <<'HOSTS'
 ::1         localhost ip6-localhost ip6-loopback
 HOSTS
 
-# Re-apply StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS) /usr/lib/os-release & /etc/os-release
+# Re-apply StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS) /usr/lib/os-release & /etc/os-release
 rm -f /etc/os-release /usr/lib/os-release
 cat > /usr/lib/os-release <<'OSREL'
-PRETTY_NAME="StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS)"
+PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)"
 NAME="StormRaven OS"
-VERSION_ID="3.8.0"
+VERSION_ID="3.9.0"
 VERSION="24.04 LTS (Noble Numbat)"
 VERSION_CODENAME=noble
 ID=stormraven
@@ -539,7 +539,7 @@ cat > /etc/lsb-release <<'LSBREL'
 DISTRIB_ID=StormRaven
 DISTRIB_RELEASE=24.04
 DISTRIB_CODENAME=noble
-DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS)"
+DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)"
 LSBREL
 
 # Install Plymouth and set the StormRaven Void theme inside chroot
@@ -610,27 +610,33 @@ else
     terminal_output console serial
 fi
 
-menuentry "StormRaven OS 24.04 - Ethereal Void" {
-    echo "Rousing the raven... [Ymir core + Pantheon]"
+menuentry "Try or Install StormRaven OS 24.04 LTS (v3.9.0 - Linux 7.0 HWE)" {
+    echo "Rousing the raven... [Linux 7.0.0-42-generic HWE + 2011-2026 Firmware + Try/Install]"
     linux /casper/vmlinuz boot=casper quiet splash console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 - All-Father Sight (Verbose / Serial)" {
-    echo "Unsealing kernel telemetry... [Serial 115200n8]"
-    linux /casper/vmlinuz boot=casper console=tty0 console=ttyS0,115200n8
+menuentry "Install StormRaven OS 24.04 LTS Directly to Disk (v3.9.0 Installer)" {
+    echo "Launching StormRaven OS Bare-Metal Disk Installer..."
+    linux /casper/vmlinuz boot=casper stormraven.mode=install console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 - Iron Ward (Safe Mode)" {
-    echo "Entering Iron Ward fallback... [nomodeset / fail-safe]"
-    linux /casper/vmlinuz boot=casper nomodeset noapic noapm nodma nomce nolapic nosmp console=tty0 console=ttyS0,115200n8
+menuentry "StormRaven OS 24.04 - Safe Graphics Mode (nomodeset / Legacy 2011-2026 GPUs)" {
+    echo "Entering Iron Ward safe graphics fallback... [nomodeset]"
+    linux /casper/vmlinuz boot=casper nomodeset console=tty0 console=ttyS0,115200n8
+    initrd /casper/initrd
+}
+
+menuentry "StormRaven OS 24.04 - Boot Rescue, GParted & Forensics Mode" {
+    echo "Launching Ubuntu Boot Disk Rescue & Partitioning Suite..."
+    linux /casper/vmlinuz boot=casper stormraven.mode=install forensic=1 console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 EOF
 
 mkdir -p "${ISO_STAGING}/.disk" "${ISO_STAGING}/EFI/BOOT"
-echo "StormRaven OS: Infinity Protocol v3.8.0 (Ubuntu 24.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
+echo "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
 
 # Stage standalone UEFI x86_64 binaries (BOOTX64.EFI + grubx64.efi + signed shim when available) (#61)
 if command -v grub-mkstandalone >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
