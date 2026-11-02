@@ -5,15 +5,15 @@ mkdir -p /opt/stormraven /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.sha
 chmod +x /opt/stormraven/StormRaven.Kernel || true
 chmod +x /usr/local/bin/stormraven || true
 
-# Create dedicated system/live users with locked/random passwords
+ADMIN_PASS="${STORMRAVEN_MASTER_PASSWORD:-Stormraven}"
 id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
-echo "stormraven:$(openssl rand -base64 12)" | chpasswd
+echo "stormraven:${ADMIN_PASS}" | chpasswd
 
 id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo ubuntu
-echo "ubuntu:$(openssl rand -base64 12)" | chpasswd
+echo "ubuntu:${ADMIN_PASS}" | chpasswd
 
 id -u user >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo user
-echo "user:$(openssl rand -base64 12)" | chpasswd
+echo "user:${ADMIN_PASS}" | chpasswd
 
 mkdir -p /etc/sudoers.d
 cat > /etc/sudoers.d/90-stormraven-live <<'SUDO'
@@ -22,6 +22,14 @@ stormraven ALL=(ALL) NOPASSWD: ALL
 user ALL=(ALL) NOPASSWD: ALL
 SUDO
 chmod 0440 /etc/sudoers.d/90-stormraven-live
+
+mkdir -p /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/50-stormraven-keyonly.conf <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+SSHD
 
 chown -R stormraven:stormraven /var/lib/stormraven /opt/stormraven /etc/stormraven /mnt/dev_drive
 

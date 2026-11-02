@@ -340,13 +340,22 @@ $SUDO cp -a "${REPO_ROOT}/distro/wallpapers/." "${CHROOT_DIR}/usr/share/backgrou
 $SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<'EOF'
 mkdir -p /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.shadow_logs
 
-# Users: Provisioned with random/locked passwords for live session
-# stormraven:stormraven (pw: stormraven), user (pw: live) -> CHANGED TO LOCKED/RANDOM
+# Users: Live session password set to Stormraven for local console + NOPASSWD sudo (#58, #59)
+# SSH password login is disabled so network access requires an authorized SSH key (#60).
+ADMIN_PASS="${STORMRAVEN_MASTER_PASSWORD:-Stormraven}"
 id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
-id -u stormraven >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" stormraven || true
-id -u ubuntu >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" ubuntu || true
-id -u root >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" root || true
-id -u user >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 12)")" user || true
+id -u stormraven >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "${ADMIN_PASS}")" stormraven || true
+id -u ubuntu >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "${ADMIN_PASS}")" ubuntu || true
+id -u root >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 16)")" root || true
+id -u user >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "${ADMIN_PASS}")" user || true
+
+mkdir -p /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/50-stormraven-keyonly.conf <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+SSHD
 
 # Sudo: Standard Ubuntu Live ISO behavior (#58) — local live user has NOPASSWD sudo
 # while account passwords remain randomized/locked against network/SSH password login.

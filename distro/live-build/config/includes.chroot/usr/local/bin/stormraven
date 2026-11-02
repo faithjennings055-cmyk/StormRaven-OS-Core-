@@ -68,8 +68,33 @@ case "$CMD" in
           echo "    To mint a hardware seal: stormraven luci authorize"
         fi
         echo "[*] FREYA (Onboard AI): Local Pantheon Mind online — run 'stormraven ai' or 'stormraven odin'"
+        echo "[*] SUDO / CONSOLE:     Master password 'Stormraven' (NOPASSWD sudo enabled on live console)"
         ;;
     esac
+    ;;
+  ssh-authorize)
+    PUBKEY="${2:-}"
+    if [ -z "$PUBKEY" ]; then
+      echo "Usage: stormraven ssh-authorize '<ssh-ed25519 AAAA...>' (locks SSH to owner key only)"
+      exit 1
+    fi
+    for usr in ubuntu stormraven; do
+      HOMEDIR="$(eval echo "~$usr")"
+      sudo mkdir -p "${HOMEDIR}/.ssh"
+      echo "$PUBKEY" | sudo tee -a "${HOMEDIR}/.ssh/authorized_keys" >/dev/null
+      sudo chmod 0700 "${HOMEDIR}/.ssh"
+      sudo chmod 0600 "${HOMEDIR}/.ssh/authorized_keys"
+      sudo chown -R "${usr}:${usr}" "${HOMEDIR}/.ssh"
+    done
+    sudo mkdir -p /etc/ssh/sshd_config.d
+    sudo tee /etc/ssh/sshd_config.d/50-stormraven-keyonly.conf >/dev/null <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+SSHD
+    sudo systemctl reload ssh 2>/dev/null || sudo systemctl restart ssh 2>/dev/null || true
+    echo "[*] SSH remote access locked exclusively to owner public key (password SSH disabled)."
     ;;
   ai|freya)
     shift || true
