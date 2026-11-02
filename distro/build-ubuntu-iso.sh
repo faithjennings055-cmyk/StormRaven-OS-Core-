@@ -349,10 +349,14 @@ mkdir -p /var/lib/stormraven /etc/stormraven /mnt/dev_drive/.shadow_logs
 # SSH password login is disabled so network access requires an authorized SSH key (#60).
 ADMIN_PASS="${STORMRAVEN_MASTER_PASSWORD:-Stormraven}"
 id -u stormraven >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo stormraven
-id -u stormraven >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "${ADMIN_PASS}")" stormraven || true
-id -u ubuntu >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "${ADMIN_PASS}")" ubuntu || true
-id -u root >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "$(openssl rand -base64 16)")" root || true
-id -u user >/dev/null 2>&1 && usermod -p "$(openssl passwd -6 "${ADMIN_PASS}")" user || true
+id -u ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo,video,input,audio ubuntu
+id -u user >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo user
+echo "stormraven:${ADMIN_PASS}" | chpasswd
+echo "ubuntu:${ADMIN_PASS}" | chpasswd
+echo "user:${ADMIN_PASS}" | chpasswd
+echo "root:${ADMIN_PASS}" | chpasswd
+passwd -u ubuntu 2>/dev/null || true
+passwd -u stormraven 2>/dev/null || true
 
 mkdir -p /etc/ssh/sshd_config.d
 cat > /etc/ssh/sshd_config.d/50-stormraven-keyonly.conf <<'SSHD'
