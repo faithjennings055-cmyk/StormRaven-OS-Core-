@@ -1,5 +1,5 @@
-/* StormRaven OS Mobile — offline shell service worker */
-const CACHE = 'stormraven-mobile-v2';
+/* StormRaven OS Mobile — network-first service worker (v4) */
+const CACHE = 'stormraven-mobile-v4';
 const SHELL = [
   './',
   './index.html',
@@ -22,8 +22,8 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  // never cache API/WS/installer traffic to the kernel gateway
   if (
     url.pathname.startsWith('/status') ||
     url.pathname.startsWith('/health') ||
@@ -35,27 +35,19 @@ self.addEventListener('fetch', (e) => {
     url.pathname.startsWith('/signals') ||
     url.pathname.startsWith('/events') ||
     url.pathname.startsWith('/ws') ||
-    url.pathname.startsWith('/install-mobile.sh')
+    url.pathname.startsWith('/iso/') ||
+    url.pathname.startsWith('/downloads/') ||
+    url.pathname.startsWith('/install-')
   ) {
     return;
   }
 
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).then((r) => {
-        const copy = r.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
-        return r;
-      }).catch(() => caches.match(e.request).then((m) => m || caches.match('./index.html')))
-    );
-    return;
-  }
-
+  // Always network-first so updates to index.html, app.js, and style.css appear immediately on reload
   e.respondWith(
-    caches.match(e.request).then((m) => m || fetch(e.request).then((r) => {
+    fetch(e.request, { cache: 'no-store' }).then((r) => {
       const copy = r.clone();
       caches.open(CACHE).then((c) => c.put(e.request, copy));
       return r;
-    }))
+    }).catch(() => caches.match(e.request).then((m) => m || caches.match('./index.html')))
   );
 });

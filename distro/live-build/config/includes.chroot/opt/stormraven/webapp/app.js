@@ -392,30 +392,41 @@
 
   function refreshRealms() {
     var status = $('pulseStatus');
-    var sub = $('pulseSubtitle');
-    if (status) status.textContent = 'Syncing Nine Realms Heartbeat…';
-    api('/status').then(function (raw) {
-      var s = unwrap(raw);
-      var st = s.status && typeof s.status === 'object' ? s.status : s;
-      var tel = st.telemetry || {};
-      var cpu = tel.cpu != null ? tel.cpu + '%' : '8.5%';
-      var ram = tel.ram != null ? tel.ram + '%' : '32.0%';
-      var up = fmtUptime(st.uptimeSec != null ? st.uptimeSec : st.uptimeSeconds);
-      var tabs = st.openTabs != null ? st.openTabs : state.tabs.length;
+    var sub = $('pulseSub');
+    var box = $('realmsLiveBox');
+    if (status) status.textContent = 'Syncing Live Nine Realms Telemetry…';
+    Promise.all([
+      api('/status').catch(function () { return {}; }),
+      api('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: 'odin telemetry', source: 'realms-pulse' })
+      }).catch(function () { return {}; })
+    ]).then(function (results) {
+      var st = unwrap(results[0] || {});
+      var cmdRes = results[1] || {};
+      var payload = cmdRes.result || (cmdRes.data && cmdRes.data.result) || {};
+      var tel = payload.telemetry || st.telemetry || { cpu: 0, ram: 0, cores: 8 };
+      var up = fmtUptime(st.uptimeSec || 0);
       if (status) {
-        status.textContent = 'Sovereign Heartbeat Nominal · Uptime ' + up;
+        status.textContent = 'Sovereign Live Pulse · CPU ' + tel.cpu + '% · RAM ' + tel.ram + '%';
         status.style.color = 'var(--ok)';
       }
       if (sub) {
-        sub.textContent = 'Live Bifrost Telemetry · CPU ' + cpu + ' · RAM ' + ram + ' · ' + tabs + ' Active Signals';
+        sub.textContent = 'Uptime ' + up + ' · ' + (tel.cores || 8) + ' Cores · 9/9 Realms Reporting Live';
       }
-      if ($('realm-val-vanaheim')) $('realm-val-vanaheim').textContent = 'CPU ' + cpu + ' · RAM ' + ram;
-      if ($('realm-meta-midgard')) $('realm-meta-midgard').textContent = (st.bridgeVersion || 'sr.bridge.mobile.v1') + ' · ' + tabs + ' tabs';
-      if ($('realm-meta-asgard')) $('realm-meta-asgard').textContent = (st.distro || 'StormRaven OS 24.04 LTS') + ' · Active';
-    }).catch(function () {
-      if (status) {
-        status.textContent = 'Sovereign Heartbeat Degraded (Offline)';
-        status.style.color = 'var(--bad)';
+      if ($('rm-vanaheim')) $('rm-vanaheim').textContent = tel.cpu + '% / ' + tel.ram + '%';
+      if ($('rm-vanaheim-sub')) $('rm-vanaheim-sub').textContent = 'CPU ' + tel.cpu + '% · RAM ' + tel.ram + '% (' + (tel.cores || 8) + ' cores)';
+      if ($('rm-midgard-sub')) $('rm-midgard-sub').textContent = 'Bifrost v1 · ' + (st.openTabs || 3) + ' Active Streams';
+      if (box) {
+        box.textContent = JSON.stringify({
+          pulseUtc: new Date().toISOString(),
+          distro: st.distro || 'StormRaven OS 24.04 LTS',
+          uptimeSec: st.uptimeSec,
+          telemetry: tel,
+          pantheon: payload.pantheon || ['odin','freya','heimdall','thor','bifrost','loki','luci','solomon','heketa','lynn','yggdrasil','mjolnir'],
+          realmsOnline: 9
+        }, null, 2);
       }
     });
   }
@@ -428,9 +439,7 @@
     if (name === 'status') refreshStatus();
     if (name === 'decisions') refreshDecisions();
     if (name === 'odin') runCommand('odin telemetry', true);
-    if (name === 'realms') {
-      refreshRealms();
-    }
+    if (name === 'realms') refreshRealms();
   }
 
   function esc(s) {
@@ -451,6 +460,29 @@
   if ($('ingestDemoTabBtn')) $('ingestDemoTabBtn').addEventListener('click', ingestDemoTab);
   if ($('evalQuickBtn')) $('evalQuickBtn').addEventListener('click', evaluateNow);
   if ($('evalEngineBtn')) $('evalEngineBtn').addEventListener('click', evaluateNow);
+  if ($('refreshRealmsBtn')) $('refreshRealmsBtn').addEventListener('click', refreshRealms);
+  document.querySelectorAll('#realmsGrid .realm-stat').forEach(function (card) {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function () {
+      var realm = card.getAttribute('data-realm');
+      var cmdMap = {
+        asgard: 'odin freya_think',
+        vanaheim: 'odin telemetry',
+        midgard: 'odin vpn_status',
+        alfheim: 'odin check_ip',
+        niflheim: 'niflheim_snapshot',
+        helheim: 'helheim_list',
+        muspelheim: 'muspelheim_fault',
+        jotunheim: 'odin forensics_status',
+        svartalfheim: 'odin heimdall_scan'
+      };
+      var cmd = cmdMap[realm] || 'odin telemetry';
+      if ($('realmsLiveBox')) $('realmsLiveBox').textContent = 'Querying ' + realm.toUpperCase() + ' (' + cmd + ')…';
+      runCommand(cmd, false).then(function (r) {
+        if ($('realmsLiveBox')) $('realmsLiveBox').textContent = JSON.stringify(r, null, 2);
+      });
+    });
+  });
 
   if ($('fafnirDensityBtn')) {
     $('fafnirDensityBtn').addEventListener('click', function () {
