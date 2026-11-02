@@ -36,8 +36,7 @@ for u in ubuntu stormraven; do
     uhome="/home/${u}"
     mkdir -p "${uhome}/.ssh"
     cat > "${uhome}/.ssh/authorized_keys" <<'KEYS'
-ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBG+yvmohUTlzYWVJ6AkWhDUtHb2em7iTmIDJIeW9OEDlr1UClHlOv+f3zd6EK4r6cWOlwFApQ4trNk6ISU0NdmY= faithjennings055-cmyk
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHMmx/Un999flE1aGZxsbWZlMddSCBaSkVNhPf2RIN96 faith@stormraven-sovereign
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJWkQAWFeyE42SrurneAh2u/rMKBiELHcpx7CMdaJc42 faithjennings055@icloud.com
 KEYS
     chmod 0700 "${uhome}/.ssh"
     chmod 0600 "${uhome}/.ssh/authorized_keys"
