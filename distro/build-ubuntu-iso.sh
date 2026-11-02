@@ -357,6 +357,8 @@ echo "user:${ADMIN_PASS}" | chpasswd
 echo "root:${ADMIN_PASS}" | chpasswd
 passwd -u ubuntu 2>/dev/null || true
 passwd -u stormraven 2>/dev/null || true
+for u in root ubuntu stormraven user; do chage -d 19723 "$u" 2>/dev/null || true; done
+chown root:root / /etc /usr /usr/local /opt 2>/dev/null || true
 
 mkdir -p /etc/ssh/sshd_config.d
 cat > /etc/ssh/sshd_config.d/50-stormraven-keyonly.conf <<'SSHD'
