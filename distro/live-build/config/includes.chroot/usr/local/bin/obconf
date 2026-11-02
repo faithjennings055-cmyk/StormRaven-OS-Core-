@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# StormRaven OS Openbox configuration wrapper (replaces missing obconf binary)
+set -euo pipefail
+for browser in falkon epiphany-browser chromium chromium-browser firefox; do
+  if command -v "${browser}" >/dev/null 2>&1; then
+    exec "${browser}" "http://127.0.0.1:8787/"
+  fi
+done
+exec xterm -bg "#07030a" -fg "#06b6d4" -T "StormRaven OS Settings" -e "/bin/bash -c 'stormraven status; read -p \"Press Enter to close...\"'"

@@ -5,19 +5,29 @@
 set -euo pipefail
 
 WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
+GATEWAY_PORT="${STORMRAVEN_GATEWAY_PORT:-8787}"
 UI_PORT="${STORMRAVEN_UI_PORT:-3000}"
 
-# 1. Ensure StormRaven Local Gateway + Webapp Server is listening on :8787 and :3000
-if ! ss -tln 2>/dev/null | grep -q ":8787 "; then
-  python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
-  sleep 1
-fi
-
-# 2. If invoked from a Linux text VT without X11 running, launch Xorg via xinit
+# 1. If invoked from a Linux text VT without X11 running, launch Xorg via xinit
 if [ -z "${DISPLAY:-}" ]; then
+  if [ "${STORMRAVEN_XINIT_STARTED:-0}" = "1" ]; then
+    exit 1
+  fi
+  export STORMRAVEN_XINIT_STARTED=1
   if command -v startx >/dev/null 2>&1; then
     exec startx /usr/local/bin/stormraven-desktop-session -- :0 vt1 -keeptty -novtswitch
   fi
+fi
+
+# 2. Ensure StormRaven Local Gateway + Webapp Server is listening on :8787 and :3000
+pkill -f "http.server 3000" 2>/dev/null || true
+if ! ss -tln 2>/dev/null | grep -q ":${GATEWAY_PORT} "; then
+  python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
+  sleep 1
+fi
+if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
+  STORMRAVEN_GATEWAY_PORT="${UI_PORT}" STORMRAVEN_UI_PORT=3001 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
+  sleep 1
 fi
 
 # 3. Inside X11 session: configure background, window manager, and Ethereal Void UI
@@ -30,10 +40,10 @@ if command -v openbox >/dev/null 2>&1; then
   openbox &
 fi
 
-# Launch browser pointing to the local Ethereal Void Desktop UI + Bifrost Gateway
+# Launch browser pointing directly to http://127.0.0.1:8787 (Bifrost Gateway + Webapp UI)
 for browser in falkon epiphany-browser chromium chromium-browser firefox; do
   if command -v "${browser}" >/dev/null 2>&1; then
-    "${browser}" "http://127.0.0.1:${UI_PORT}" >/dev/null 2>&1 &
+    "${browser}" "http://127.0.0.1:${GATEWAY_PORT}/" >/dev/null 2>&1 &
     break
   fi
 done

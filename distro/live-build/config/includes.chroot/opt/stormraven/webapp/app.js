@@ -6,6 +6,9 @@
   var defaultOrigin = (function () {
     if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.indexOf('http') === 0) {
       var host = window.location.hostname || '';
+      if (host === '127.0.0.1' || host === 'localhost') {
+        return 'http://127.0.0.1:8787';
+      }
       if (host.indexOf('.vercel.app') !== -1 || host.indexOf('github.io') !== -1) {
         return 'https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app';
       }

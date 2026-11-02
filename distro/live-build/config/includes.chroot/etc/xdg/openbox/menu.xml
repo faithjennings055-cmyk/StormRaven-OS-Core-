@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://openbox.org/ file:///usr/share/openbox/menu.xsd">
+<menu id="root-menu" label="StormRaven OS">
+  <separator label="StormRaven OS — Ethereal Void" />
+  <item label="Ethereal Void Dashboard (Browser)">
+    <action name="Execute"><execute>falkon http://127.0.0.1:8787/</execute></action>
+  </item>
+  <item label="Odin Pantheon Terminal">
+    <action name="Execute"><execute>xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -T "Odin Pantheon" -e "/bin/bash -l -c 'python3 /opt/stormraven/python/odin.py'"</execute></action>
+  </item>
+  <item label="Void Shell">
+    <action name="Execute"><execute>xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -T "StormRaven Shell"</execute></action>
+  </item>
+  <separator label="Built-in Subsystems" />
+  <item label="WireGuard VPN Status">
+    <action name="Execute"><execute>xterm -bg "#07030a" -fg "#06b6d4" -T "StormRaven VPN" -e "/bin/bash -c 'stormraven-vpn status; echo; read -p \"Press Enter...\"'"</execute></action>
+  </item>
+  <item label="KVM/QEMU Hypervisor Status">
+    <action name="Execute"><execute>xterm -bg "#07030a" -fg "#06b6d4" -T "StormRaven VM" -e "/bin/bash -c 'stormraven-vm status; echo; read -p \"Press Enter...\"'"</execute></action>
+  </item>
+  <item label="Forensics Suite Status">
+    <action name="Execute"><execute>xterm -bg "#07030a" -fg "#06b6d4" -T "StormRaven Forensics" -e "/bin/bash -c 'stormraven-forensics status; echo; read -p \"Press Enter...\"'"</execute></action>
+  </item>
+  <separator />
+  <item label="Take Screenshot">
+    <action name="Execute"><execute>/usr/local/bin/scrot</execute></action>
+  </item>
+  <item label="Reconfigure Openbox">
+    <action name="Reconfigure" />
+  </item>
+</menu>
+</openbox_menu>

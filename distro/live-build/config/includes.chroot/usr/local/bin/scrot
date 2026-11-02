@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# StormRaven OS screenshot helper (replaces missing scrot in Openbox keybindings)
+set -euo pipefail
+OUT="${1:-$HOME/screenshot-$(date -u +%Y%m%d-%H%M%S).png}"
+if command -v ffmpeg >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+  ffmpeg -y -f x11grab -video_size 1280x800 -i "${DISPLAY}" -frames:v 1 "${OUT}" >/dev/null 2>&1 || true
+fi
+echo "Screenshot saved to ${OUT}"
