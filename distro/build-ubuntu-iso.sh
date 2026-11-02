@@ -238,7 +238,7 @@ fi
 # StormRaven.Kernel is built from source in step 5.1
 $SUDO chmod +x "${CHROOT_DIR}/opt/stormraven/StormRaven.Kernel"
 $SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven"
-$SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven-desktop-session" "${CHROOT_DIR}/usr/local/bin/stormraven-vpn" "${CHROOT_DIR}/usr/local/bin/stormraven-vm" "${CHROOT_DIR}/usr/local/bin/stormraven-forensics" 2>/dev/null || true
+$SUDO chmod +x "${CHROOT_DIR}/usr/local/bin/stormraven-local-gateway" "${CHROOT_DIR}/usr/local/bin/stormraven-desktop-session" "${CHROOT_DIR}/usr/local/bin/stormraven-vpn" "${CHROOT_DIR}/usr/local/bin/stormraven-vm" "${CHROOT_DIR}/usr/local/bin/stormraven-forensics" 2>/dev/null || true
 
 # Install live initramfs hook & script so both boot=casper and boot=live mount the squashfs cleanly
 $SUDO tee "${CHROOT_DIR}/etc/initramfs-tools/modules" >/dev/null <<'EOF'
@@ -360,9 +360,11 @@ chown -R stormraven:stormraven /var/lib/stormraven /opt/stormraven /etc/stormrav
 rm -f /etc/systemd/system/multi-user.target.wants/casper-md5check.service \
       /etc/systemd/system/final.target.wants/casper.service || true
 
-# Enable systemd services
+# Enable systemd services and set graphical.target as default (#52)
 mkdir -p /etc/systemd/system/multi-user.target.wants /etc/systemd/system/graphical.target.wants
+ln -sf /lib/systemd/system/graphical.target /etc/systemd/system/default.target
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
+ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/graphical.target.wants/stormraven-kernel.service
 ln -sf /etc/systemd/system/stormraven-desktop.service /etc/systemd/system/multi-user.target.wants/stormraven-desktop.service
 ln -sf /etc/systemd/system/stormraven-desktop.service /etc/systemd/system/graphical.target.wants/stormraven-desktop.service
 ln -sf /lib/systemd/system/libvirtd.service /etc/systemd/system/multi-user.target.wants/libvirtd.service || true

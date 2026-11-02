@@ -5,16 +5,18 @@ After=network.target
 
 [Service]
 Type=simple
-User=stormraven
-Group=stormraven
+User=root
 WorkingDirectory=/opt/stormraven
-ExecStartPre=/usr/bin/install -d -o stormraven -g stormraven /var/lib/stormraven
-ExecStart=/opt/stormraven/StormRaven.Kernel
+ExecStartPre=/usr/bin/install -d -m 0755 /var/lib/stormraven
+ExecStart=/usr/bin/python3 /usr/local/bin/stormraven-local-gateway
 Environment=STORMRAVEN_DB=/var/lib/stormraven/kernel.db
 Environment=STORMRAVEN_GATEWAY_PORT=8787
+Environment=STORMRAVEN_UI_PORT=3000
+Environment=STORMRAVEN_WEBAPP_DIR=/opt/stormraven/webapp
+Environment=STORMRAVEN_PYTHON_DIR=/opt/stormraven/python
 Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 Restart=always
-RestartSec=3
+RestartSec=2
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target graphical.target
