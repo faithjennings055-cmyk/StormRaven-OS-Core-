@@ -35,8 +35,13 @@ export DEBIAN_FRONTEND=noninteractive
 if ! command -v debootstrap >/dev/null 2>&1 || \
    ! command -v mksquashfs >/dev/null 2>&1 || \
    ! command -v xorriso >/dev/null 2>&1 || \
-   ! command -v grub-mkrescue >/dev/null 2>&1; then
+   ! command -v grub-mkrescue >/dev/null 2>&1 || \
+   [ ! -d /usr/lib/grub/x86_64-efi ] || \
+   [ ! -d /usr/lib/grub/i386-pc ]; then
   $SUDO apt-get update -qq
+  $SUDO apt-get install -y -qq \
+    debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin \
+    grub-efi-amd64-signed shim-signed mtools dosfstools ca-certificates curl || \
   $SUDO apt-get install -y -qq \
     debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin \
     mtools dosfstools ca-certificates curl
@@ -568,8 +573,28 @@ menuentry "StormRaven OS 24.04 - Iron Ward (Safe Mode)" {
 }
 EOF
 
-mkdir -p "${ISO_STAGING}/.disk"
+mkdir -p "${ISO_STAGING}/.disk" "${ISO_STAGING}/EFI/BOOT"
 echo "StormRaven OS 24.04 LTS (Ubuntu Noble) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
+
+# Stage standalone UEFI x86_64 binaries (BOOTX64.EFI + grubx64.efi + signed shim when available) (#61)
+if command -v grub-mkstandalone >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
+  cat > /tmp/grub-early.cfg <<'EARLY'
+search --no-floppy --set=root --file /boot/grub/grub.cfg
+set prefix=($root)/boot/grub
+configfile ($root)/boot/grub/grub.cfg
+EARLY
+  grub-mkstandalone \
+    -O x86_64-efi \
+    -o "${ISO_STAGING}/EFI/BOOT/grubx64.efi" \
+    "boot/grub/grub.cfg=/tmp/grub-early.cfg" || true
+  rm -f /tmp/grub-early.cfg
+  if [ -f /usr/lib/shim/shimx64.efi.signed ]; then
+    cp -f /usr/lib/shim/shimx64.efi.signed "${ISO_STAGING}/EFI/BOOT/BOOTX64.EFI"
+  elif [ -f "${ISO_STAGING}/EFI/BOOT/grubx64.efi" ]; then
+    cp -f "${ISO_STAGING}/EFI/BOOT/grubx64.efi" "${ISO_STAGING}/EFI/BOOT/BOOTX64.EFI"
+  fi
+fi
+cp -f "${ISO_STAGING}/boot/grub/grub.cfg" "${ISO_STAGING}/EFI/BOOT/grub.cfg"
 
 echo "==> [7/7] Building hybrid BIOS/UEFI bootable ISO: ${OUTPUT_ISO}..."
 grub-mkrescue -o "${OUTPUT_ISO}" "${ISO_STAGING}" -- -volid "STORMRAVEN_2404"
