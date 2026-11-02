@@ -375,6 +375,11 @@ ln -sf /lib/systemd/system/unattended-upgrades.service /etc/systemd/system/multi
 ln -sf /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/systemd-networkd.service || true
 ln -sf /lib/systemd/system/systemd-resolved.service /etc/systemd/system/multi-user.target.wants/systemd-resolved.service || true
 
+# Boot into the graphical environment by default (issue #52): without this the
+# system stays on multi-user.target and display-manager.service never starts,
+# so users land on tty1 instead of the Ethereal Void desktop.
+systemctl set-default graphical.target || true
+
 # Configure LightDM graphical autologin & tty1 fallback launcher (#48)
 mkdir -p /etc/lightdm/lightdm.conf.d /usr/share/xsessions
 cat > /etc/lightdm/lightdm.conf.d/50-stormraven.conf <<'LIGHTDM'
