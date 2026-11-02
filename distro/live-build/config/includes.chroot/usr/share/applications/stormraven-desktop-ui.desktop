@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=StormRaven OS Ethereal Void Desktop UI
+Comment=Automatically starts the StormRaven Bifrost Gateway and opens the Ethereal Void Desktop UI at login
+Exec=/bin/sh -c 'if [ -x /usr/local/bin/stormraven-ui-autostart ]; then /usr/local/bin/stormraven-ui-autostart; elif [ -x /snap/stormraven-os/current/bin/stormraven-ui-autostart ]; then /snap/stormraven-os/current/bin/stormraven-ui-autostart; fi'
+Icon=utilities-terminal
+Terminal=false
+Categories=System;Utility;
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=2

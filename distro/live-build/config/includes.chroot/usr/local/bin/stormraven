@@ -285,8 +285,43 @@ SSHD
       fi
     done
     ;;
+  ui|desktop)
+    shift || true
+    for ui in "${SCRIPT_BIN_DIR}/stormraven-ui-autostart" "${SNAP:-}/bin/stormraven-ui-autostart" "/usr/local/bin/stormraven-ui-autostart"; do
+      if [ -f "$ui" ]; then
+        exec bash "$ui" "$@"
+      fi
+    done
+    ;;
+  autostart)
+    SUB="${2:-enable}"
+    case "$SUB" in
+      enable|on|install)
+        sudo mkdir -p /etc/xdg/autostart /usr/share/applications
+        sudo tee /etc/xdg/autostart/stormraven-desktop-ui.desktop >/dev/null <<'DESK'
+[Desktop Entry]
+Type=Application
+Name=StormRaven OS Ethereal Void Desktop UI
+Comment=Automatically starts the StormRaven Bifrost Gateway and opens the Ethereal Void Desktop UI at login
+Exec=/bin/sh -c 'if [ -x /usr/local/bin/stormraven-ui-autostart ]; then /usr/local/bin/stormraven-ui-autostart; elif [ -x /snap/stormraven-os/current/bin/stormraven-ui-autostart ]; then /snap/stormraven-os/current/bin/stormraven-ui-autostart; fi'
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=2
+DESK
+        sudo cp -f /etc/xdg/autostart/stormraven-desktop-ui.desktop /usr/share/applications/stormraven-desktop-ui.desktop 2>/dev/null || true
+        echo "[*] StormRaven Desktop UI autostart enabled (/etc/xdg/autostart/stormraven-desktop-ui.desktop)."
+        ;;
+      disable|off|remove)
+        sudo rm -f /etc/xdg/autostart/stormraven-desktop-ui.desktop
+        echo "[*] StormRaven Desktop UI autostart disabled."
+        ;;
+      *)
+        echo "Usage: stormraven autostart {enable|disable}"
+        ;;
+    esac
+    ;;
   *)
-    echo "Usage: stormraven {status|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
+    echo "Usage: stormraven {status|ui|autostart [enable|disable]|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
     exit 1
     ;;
 esac
