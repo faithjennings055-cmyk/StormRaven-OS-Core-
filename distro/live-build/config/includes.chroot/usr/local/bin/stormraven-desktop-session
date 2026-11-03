@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS — Full Ethereal Void Graphical Desktop Environment (v3.9.2)
+# StormRaven OS — Full Ethereal Void Graphical Desktop Environment (v3.9.3)
 # =============================================================================
 set +e
 
@@ -18,20 +18,18 @@ if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
   STORMRAVEN_GATEWAY_PORT="${UI_PORT}" STORMRAVEN_UI_PORT=3000 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
 fi
 
-# 2. If invoked without DISPLAY (from tty1 or systemd), start Xorg as root (-ac) so any bare-metal GPU works
+# 2. If invoked without DISPLAY, start Xorg as root (-ac)
 if [ -z "${DISPLAY:-}" ]; then
   if [ "$(id -u)" -ne 0 ]; then
-    exec sudo -E /usr/local/bin/stormraven-desktop-session "$@"
+    exec sudo -n -E /usr/local/bin/stormraven-desktop-session "$@"
   fi
   plymouth quit 2>/dev/null || true
-  chvt 1 2>/dev/null || true
 
-  # Clean any stale X0 lock
   if ! pgrep -x Xorg >/dev/null 2>&1; then
     rm -f /tmp/.X0-lock /tmp/.X11-unix/X0 2>/dev/null || true
     /usr/lib/xorg/Xorg :0 vt1 -keeptty -ac -noreset >/tmp/stormraven-xorg.log 2>&1 &
     XORG_PID=$!
-    for _ in $(seq 1 30); do
+    for _ in $(seq 1 35); do
       if [ -S /tmp/.X11-unix/X0 ]; then
         break
       fi
@@ -43,7 +41,7 @@ if [ -z "${DISPLAY:-}" ]; then
   fi
 
   if [ ! -S /tmp/.X11-unix/X0 ]; then
-    echo "[StormRaven OS] Xorg did not start on :0 (see /tmp/stormraven-xorg.log)."
+    echo "[StormRaven OS v3.9.3] Xorg did not start on :0 (see /tmp/stormraven-xorg.log)."
     exit 1
   fi
 
@@ -53,7 +51,6 @@ if [ -z "${DISPLAY:-}" ]; then
   chown -R "${LIVE_USER}:${LIVE_USER}" "/run/user/${LIVE_UID}" "/home/${LIVE_USER}" 2>/dev/null || true
   chmod 0700 "/run/user/${LIVE_UID}" 2>/dev/null || true
 
-  # Re-invoke inside the X11 session as the live user `ubuntu`
   exec su - "${LIVE_USER}" -c "DISPLAY=:0 XDG_RUNTIME_DIR=/run/user/${LIVE_UID} /usr/local/bin/stormraven-desktop-session --inside-x11"
 fi
 
@@ -72,26 +69,22 @@ if [ -f "${WALLPAPER}" ] && command -v feh >/dev/null 2>&1; then
   feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
 fi
 
-# 4. Start Openbox Window Manager
 if command -v openbox >/dev/null 2>&1; then
   openbox &
   WM_PID=$!
   sleep 0.6
 fi
 
-# 5. Start PCManFM Desktop Manager (clickable Desktop Icons + Wallpaper)
 if command -v pcmanfm >/dev/null 2>&1; then
   pcmanfm --desktop --profile default >/tmp/stormraven-pcmanfm.log 2>&1 &
   sleep 0.5
 fi
 
-# 6. Start Tint2 Bottom Dock & Taskbar Panel
 if command -v tint2 >/dev/null 2>&1; then
   tint2 -c /etc/xdg/tint2/tint2rc >/tmp/stormraven-tint2.log 2>&1 &
   sleep 0.4
 fi
 
-# 7. Open an Odin Pantheon Terminal window cleanly
 if command -v lxterminal >/dev/null 2>&1; then
   lxterminal --geometry=80x22 --title="StormRaven OS — Odin Pantheon & Void Shell" \
     -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
@@ -101,7 +94,6 @@ elif command -v xterm >/dev/null 2>&1; then
     -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
 fi
 
-# 8. Open the 29-App Ethereal Void Command Center
 /usr/local/bin/stormraven-open-ui &
 
 if [ -n "${WM_PID:-}" ]; then
