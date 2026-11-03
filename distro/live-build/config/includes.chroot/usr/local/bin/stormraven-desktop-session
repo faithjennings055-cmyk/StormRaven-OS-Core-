@@ -32,6 +32,8 @@ if [ -z "${DISPLAY:-}" ]; then
 fi
 
 # 3. Ensure XDG runtime dir and D-Bus session exist
+export NO_AT_BRIDGE=1
+export GDK_BACKEND=x11
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/runtime-$(id -u)}"
 mkdir -p "${XDG_RUNTIME_DIR}"
 chmod 0700 "${XDG_RUNTIME_DIR}" 2>/dev/null || true
@@ -66,18 +68,18 @@ if command -v tint2 >/dev/null 2>&1; then
   sleep 0.4
 fi
 
-# 8. Open an Odin Pantheon Terminal window cleanly
+# 8. Launch the Native GTK3 Ethereal Void Command Center & 29-App Suite immediately
+/usr/local/bin/stormraven-open-ui &
+
+# 9. Also open a compact Odin Pantheon Terminal window in the bottom-right corner
 if command -v lxterminal >/dev/null 2>&1; then
-  lxterminal --geometry=80x22 --title="StormRaven OS — Odin Pantheon & Void Shell" \
+  lxterminal --geometry=74x18 --title="StormRaven OS — Odin Pantheon & Void Shell" \
     -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
 elif command -v xterm >/dev/null 2>&1; then
-  xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 10 -geometry 80x22+760+420 \
+  xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 10 -geometry 74x18+480+420 \
     -T "StormRaven OS — Odin Pantheon & Void Shell" \
     -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
 fi
-
-# 9. Wait for Local Gateway (:3887) to be ready, then open the 29-App Ethereal Void Command Center
-/usr/local/bin/stormraven-open-ui &
 
 if [ -n "${WM_PID:-}" ]; then
   wait "${WM_PID}"

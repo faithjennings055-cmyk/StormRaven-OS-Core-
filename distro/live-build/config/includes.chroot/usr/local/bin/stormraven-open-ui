@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Ethereal Void UI Window Launcher (v3.9.0)
+# =============================================================================
+set +e
+
 UI_PORT="${STORMRAVEN_UI_PORT:-3887}"
 
 if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
@@ -12,17 +17,20 @@ for _ in $(seq 1 20); do
   sleep 0.25
 done
 
-URL="http://127.0.0.1:${UI_PORT}/"
-if command -v falkon >/dev/null 2>&1; then
-  QTWEBENGINE_DISABLE_SANDBOX=1 QT_XCB_GL_INTEGRATION=none LIBGL_ALWAYS_SOFTWARE=1 \
-    falkon --no-sandbox "${URL}" >/tmp/stormraven-falkon.log 2>&1 &
-  sleep 2
-  wmctrl -r "Falkon" -e 0,200,30,1120,660 2>/dev/null || wmctrl -r "StormRaven" -e 0,200,30,1120,660 2>/dev/null || true
+URL="${1:-http://127.0.0.1:${UI_PORT}/}"
+
+export NO_AT_BRIDGE=1
+export GDK_BACKEND=x11
+
+if [ -x /usr/local/bin/stormraven-shell-window ]; then
+  python3 /usr/local/bin/stormraven-shell-window "${URL}" >/tmp/stormraven-shell-window.log 2>&1 &
   exit 0
 fi
-for browser in chromium chromium-browser firefox epiphany-browser xdg-open; do
+
+for browser in epiphany-browser netsurf-gtk chromium chromium-browser firefox xdg-open; do
   if command -v "${browser}" >/dev/null 2>&1; then
-    "${browser}" "${URL}" >/dev/null 2>&1 &
+    WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 \
+      "${browser}" "${URL}" >/tmp/stormraven-browser.log 2>&1 &
     exit 0
   fi
 done
