@@ -30,7 +30,8 @@
   </header>
 
   <nav class="tabbar">
-    <button class="tab active" data-view="desktop">Desktop</button>
+    <button class="tab active" data-view="ymir">❄ Ymir Edition</button>
+    <button class="tab" data-view="desktop">App Grid</button>
     <button class="tab" data-view="status">Status</button>
     <button class="tab" data-view="tabs">Tabs</button>
     <button class="tab" data-view="fafnir">Fafnir</button>
@@ -41,8 +42,184 @@
   </nav>
 
   <main>
+    <!-- STORMRAVEN OS: YMIR EDITION 3-PANEL GLASS HUD (Exact Mockup Architecture) -->
+    <section id="view-ymir" class="view active">
+      <div class="ymir-hud-stage">
+        <div class="ymir-hud-grid">
+          <!-- LEFT COLUMN: Panel 1 (Kernel Forge Status + RunicSys Modules) -->
+          <div class="ymir-glass-win ymir-win-forge">
+            <div class="ymir-win-bar">
+              <div class="ymir-win-brand"><span class="ymir-r-badge">R</span> <span>File &nbsp;Edit &nbsp;View &nbsp;Runic &nbsp;Core</span></div>
+              <div class="ymir-win-dots"><span>─</span><span>□</span><span>✕</span></div>
+            </div>
+            <div class="ymir-win-subbar">
+              <span>◀ ▶ ⟳</span>
+              <span class="ymir-subbar-path">ymir://kernel-forge/ring0</span>
+              <span id="ymirBridgePill" class="ymir-pill">● BIFRÖST ACTIVE</span>
+            </div>
+            <div class="ymir-win-content">
+              <div class="ymir-sec-head">▴ Kernel Forge Status</div>
+              <div class="ymir-forge-split">
+                <div class="ymir-meters">
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">Kernel Forge Status</span>
+                    <div class="ymir-m-track"><div id="ymBarForge" class="ymir-m-fill" style="width:98%"></div></div>
+                    <span id="ymValForge" class="ymir-m-val">98</span>
+                  </div>
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">CPU, Processes</span>
+                    <div class="ymir-m-track"><div id="ymBarCpu" class="ymir-m-fill" style="width:18%"></div></div>
+                    <span id="ymValCpu" class="ymir-m-val">18</span>
+                  </div>
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">Memory</span>
+                    <div class="ymir-m-track"><div id="ymBarRam" class="ymir-m-fill" style="width:42%"></div></div>
+                    <span id="ymValRam" class="ymir-m-val">42</span>
+                  </div>
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">Disk</span>
+                    <div class="ymir-m-track"><div id="ymBarDisk" class="ymir-m-fill" style="width:26%"></div></div>
+                    <span id="ymValDisk" class="ymir-m-val">26</span>
+                  </div>
+                </div>
+                <div class="ymir-reactor-col">
+                  <div class="ymir-reactor-ring">
+                    <div class="ymir-reactor-core"></div>
+                  </div>
+                  <div class="ymir-wave">▁▂▄▆█▄▂▅▇▃▂▆█▄▂▁▃▅</div>
+                </div>
+              </div>
+
+              <div class="ymir-sec-head" style="margin-top:12px">▾ RunicSys Modules</div>
+              <div class="ymir-rune-tiles">
+                <button type="button" class="ymir-rune-tile" data-rune="fehu" title="Fehu — Resource &amp; Memory Optimizer">
+                  <span class="rune-glyph">ᚠ</span>
+                  <span class="rune-sub">FEHU</span>
+                </button>
+                <button type="button" class="ymir-rune-tile" data-rune="algiz" title="Algiz — Heimdall Zero-Trust Shield">
+                  <span class="rune-glyph">ᛉ</span>
+                  <span class="rune-sub">ALGIZ</span>
+                </button>
+                <button type="button" class="ymir-rune-tile" data-rune="isa" title="Isa — Niflheim Cryo-Freeze &amp; Snapshot">
+                  <span class="rune-glyph">ᛁ</span>
+                  <span class="rune-sub">ISA</span>
+                </button>
+                <button type="button" class="ymir-rune-tile" data-rune="raido" title="Raido — Bifrost &amp; Pantheon Update">
+                  <span class="rune-glyph">ᚱ</span>
+                  <span class="rune-sub">RAIDO</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CENTER COLUMN: Ymir Frost Giant & Winged Raven-Skull Emblem -->
+          <div class="ymir-center-crest">
+            <div class="ymir-crest-spacer"></div>
+            <div class="ymir-crest-title-box">
+              <div class="ymir-oath-rune">❄️ &nbsp; ᛟ &nbsp; ❄️</div>
+              <h2 class="ymir-main-logo">STORMRAVEN OS</h2>
+              <div class="ymir-sub-logo">Y M I R &nbsp; E D I T I O N</div>
+              <div class="ymir-quick-actions">
+                <button type="button" class="ymir-action-btn" data-ViewJump="desktop">⠿ Open 29-App Suite</button>
+                <button type="button" class="ymir-action-btn" data-rune="pc_launch_hud">🖥 Push Ymir HUD to PC</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Panel 2 (Runic Command Console) + Panel 3 (RavenNest Virtual Server) -->
+          <div class="ymir-right-col">
+            <!-- Panel 2: Runic Command Console -->
+            <div class="ymir-glass-win ymir-win-runic">
+              <div class="ymir-win-bar">
+                <div class="ymir-win-brand"><span>⛨ RunicSys Command Console</span></div>
+                <div class="ymir-win-dots"><span>⚙</span><span>□</span><span>✕</span></div>
+              </div>
+              <div class="ymir-runic-list">
+                <button type="button" class="ymir-runic-row" data-rune="fehu">
+                  <span class="ymir-r-icon">ᚠ</span>
+                  <span class="ymir-r-name">fehu</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">resource</span>
+                  <span class="ymir-r-act">EXECUTE ▸</span>
+                </button>
+                <button type="button" class="ymir-runic-row" data-rune="algiz">
+                  <span class="ymir-r-icon">ᛉ</span>
+                  <span class="ymir-r-name">algiz</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">defend</span>
+                  <span class="ymir-r-act">LOCK SHIELD ▸</span>
+                </button>
+                <button type="button" class="ymir-runic-row" data-rune="isa">
+                  <span class="ymir-r-icon">ᛁ</span>
+                  <span class="ymir-r-name">isa</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">freeze</span>
+                  <span class="ymir-r-act">CRYO SNAPSHOT ▸</span>
+                </button>
+                <button type="button" class="ymir-runic-row" data-rune="raido">
+                  <span class="ymir-r-icon">ᚱ</span>
+                  <span class="ymir-r-name">raido</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">update</span>
+                  <span class="ymir-r-act">SYNC CORE ▸</span>
+                </button>
+              </div>
+              <div id="ymirRunicLog" class="ymir-runic-log">[Ymir Ring-0] Click any Runic command or RavenNest server cube to execute on the kernel…</div>
+            </div>
+
+            <!-- Panel 3: RavenNest VIRTUAL SERVER -->
+            <div class="ymir-glass-win ymir-win-ravennest">
+              <div class="ymir-win-bar">
+                <div class="ymir-win-brand"><span>▸ <strong>RavenNest</strong> <small style="opacity:.8;letter-spacing:.1em">VIRTUAL SERVER</small></span></div>
+                <div class="ymir-win-dots"><span>─</span><span>□</span><span>✕</span></div>
+              </div>
+              <div class="ymir-nest-grid">
+                <button type="button" class="ymir-cube-node" data-rune="ravencore">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">❖</span></div>
+                  <div class="cube-title">RavenCore</div>
+                  <div class="cube-meta">Ring-0 · :8787</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="frostvault">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">❄</span></div>
+                  <div class="cube-title">FrostVault</div>
+                  <div class="cube-meta">Cryo Isolation</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="frostnode">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">🧊</span></div>
+                  <div class="cube-title">FrostNode</div>
+                  <div class="cube-meta">KVM Hypervisor</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="ymirvault">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">ᛟ</span></div>
+                  <div class="cube-title">YmirVault</div>
+                  <div class="cube-meta">Buddy/SLAB · Luci</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="echoshell">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">❯_</span></div>
+                  <div class="cube-title">EchoShell</div>
+                  <div class="cube-meta">Live PC Bridge</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Hardware Remote Control Bar -->
+        <div class="ymir-remote-bar">
+          <div>
+            <strong style="color:#38bdf8">⚡ Live PC Hardware Remote Control &amp; Ymir Theme Upgrade:</strong>
+            <span class="muted" style="font-size:11.5px;margin-left:6px">Run on your booted PC terminal (<code>root@stormraven:~#</code>) to transform the desktop &amp; link mobile control:</span>
+          </div>
+          <div class="ymir-remote-cmd-wrap">
+            <code id="ymirUpgradeCmd">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh.sha256 &amp;&amp; sha256sum -c upgrade-void.sh.sha256 &amp;&amp; sudo bash upgrade-void.sh</code>
+            <button type="button" id="copyYmirUpgradeBtn" class="btn small">Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- DESKTOP APP GRID (Ubuntu GNOME Dock + Top Bar + 8x4 App Grid + Win11 Mode Toggle) -->
-    <section id="view-desktop" class="view active">
+    <section id="view-desktop" class="view">
       <div id="srDesktopShell" class="sr-desktop-shell mode-ubuntu">
         <!-- Top Bar -->
         <div class="sr-top-panel">

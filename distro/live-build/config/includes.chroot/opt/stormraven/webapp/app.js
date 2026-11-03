@@ -460,6 +460,34 @@
     if (name === 'decisions') refreshDecisions();
     if (name === 'odin') runCommand('odin telemetry', true);
     if (name === 'realms') refreshRealms();
+    if (name === 'ymir') refreshYmirHud();
+  }
+
+  function refreshYmirHud() {
+    api('/status').then(function (r) {
+      var d = unwrap(r);
+      var tel = d.telemetry || { cpu: 18, ram: 42 };
+      var cpu = Math.round(tel.cpu || 18);
+      var ram = Math.round(tel.ram || 42);
+      if ($('ymBarCpu')) $('ymBarCpu').style.width = Math.min(100, Math.max(4, cpu)) + '%';
+      if ($('ymValCpu')) $('ymValCpu').textContent = String(cpu);
+      if ($('ymBarRam')) $('ymBarRam').style.width = Math.min(100, Math.max(4, ram)) + '%';
+      if ($('ymValRam')) $('ymValRam').textContent = String(ram);
+      if ($('ymirBridgePill')) {
+        $('ymirBridgePill').textContent = d.hardwareConnected ? '● LIVE PC CONNECTED' : '● BIFRÖST ACTIVE';
+      }
+    }).catch(function () {});
+  }
+
+  function executeRuneOrNode(runeId) {
+    var logBox = $('ymirRunicLog');
+    if (logBox) logBox.textContent = '❯ Executing Runic/RavenNest directive: ' + runeId + '…';
+    runCommand(runeId, false).then(function (payload) {
+      if (logBox) {
+        logBox.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+      }
+      refreshYmirHud();
+    });
   }
 
   function esc(s) {
@@ -541,6 +569,30 @@
       }
     });
   });
+
+  document.querySelectorAll('[data-rune]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var rune = btn.getAttribute('data-rune');
+      if (rune) executeRuneOrNode(rune);
+    });
+  });
+  document.querySelectorAll('[data-ViewJump]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      switchView(btn.getAttribute('data-ViewJump'));
+    });
+  });
+  if ($('copyYmirUpgradeBtn') && $('ymirUpgradeCmd')) {
+    $('copyYmirUpgradeBtn').addEventListener('click', function () {
+      var txt = $('ymirUpgradeCmd').textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () {
+          $('copyYmirUpgradeBtn').textContent = 'Copied!';
+          setTimeout(function () { $('copyYmirUpgradeBtn').textContent = 'Copy'; }, 1800);
+        });
+      }
+    });
+  }
+  refreshYmirHud();
 
   if ($('installCmdText')) {
     $('installCmdText').textContent = 'curl -fsSL ' + baseUrl() + '/install-mobile.sh | bash';

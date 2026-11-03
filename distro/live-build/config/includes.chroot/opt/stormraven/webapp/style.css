@@ -179,3 +179,433 @@ code{font-family:ui-monospace,monospace;font-size:.9em}
 .sr-desktop-shell.mode-win11 .sr-left-dock{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:auto;height:48px;flex-direction:row;border:1px solid rgba(6,182,212,0.35);border-radius:14px;padding:4px 10px;background:rgba(10,14,26,0.88);backdrop-filter:blur(16px)}
 .sr-desktop-shell.mode-win11 .sr-dock-sep{width:1px;height:26px;margin:0 4px}
 .sr-desktop-shell.mode-win11 .sr-apps-btn{margin-top:0}
+
+/* ========== STORMRAVEN OS: YMIR EDITION 3-PANEL GLASS HUD ========== */
+@media (min-width: 860px) {
+  #app, main {
+    max-width: 1240px !important;
+  }
+}
+.ymir-hud-stage {
+  background: linear-gradient(180deg, rgba(4, 12, 24, 0.35) 0%, rgba(4, 10, 20, 0.55) 100%), url('ymir-bg.jpg') center center / cover no-repeat;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 16px;
+  padding: 18px;
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 0 45px rgba(14, 165, 233, 0.28), inset 0 0 60px rgba(2, 8, 23, 0.65);
+  position: relative;
+  overflow: hidden;
+}
+.ymir-hud-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.9fr 1.05fr;
+  gap: 16px;
+  align-items: stretch;
+  flex: 1;
+}
+@media (max-width: 960px) {
+  .ymir-hud-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ymir-glass-win {
+  background: linear-gradient(160deg, rgba(6, 18, 36, 0.84) 0%, rgba(4, 11, 24, 0.9) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 10px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75), 0 0 18px rgba(56, 189, 248, 0.22);
+  color: #e0f2fe;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.ymir-win-bar {
+  height: 28px;
+  background: linear-gradient(90deg, rgba(14, 116, 144, 0.45), rgba(7, 24, 46, 0.85));
+  border-bottom: 1px solid rgba(56, 189, 248, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #bae6fd;
+}
+.ymir-win-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ymir-r-badge {
+  background: #0284c7;
+  color: #fff;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  box-shadow: 0 0 8px #38bdf8;
+}
+.ymir-win-dots {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #7dd3fc;
+  opacity: 0.8;
+}
+.ymir-win-subbar {
+  height: 24px;
+  background: rgba(2, 10, 22, 0.75);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: #7dd3fc;
+}
+.ymir-pill {
+  color: #38bdf8;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
+}
+.ymir-win-content {
+  padding: 12px 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.ymir-sec-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e0f2fe;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+}
+.ymir-forge-split {
+  display: grid;
+  grid-template-columns: 1.45fr 0.9fr;
+  gap: 12px;
+  align-items: center;
+}
+.ymir-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ymir-meter-row {
+  display: grid;
+  grid-template-columns: 112px 1fr 28px;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: #bae6fd;
+}
+.ymir-m-track {
+  height: 10px;
+  background: rgba(2, 12, 27, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 3px;
+  overflow: hidden;
+  padding: 1px;
+}
+.ymir-m-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8, #e0f2fe);
+  box-shadow: 0 0 10px #38bdf8;
+  transition: width 0.35s ease;
+}
+.ymir-m-val {
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #f0f9ff;
+  text-align: right;
+}
+.ymir-reactor-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ymir-reactor-ring {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px solid rgba(56, 189, 248, 0.75);
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.55), inset 0 0 16px rgba(56, 189, 248, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.ymir-reactor-core {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e0f2fe 0%, #38bdf8 55%, #0369a1 100%);
+  box-shadow: 0 0 18px #38bdf8;
+}
+.ymir-wave {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #38bdf8;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px #38bdf8;
+}
+.ymir-rune-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.ymir-rune-tile {
+  background: linear-gradient(180deg, rgba(14, 116, 144, 0.32), rgba(2, 12, 27, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 8px;
+  padding: 8px 4px;
+  color: #e0f2fe;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+.ymir-rune-tile:hover {
+  background: rgba(56, 189, 248, 0.28);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+.rune-glyph {
+  font-size: 22px;
+  font-weight: 800;
+  color: #7dd3fc;
+  text-shadow: 0 0 12px #38bdf8;
+}
+.rune-sub {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  color: #bae6fd;
+}
+
+/* Center Crest Column */
+.ymir-center-crest {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 8px;
+}
+.ymir-crest-spacer {
+  flex: 1;
+  min-height: 220px;
+}
+.ymir-crest-title-box {
+  background: radial-gradient(ellipse at center, rgba(3, 12, 26, 0.85) 0%, rgba(3, 12, 26, 0.45) 80%, transparent 100%);
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.ymir-oath-rune {
+  font-size: 16px;
+  color: #7dd3fc;
+  text-shadow: 0 0 12px #38bdf8;
+  margin-bottom: 2px;
+}
+.ymir-main-logo {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #f8fafc;
+  text-shadow: 0 2px 14px rgba(56, 189, 248, 0.85);
+  margin: 0;
+}
+.ymir-sub-logo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #7dd3fc;
+  margin-top: 3px;
+  margin-bottom: 10px;
+}
+.ymir-quick-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ymir-action-btn {
+  background: rgba(14, 116, 144, 0.45);
+  border: 1px solid #38bdf8;
+  color: #f0f9ff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+.ymir-action-btn:hover {
+  background: rgba(56, 189, 248, 0.4);
+}
+
+/* Right Column: Runic Console + RavenNest Virtual Server */
+.ymir-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ymir-runic-list {
+  padding: 10px 12px 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ymir-runic-row {
+  background: rgba(2, 12, 27, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 7px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0f2fe;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+.ymir-runic-row:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+}
+.ymir-r-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7dd3fc;
+  font-weight: 800;
+}
+.ymir-r-name {
+  font-weight: 700;
+  color: #f8fafc;
+}
+.ymir-r-sep {
+  color: #64748b;
+}
+.ymir-r-desc {
+  color: #38bdf8;
+  font-weight: 600;
+}
+.ymir-r-act {
+  margin-left: auto;
+  font-size: 9.5px;
+  color: #7dd3fc;
+  opacity: 0.85;
+}
+.ymir-runic-log {
+  margin: 4px 12px 10px 12px;
+  padding: 8px 10px;
+  background: rgba(2, 8, 18, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  color: #7dd3fc;
+  max-height: 88px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+/* RavenNest Virtual Server Cubes */
+.ymir-nest-grid {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.ymir-cube-node {
+  background: radial-gradient(circle at 50% 30%, rgba(14, 165, 233, 0.28), rgba(2, 12, 27, 0.88));
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 9px;
+  padding: 9px 6px;
+  color: #e0f2fe;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.ymir-cube-node:hover {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
+  transform: translateY(-2px);
+}
+.ymir-iso-cube {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(3, 105, 161, 0.85));
+  border: 1px solid #7dd3fc;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6), inset 0 0 8px #e0f2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-6deg);
+}
+.cube-glyph {
+  font-size: 18px;
+  color: #ffffff;
+  text-shadow: 0 0 8px #38bdf8;
+}
+.cube-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f0f9ff;
+}
+.cube-meta {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: #7dd3fc;
+}
+.ymir-remote-bar {
+  margin-top: 14px;
+  background: rgba(3, 12, 26, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ymir-remote-cmd-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ymir-remote-cmd-wrap code {
+  background: #020814;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+}
