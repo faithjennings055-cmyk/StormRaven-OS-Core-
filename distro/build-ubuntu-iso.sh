@@ -14,7 +14,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-WORK_DIR="${WORK_DIR:-/tmp/stormraven-ubuntu-build}"
+# Use /var/tmp (disk-backed) instead of /tmp (which is a RAM tmpfs on Ubuntu 24.04/26.04)
+WORK_DIR="${WORK_DIR:-/var/tmp/stormraven-ubuntu-build}"
 CHROOT_DIR="${WORK_DIR}/chroot"
 ISO_STAGING="${WORK_DIR}/iso"
 OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso}"
@@ -62,6 +63,8 @@ cleanup_mounts() {
 trap cleanup_mounts EXIT
 
 cleanup_mounts
+# Free any leftover /tmp RAM-disk build directories from earlier runs
+$SUDO rm -rf /tmp/stormraven-ubuntu-build /tmp/stormraven-genesis-src 2>/dev/null || true
 if [ "${CLEAN_BUILD}" = "1" ] || [ ! -x "${CHROOT_DIR}/bin/bash" ]; then
   echo "==> [2/7] Bootstrapping Ubuntu 24.04 LTS (${UBUNTU_SUITE}) rootfs into ${CHROOT_DIR}..."
   $SUDO rm -rf "${WORK_DIR}"

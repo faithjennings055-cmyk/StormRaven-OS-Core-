@@ -37,6 +37,12 @@ echo "======================================================================="
 echo " Target ISO: ${OUTPUT_ISO}"
 echo ""
 
+# Clean up any leftover /tmp RAM-disk build directories from earlier runs so /tmp is never full
+for mp in dev/pts dev proc sys run; do
+  umount -lf "/tmp/stormraven-ubuntu-build/chroot/${mp}" 2>/dev/null || true
+done
+rm -rf /tmp/stormraven-ubuntu-build /tmp/stormraven-genesis-src 2>/dev/null || true
+
 # Remove any old/duplicate StormRaven ISOs in the output folder so only v3.9.0 remains
 rm -f "${OUT_DIR}"/StormRavenOS-ubuntu-24.04-amd64.iso* \
       "${OUT_DIR}"/StormRavenOS-v3.6-amd64.iso* \
@@ -68,16 +74,16 @@ apt-get install -y -qq \
   git curl ca-certificates debootstrap squashfs-tools xorriso \
   grub-pc-bin grub-efi-amd64-bin mtools dosfstools
 
-WORK_REPO="/tmp/stormraven-genesis-src"
+WORK_REPO="/var/tmp/stormraven-genesis-src"
 rm -rf "${WORK_REPO}"
-echo "==> [Genesis 2/4] Cloning StormRaven-OS-Core-..."
+echo "==> [Genesis 2/4] Cloning StormRaven-OS-Core- into /var/tmp (disk-backed)..."
 git clone --depth 1 "${REPO_URL}" "${WORK_REPO}"
 
-echo "==> [Genesis 3/4] Running full Ubuntu 24.04 LTS (Noble) v${VERSION} ISO build..."
-OUTPUT_ISO="${OUTPUT_ISO}" CLEAN_BUILD=1 bash "${WORK_REPO}/distro/build-ubuntu-iso.sh"
+echo "==> [Genesis 3/4] Running full Ubuntu 24.04 LTS (Noble) v${VERSION} ISO build in /var/tmp..."
+WORK_DIR="/var/tmp/stormraven-ubuntu-build" OUTPUT_ISO="${OUTPUT_ISO}" CLEAN_BUILD=1 bash "${WORK_REPO}/distro/build-ubuntu-iso.sh"
 
 [ -n "${SUDO_USER:-}" ] && chown "${SUDO_USER}:${SUDO_USER}" "${OUTPUT_ISO}" "${OUTPUT_ISO}.sha256" 2>/dev/null || true
-rm -rf "${WORK_REPO}"
+rm -rf "${WORK_REPO}" "/var/tmp/stormraven-ubuntu-build"
 
 echo "======================================================================="
 echo " ✦ GENESIS COMPLETE: ${OUTPUT_ISO}"
