@@ -213,6 +213,25 @@ apt-get install -y --no-install-recommends \
   timeshift \
   libnss-systemd
 
+# --- Google Chrome baked into the ISO (Faith's request) ---
+echo "==> Installing Google Chrome..."
+CHROME_DEB="/tmp/google-chrome-stable_current_amd64.deb"
+for i in 1 2 3; do
+  wget -q --timeout=120 -O "${CHROME_DEB}" https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && break
+  sleep 10
+done
+if [ -s "${CHROME_DEB}" ]; then
+  apt-get install -y --no-install-recommends "${CHROME_DEB}" || dpkg -i "${CHROME_DEB}" || true
+  rm -f "${CHROME_DEB}"
+  if command -v google-chrome >/dev/null 2>&1; then
+    echo "Google Chrome $(google-chrome --version 2>/dev/null || echo unknown) installed"
+  else
+    echo "WARNING: google-chrome binary not found after install"
+  fi
+else
+  echo "WARNING: Chrome .deb download failed; continuing without Chrome"
+fi
+
 apt-get clean
 EOF
 
