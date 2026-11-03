@@ -164,10 +164,10 @@ code{font-family:ui-monospace,monospace;font-size:.9em}
 .sr-search-wrap{width:100%;max-width:340px;background:rgba(30,27,46,0.85);border:1px solid rgba(6,182,212,0.35);border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:8px;margin-bottom:20px}
 .sr-search-wrap input{background:transparent;border:none;outline:none;color:#f8fafc;font-size:13px;width:100%}
 .sr-app-grid{width:100%;max-width:860px;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:16px 12px;justify-items:center}
-.sr-app-tile{display:flex;flex-direction:column;align-items:center;gap:6px;width:88px;padding:8px 4px;border-radius:12px;cursor:pointer;transition:background .15s ease,transform .15s ease;text-align:center;border:1px solid transparent}
+.sr-app-tile{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;padding:10px 6px;border-radius:12px;cursor:pointer;transition:background .15s ease,transform .15s ease;text-align:center;border:1px solid rgba(148,163,184,0.18);background:rgba(15,23,42,0.85)}
 .sr-app-tile:hover{background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);transform:translateY(-2px)}
 .sr-app-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12)}
-.sr-app-label{font-size:11px;color:#e2e8f0;line-height:1.2;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-app-label{font-size:11.5px;font-weight:600;color:#f8fafc;line-height:1.25;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sr-app-window{position:absolute;inset:16px;background:rgba(10,7,18,0.96);backdrop-filter:blur(14px);border:1px solid #06b6d4;border-radius:12px;display:flex;flex-direction:column;z-index:20;box-shadow:0 16px 50px rgba(0,0,0,0.8)}
 .sr-app-window.hidden{display:none}
 .sr-win-titlebar{height:36px;background:rgba(6,182,212,0.14);border-bottom:1px solid rgba(6,182,212,0.3);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;font-weight:700;color:#06b6d4}

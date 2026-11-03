@@ -1,24 +1,22 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS — Ethereal Void Graphical Desktop Session Launcher (v3.9.0)
+# StormRaven OS — Full Ethereal Void Graphical Desktop Environment (v3.9.1)
 # =============================================================================
 set +e
 
 WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
 GATEWAY_PORT="${STORMRAVEN_GATEWAY_PORT:-8787}"
-UI_PORT="${STORMRAVEN_UI_PORT:-3000}"
+UI_PORT="${STORMRAVEN_UI_PORT:-3887}"
 
-# 1. Ensure StormRaven Local Gateway + Webapp Server is listening on :8787 and :3000
+# 1. Start StormRaven Local Gateway + Webapp Server on :8787 and :3887
 if ! ss -tln 2>/dev/null | grep -q ":${GATEWAY_PORT} "; then
   python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
-  sleep 1
 fi
 if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
-  STORMRAVEN_GATEWAY_PORT="${UI_PORT}" STORMRAVEN_UI_PORT=3001 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
-  sleep 1
+  STORMRAVEN_GATEWAY_PORT="${UI_PORT}" STORMRAVEN_UI_PORT=3000 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
 fi
 
-# 2. If invoked from a Linux text VT without X11 running, launch Xorg via startx (WITHOUT -novtswitch so Ctrl+Alt+F2 works!)
+# 2. If invoked from a Linux text VT without X11 running, launch Xorg via startx
 if [ -z "${DISPLAY:-}" ]; then
   if [ "${STORMRAVEN_STARTX_ACTIVE:-0}" = "1" ]; then
     exit 0
@@ -33,29 +31,56 @@ if [ -z "${DISPLAY:-}" ]; then
   exit 1
 fi
 
-# 3. Inside X11 session: disable DPMS/blanking, configure background, window manager, browser, and terminal
+# 3. Ensure XDG runtime dir and D-Bus session exist
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/runtime-$(id -u)}"
+mkdir -p "${XDG_RUNTIME_DIR}"
+chmod 0700 "${XDG_RUNTIME_DIR}" 2>/dev/null || true
+
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && command -v dbus-launch >/dev/null 2>&1; then
+  eval "$(dbus-launch --sh-syntax --exit-with-session)" 2>/dev/null || true
+fi
+
+# 4. Disable screen blanking and paint Ethereal Void wallpaper
 xset s off -dpms 2>/dev/null || true
 xsetroot -solid "#07030a" 2>/dev/null || true
 if [ -f "${WALLPAPER}" ] && command -v feh >/dev/null 2>&1; then
   feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
 fi
 
-for browser in falkon epiphany-browser chromium chromium-browser firefox; do
-  if command -v "${browser}" >/dev/null 2>&1; then
-    "${browser}" "http://127.0.0.1:${UI_PORT}" >/dev/null 2>&1 &
-    break
-  fi
-done
-
-if command -v xterm >/dev/null 2>&1; then
-  xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -geometry 105x28+50+50 \
-    -T "StormRaven OS — Odin Pantheon & Void Shell" \
-    -e "/bin/bash -l -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
-fi
-
-# Keep the X11 session alive via openbox window manager
+# 5. Start Openbox Window Manager first so panels, desktop icons, and windows place properly
 if command -v openbox >/dev/null 2>&1; then
-  exec openbox
+  openbox &
+  WM_PID=$!
+  sleep 0.6
 fi
 
-wait
+# 6. Start PCManFM Desktop Manager (renders clickable Desktop Icons + Wallpaper)
+if command -v pcmanfm >/dev/null 2>&1; then
+  pcmanfm --desktop --profile default >/tmp/stormraven-pcmanfm.log 2>&1 &
+  sleep 0.5
+fi
+
+# 7. Start Tint2 Bottom Dock & Taskbar Panel (App Launchers + Window List + Clock)
+if command -v tint2 >/dev/null 2>&1; then
+  tint2 -c /etc/xdg/tint2/tint2rc >/tmp/stormraven-tint2.log 2>&1 &
+  sleep 0.4
+fi
+
+# 8. Open an Odin Pantheon Terminal window cleanly
+if command -v lxterminal >/dev/null 2>&1; then
+  lxterminal --geometry=80x22 --title="StormRaven OS — Odin Pantheon & Void Shell" \
+    -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
+elif command -v xterm >/dev/null 2>&1; then
+  xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 10 -geometry 80x22+760+420 \
+    -T "StormRaven OS — Odin Pantheon & Void Shell" \
+    -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
+fi
+
+# 9. Wait for Local Gateway (:3887) to be ready, then open the 29-App Ethereal Void Command Center
+/usr/local/bin/stormraven-open-ui &
+
+if [ -n "${WM_PID:-}" ]; then
+  wait "${WM_PID}"
+else
+  wait
+fi

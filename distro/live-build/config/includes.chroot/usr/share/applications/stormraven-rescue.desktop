@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ubuntu Boot & Disk Rescue
+Comment=GParted, TestDisk, Forensics, WireGuard VPN & KVM Tools
+Exec=lxterminal --title="StormRaven OS — Forensics, VPN & Rescue Suite" -e "/bin/bash -c 'stormraven baseline-audit || true; exec /bin/bash -i'"
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;

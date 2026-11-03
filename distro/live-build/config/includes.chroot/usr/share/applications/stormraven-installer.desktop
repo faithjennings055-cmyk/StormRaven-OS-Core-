@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install StormRaven OS
+Comment=Try or Install StormRaven OS 24.04 LTS to Disk + Boot Repair
+Exec=lxterminal --title="StormRaven OS — Try / Install & Boot Rescue Wizard" -e "sudo /usr/local/bin/stormraven-installer"
+Icon=system-software-install
+Terminal=false
+Categories=System;Settings;

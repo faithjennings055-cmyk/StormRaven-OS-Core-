@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=StormRaven Command Center
+Comment=Open the 29-App Ethereal Void Desktop & Bifrost Dashboard
+Exec=/usr/local/bin/stormraven-open-ui
+Icon=applications-internet
+Terminal=false
+Categories=System;Network;

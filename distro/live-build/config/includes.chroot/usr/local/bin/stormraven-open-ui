@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+UI_PORT="${STORMRAVEN_UI_PORT:-3887}"
+
+if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
+  STORMRAVEN_GATEWAY_PORT="${UI_PORT}" STORMRAVEN_UI_PORT=3000 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
+fi
+
+for _ in $(seq 1 20); do
+  if curl -fsS "http://127.0.0.1:${UI_PORT}/health" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.25
+done
+
+URL="http://127.0.0.1:${UI_PORT}/"
+if command -v falkon >/dev/null 2>&1; then
+  QTWEBENGINE_DISABLE_SANDBOX=1 QT_XCB_GL_INTEGRATION=none LIBGL_ALWAYS_SOFTWARE=1 \
+    falkon --no-sandbox "${URL}" >/tmp/stormraven-falkon.log 2>&1 &
+  sleep 2
+  wmctrl -r "Falkon" -e 0,200,30,1120,660 2>/dev/null || wmctrl -r "StormRaven" -e 0,200,30,1120,660 2>/dev/null || true
+  exit 0
+fi
+for browser in chromium chromium-browser firefox epiphany-browser xdg-open; do
+  if command -v "${browser}" >/dev/null 2>&1; then
+    "${browser}" "${URL}" >/dev/null 2>&1 &
+    exit 0
+  fi
+done
