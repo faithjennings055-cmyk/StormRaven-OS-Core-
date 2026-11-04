@@ -43,7 +43,75 @@ case "${APP_ID}" in
     exec /usr/local/bin/stormraven-open-ui
     ;;
   files|fafnir)
-    exec pcmanfm /home/ubuntu
+    exec pcmanfm "${HOME:-/home/ubuntu}"
+    ;;
+  calc)
+    if command -v galculator >/dev/null 2>&1; then exec galculator; fi
+    if command -v gnome-calculator >/dev/null 2>&1; then exec gnome-calculator; fi
+    exec /usr/local/bin/stormraven-open-ui calc
+    ;;
+  calendar)
+    if command -v gnome-calendar >/dev/null 2>&1; then exec gnome-calendar; fi
+    run_term "StormRaven Calendar" "cal -y; exec /bin/bash"
+    ;;
+  clocks)
+    if command -v gnome-clocks >/dev/null 2>&1; then exec gnome-clocks; fi
+    run_term "StormRaven World Clocks" "timedatectl status || date; exec /bin/bash"
+    ;;
+  characters)
+    if command -v gnome-characters >/dev/null 2>&1; then exec gnome-characters; fi
+    exec /usr/local/bin/stormraven-open-ui characters
+    ;;
+  docviewer)
+    if command -v evince >/dev/null 2>&1; then exec evince; fi
+    exec /usr/local/bin/stormraven-open-ui docviewer
+    ;;
+  lowriter)
+    if command -v lowriter >/dev/null 2>&1; then exec lowriter; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --writer; fi
+    exec /usr/local/bin/stormraven-open-ui lowriter
+    ;;
+  localc)
+    if command -v localc >/dev/null 2>&1; then exec localc; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --calc; fi
+    exec /usr/local/bin/stormraven-open-ui localc
+    ;;
+  lodraw)
+    if command -v lodraw >/dev/null 2>&1; then exec lodraw; fi
+    if command -v gimp >/dev/null 2>&1; then exec gimp; fi
+    exec /usr/local/bin/stormraven-open-ui lodraw
+    ;;
+  loimpress)
+    if command -v loimpress >/dev/null 2>&1; then exec loimpress; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --impress; fi
+    exec /usr/local/bin/stormraven-open-ui loimpress
+    ;;
+  lomath)
+    if command -v lomath >/dev/null 2>&1; then exec lomath; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --math; fi
+    exec /usr/local/bin/stormraven-open-ui lomath
+    ;;
+  video)
+    if command -v vlc >/dev/null 2>&1; then exec vlc; fi
+    if command -v mpv >/dev/null 2>&1; then exec mpv; fi
+    exec /usr/local/bin/stormraven-open-ui video
+    ;;
+  remmina)
+    if command -v remmina >/dev/null 2>&1; then exec remmina; fi
+    exec /usr/local/bin/stormraven-open-ui remmina
+    ;;
+  shotwell)
+    if command -v shotwell >/dev/null 2>&1; then exec shotwell; fi
+    exec feh /usr/share/backgrounds/stormraven
+    ;;
+  texteditor)
+    if command -v mousepad >/dev/null 2>&1; then exec mousepad; fi
+    if command -v gedit >/dev/null 2>&1; then exec gedit; fi
+    run_term "StormRaven Void Text Editor (nano)" "nano"
+    ;;
+  transmission)
+    if command -v transmission-gtk >/dev/null 2>&1; then exec transmission-gtk; fi
+    exec /usr/local/bin/stormraven-open-ui transmission
     ;;
   resources|system)
     if command -v htop >/dev/null 2>&1; then
@@ -66,6 +134,7 @@ case "${APP_ID}" in
     exec /usr/local/bin/stormraven-open-ui
     ;;
   camera)
+    if command -v cheese >/dev/null 2>&1; then exec cheese; fi
     run_term "HP w2558hc Webcam & V4L2 Devices" "lsusb; echo ''; ls -la /dev/video* 2>/dev/null || echo 'Plug in HP w2558hc USB upstream cable to enable built-in 2MP webcam'; exec /bin/bash"
     ;;
   software)
