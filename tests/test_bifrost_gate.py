@@ -59,6 +59,17 @@ class BifrostGateContract(unittest.TestCase):
         self.assertIn("Get-FileHash", xml_src)
         self.assertIn("install-win11.ps1.sha256", xml_src)
 
+    def test_void_theme_assets_present_in_chroot(self):
+        chroot = os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot")
+        for rel in (
+            ("etc", "gtk-3.0", "gtk.css"),
+            ("etc", "gtk-3.0", "settings.ini"),
+            ("etc", "xdg", "tint2", "tint2rc"),
+            ("etc", "xdg", "openbox", "rc.xml"),
+            ("usr", "share", "themes", "StormRaven-Ymir", "openbox-3", "themerc"),
+        ):
+            self.assertTrue(os.path.isfile(os.path.join(chroot, *rel)), f"Missing Void theme file: {rel}")
+
 
 if __name__ == "__main__":
     unittest.main()
