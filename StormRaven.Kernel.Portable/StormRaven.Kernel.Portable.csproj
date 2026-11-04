@@ -6,8 +6,8 @@
     Compiles the kernel's portable sources (Contracts, Kernel/DecisionEngine,
     Providers, Storage, ContextBus, Ipc) via linked compilation so there is a
     single source of truth shared with the Windows kernel project. Targets
-    plain net8.0 so it can be built and verified on any platform, and is
-    consumed by StormRaven.Mobile (MAUI, net8.0-ios) via ProjectReference.
+    plain net10.0 so it can be built and verified on any platform, and is
+    consumed by StormRaven.Mobile (MAUI, net10.0-ios) via ProjectReference.
 
     The Windows-only ServiceBase wrapper (Core/StormRaven.Kernel/KernelService.cs)
     is intentionally NOT linked here; each host supplies its own lifecycle
@@ -15,14 +15,14 @@
   -->
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>StormRaven.Kernel</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>

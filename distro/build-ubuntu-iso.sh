@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS 24.04 LTS (Ubuntu Noble Numbat) — Reproducible Live ISO Builder
+# StormRaven OS 26.04 LTS (Ubuntu Resolute Raccoon) — Reproducible Live ISO Builder
 # =============================================================================
-# Builds a bootable Ubuntu 24.04 LTS (noble) hybrid BIOS/UEFI Live ISO with:
-#   - Ubuntu 24.04 LTS (noble) userspace & kernel from archive.ubuntu.com
+# Builds a bootable Ubuntu 26.04 LTS (resolute) hybrid BIOS/UEFI Live ISO with:
+#   - Ubuntu 26.04 LTS (resolute) userspace & kernel from archive.ubuntu.com
 #   - StormRaven.Kernel + Bifrost HTTP/WS Gateway auto-starting on :8787
 #   - StormRaven Python Pantheon modules (/opt/stormraven/python/)
 #   - StormRaven Companion PWA (/opt/stormraven/webapp/)
@@ -14,15 +14,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-# Use /var/tmp (disk-backed) instead of /tmp (which is a RAM tmpfs on Ubuntu 24.04/26.04)
+# Use /var/tmp (disk-backed) instead of /tmp (which is a RAM tmpfs on Ubuntu 26.04/26.04)
 WORK_DIR="${WORK_DIR:-/var/tmp/stormraven-ubuntu-build}"
 CHROOT_DIR="${WORK_DIR}/chroot"
 ISO_STAGING="${WORK_DIR}/iso"
 OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso}"
-UBUNTU_SUITE="noble"
+UBUNTU_SUITE="resolute"
 UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}"
 UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}"
-KERNEL_PKG="${KERNEL_PKG:-linux-image-generic-hwe-24.04}"
+KERNEL_PKG="${KERNEL_PKG:-linux-image-generic-hwe-26.04}"
 CLEAN_BUILD="${CLEAN_BUILD:-0}"
 
 echo "==> [1/7] Checking host build dependencies..."
@@ -48,9 +48,9 @@ if ! command -v debootstrap >/dev/null 2>&1 || \
     mtools dosfstools ca-certificates curl
 fi
 
-# Ensure debootstrap knows about Ubuntu noble
-if [ ! -e /usr/share/debootstrap/scripts/noble ]; then
-  $SUDO ln -sf gutsy /usr/share/debootstrap/scripts/noble
+# Ensure debootstrap knows about Ubuntu resolute
+if [ ! -e /usr/share/debootstrap/scripts/resolute ]; then
+  $SUDO ln -sf gutsy /usr/share/debootstrap/scripts/resolute
 fi
 
 cleanup_mounts() {
@@ -66,7 +66,7 @@ cleanup_mounts
 # Free any leftover /tmp RAM-disk build directories from earlier runs
 $SUDO rm -rf /tmp/stormraven-ubuntu-build /tmp/stormraven-genesis-src 2>/dev/null || true
 if [ "${CLEAN_BUILD}" = "1" ] || [ ! -x "${CHROOT_DIR}/bin/bash" ]; then
-  echo "==> [2/7] Bootstrapping Ubuntu 24.04 LTS (${UBUNTU_SUITE}) rootfs into ${CHROOT_DIR}..."
+  echo "==> [2/7] Bootstrapping Ubuntu 26.04 LTS (${UBUNTU_SUITE}) rootfs into ${CHROOT_DIR}..."
   $SUDO rm -rf "${WORK_DIR}"
   mkdir -p "${CHROOT_DIR}" "${ISO_STAGING}/casper" "${ISO_STAGING}/live" "${ISO_STAGING}/boot/grub"
 
@@ -78,12 +78,12 @@ if [ "${CLEAN_BUILD}" = "1" ] || [ ! -x "${CHROOT_DIR}/bin/bash" ]; then
     "${CHROOT_DIR}" \
     "${UBUNTU_MIRROR}"
 else
-  echo "==> [2/7] Reusing existing Ubuntu 24.04 LTS (${UBUNTU_SUITE}) rootfs in ${CHROOT_DIR}..."
+  echo "==> [2/7] Reusing existing Ubuntu 26.04 LTS (${UBUNTU_SUITE}) rootfs in ${CHROOT_DIR}..."
   $SUDO rm -rf "${ISO_STAGING}"
   mkdir -p "${ISO_STAGING}/casper" "${ISO_STAGING}/live" "${ISO_STAGING}/boot/grub"
 fi
 
-echo "==> [3/7] Configuring Ubuntu 24.04 APT sources & bind mounts..."
+echo "==> [3/7] Configuring Ubuntu 26.04 APT sources & bind mounts..."
 $SUDO tee "${CHROOT_DIR}/etc/apt/sources.list" >/dev/null <<EOF
 deb ${UBUNTU_MIRROR} ${UBUNTU_SUITE} main restricted universe multiverse
 deb ${UBUNTU_MIRROR} ${UBUNTU_SUITE}-updates main restricted universe multiverse
@@ -104,7 +104,7 @@ exit 101
 EOF
 $SUDO chmod +x "${CHROOT_DIR}/usr/sbin/policy-rc.d"
 
-echo "==> [4/7] Installing Ubuntu 24.04 LTS kernel, systemd, casper, Python & runtime packages..."
+echo "==> [4/7] Installing Ubuntu 26.04 LTS kernel, systemd, casper, Python & runtime packages..."
 # --- Google Chrome: download on host into chroot /tmp (Faith's request) ---
 echo "==> Downloading Google Chrome for chroot install..."
 CHROME_DEB_HOST="${CHROOT_DIR}/tmp/google-chrome-stable_current_amd64.deb"
@@ -251,7 +251,7 @@ echo "==> [5.1/7] Building StormRaven.Kernel from source..."
     dotnet publish StormRaven.Kernel.csproj -c Release -r linux-x64 --self-contained true -o "${CHROOT_DIR}/opt/stormraven/" /p:PublishSingleFile=true /p:PublishTrimmed=true
 )
 
-echo "==> [5.2/7] Installing StormRaven OS payload, services, CLI, and Ubuntu 24.04 branding..."
+echo "==> [5.2/7] Installing StormRaven OS payload, services, CLI, and Ubuntu 26.04 branding..."
 
 # Build the Next.js UI for static export
 echo "Building Alfheim UI..."
@@ -315,7 +315,7 @@ $SUDO chmod +x "${CHROOT_DIR}/usr/share/initramfs-tools/hooks/stormraven-live"
 
 $SUDO tee "${CHROOT_DIR}/usr/share/initramfs-tools/scripts/casper" >/dev/null <<'EOF'
 #!/bin/sh
-# StormRaven OS Ubuntu 24.04 Live Rootfs Mounter (supports boot=casper and boot=live)
+# StormRaven OS Ubuntu 26.04 Live Rootfs Mounter (supports boot=casper and boot=live)
 
 mount_top() { :; }
 mount_premount() { :; }
@@ -542,30 +542,30 @@ cat > /etc/hosts <<'HOSTS'
 ::1         localhost ip6-localhost ip6-loopback
 HOSTS
 
-# Re-apply StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS) /usr/lib/os-release & /etc/os-release
+# Re-apply StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 26.04 LTS) /usr/lib/os-release & /etc/os-release
 rm -f /etc/os-release /usr/lib/os-release
 cat > /usr/lib/os-release <<'OSREL'
-PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS)"
+PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 26.04 LTS)"
 NAME="StormRaven OS"
 VERSION_ID="3.9.4"
-VERSION="24.04 LTS (Noble Numbat)"
-VERSION_CODENAME=noble
+VERSION="26.04 LTS (Resolute Raccoon)"
+VERSION_CODENAME=resolute
 ID=stormraven
 ID_LIKE="ubuntu debian"
 HOME_URL="https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-"
 SUPPORT_URL="https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-/issues"
 BUG_REPORT_URL="https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-/issues"
 PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-UBUNTU_CODENAME=noble
+UBUNTU_CODENAME=resolute
 LOGO=stormraven
 OSREL
 ln -sf ../usr/lib/os-release /etc/os-release
 
 cat > /etc/lsb-release <<'LSBREL'
 DISTRIB_ID=StormRaven
-DISTRIB_RELEASE=24.04
-DISTRIB_CODENAME=noble
-DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS)"
+DISTRIB_RELEASE=26.04
+DISTRIB_CODENAME=resolute
+DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 26.04 LTS)"
 LSBREL
 
 # Install Plymouth and set the StormRaven Void theme inside chroot
@@ -636,25 +636,25 @@ else
     terminal_output console serial
 fi
 
-menuentry "Try or Install StormRaven OS 24.04 LTS (v3.9.0 - Linux 7.0 HWE)" {
+menuentry "Try or Install StormRaven OS 26.04 LTS (v3.9.0 - Linux 7.0 HWE)" {
     echo "Rousing the raven... [Linux 7.0.0-42-generic HWE + 2011-2026 Firmware + Try/Install]"
     linux /casper/vmlinuz boot=casper quiet splash console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "Install StormRaven OS 24.04 LTS Directly to Disk (v3.9.0 Installer)" {
+menuentry "Install StormRaven OS 26.04 LTS Directly to Disk (v3.9.0 Installer)" {
     echo "Launching StormRaven OS Bare-Metal Disk Installer..."
     linux /casper/vmlinuz boot=casper stormraven.mode=install console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 - Safe Graphics Mode (nomodeset / Legacy 2011-2026 GPUs)" {
+menuentry "StormRaven OS 26.04 - Safe Graphics Mode (nomodeset / Legacy 2011-2026 GPUs)" {
     echo "Entering Iron Ward safe graphics fallback... [nomodeset]"
     linux /casper/vmlinuz boot=casper nomodeset console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
 }
 
-menuentry "StormRaven OS 24.04 - Boot Rescue, GParted & Forensics Mode" {
+menuentry "StormRaven OS 26.04 - Boot Rescue, GParted & Forensics Mode" {
     echo "Launching Ubuntu Boot Disk Rescue & Partitioning Suite..."
     linux /casper/vmlinuz boot=casper stormraven.mode=install forensic=1 console=tty0 console=ttyS0,115200n8
     initrd /casper/initrd
@@ -662,7 +662,7 @@ menuentry "StormRaven OS 24.04 - Boot Rescue, GParted & Forensics Mode" {
 EOF
 
 mkdir -p "${ISO_STAGING}/.disk" "${ISO_STAGING}/EFI/BOOT"
-echo "StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
+echo "StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 26.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
 
 # Stage standalone UEFI x86_64 binaries (BOOTX64.EFI + grubx64.efi + signed shim when available) (#61)
 if command -v grub-mkstandalone >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
