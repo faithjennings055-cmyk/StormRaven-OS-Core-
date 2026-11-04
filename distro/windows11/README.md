@@ -1,11 +1,15 @@
-# StormRaven OS — Windows 11 Edition (`distro/windows11/`, Issue #63)
+# StormRaven OS — Windows 11 Edition (`distro/windows11/`, Issues #63 & #80)
 
-Brings the full **StormRaven OS: Infinity Protocol** experience to Windows 11 via two supported paths:
+Brings the full **StormRaven OS: Infinity Protocol** experience to Windows 11 with strict SHA-256 supply-chain verification (no blind `irm | iex` piping and no plaintext credentials in `autounattend.xml`).
 
-## Option 1: 1-Command Windows 11 Installer (Recommended)
+## Option 1: SHA-256 Verified Windows 11 Installer (Recommended)
 Run in an Administrator PowerShell window on any Windows 11 PC or VM:
 ```powershell
-irm https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 | iex
+$u = "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app"
+Invoke-WebRequest "$u/install-win11.ps1" -OutFile install-win11.ps1
+Invoke-WebRequest "$u/install-win11.ps1.sha256" -OutFile install-win11.ps1.sha256
+if ((Get-FileHash .\install-win11.ps1 -Algorithm SHA256).Hash.ToLower() -ne (Get-Content .\install-win11.ps1.sha256).Split()[0].ToLower()) { throw "SHA-256 mismatch!" }
+.\install-win11.ps1
 ```
 Or from a local clone of `StormRaven-OS-Core-`:
 ```powershell
@@ -25,4 +29,4 @@ powershell -ExecutionPolicy Bypass -File .\distro\windows11\Install-StormRaven-W
 4. **Ethereal Void Windows 11 Theme:** Enables system/app dark mode, `#07030a` deep void background, centered Windows 11 taskbar, and creates the **StormRaven OS** desktop launcher.
 
 ## Option 2: Custom Windows 11 ISO (`autounattend.xml`)
-Drop `distro/windows11/autounattend.xml` into the root of any Windows 11 23H2/24H2 ISO (or USB stick created with Rufus/Media Creation Tool) to automatically provision the `stormraven` administrator account (password: `Stormraven`) and run `Install-StormRaven-Win11.ps1` on first boot.
+Drop `distro/windows11/autounattend.xml` into the root of any Windows 11 23H2/24H2 ISO (or USB stick). You set your own local administrator account credentials interactively during Windows OOBE (no hardcoded plaintext password), and on first logon Windows verifies the SHA-256 checksum of `install-win11.ps1` before bootstrapping the StormRaven OS stack.

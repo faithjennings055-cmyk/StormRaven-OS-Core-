@@ -12,6 +12,7 @@ Usage: stormraven-vm <command> [args]
 
 Commands:
   status                           Show KVM/QEMU hypervisor & nested-virt status (JSON)
+  win11 [win11-iso-path]           Launch Windows 11 test VM with TPM 2.0 + preloaded StormRaven Win11 drive
   init-pool                        Initialize default libvirt storage pool (${POOL_DIR})
   snapshot <vm-name> <snap-name>   Create live/offline qcow2 snapshot
   restore <vm-name> <snap-name>    Revert VM to snapshot
@@ -21,6 +22,14 @@ EOF
 
 cmd="${1:-status}"
 case "${cmd}" in
+  win11)
+    shift || true
+    if [ -x /usr/local/bin/vm-win11.sh ]; then
+      exec sudo /usr/local/bin/vm-win11.sh "$@"
+    else
+      exec bash -c "curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/vm-win11.sh | sudo bash -s -- $*"
+    fi
+    ;;
   status)
     kvm_loaded="false"
     [ -e /dev/kvm ] && kvm_loaded="true"

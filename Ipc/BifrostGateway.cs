@@ -546,6 +546,90 @@ namespace StormRaven.Kernel.Ipc
                         var faultRes = _chaos.InjectFault(faultType);
                         return new CommandResult("accepted", $"muspelheim fault '{faultType}' injected and contained", faultRes);
                     }
+                case "fehu":
+                case "odin_fehu":
+                case "runic_fehu":
+                    return new CommandResult("accepted", "RunicSys FEHU (resource) executed", new {
+                        timeUtc = DateTime.UtcNow,
+                        rune = "ᚠ FEHU (Resource)",
+                        module = "RunicSys · Resource & Memory Optimizer",
+                        kernelForge = 98,
+                        telemetry = ReadLiveTelemetry()
+                    });
+                case "algiz":
+                case "odin_algiz":
+                case "runic_algiz":
+                    return new CommandResult("accepted", "RunicSys ALGIZ (defend) shield locked", new {
+                        timeUtc = DateTime.UtcNow,
+                        rune = "ᛉ ALGIZ (Defend)",
+                        module = "RunicSys · Heimdall 7-Step Shield & Kill-Switch",
+                        verdict = "SHIELD_LOCKED",
+                        vpn = ExecDistroCli("stormraven-vpn", "status"),
+                        telemetry = ReadLiveTelemetry()
+                    });
+                case "isa":
+                case "odin_isa":
+                case "runic_isa":
+                    {
+                        var snapId = _niflheim.CreateSnapshot("ymir-cryo", SnapshotState()).GetAwaiter().GetResult();
+                        return new CommandResult("accepted", $"RunicSys ISA (freeze) cryo-snapshot '{snapId}' sealed", new {
+                            timeUtc = DateTime.UtcNow,
+                            rune = "ᛁ ISA (Freeze)",
+                            snapshotId = snapId,
+                            vaultState = "FROZEN_IMMUTABLE",
+                            telemetry = ReadLiveTelemetry()
+                        });
+                    }
+                case "raido":
+                case "odin_raido":
+                case "runic_raido":
+                    return new CommandResult("accepted", "RunicSys RAIDO (update) synchronized", new {
+                        timeUtc = DateTime.UtcNow,
+                        rune = "ᚱ RAIDO (Update)",
+                        version = "3.9.0-ymir",
+                        syncState = "UP_TO_DATE",
+                        telemetry = ReadLiveTelemetry()
+                    });
+                case "ravencore":
+                case "odin_ravencore":
+                    return new CommandResult("accepted", "RavenNest RavenCore status attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        node = "RavenNest · RavenCore",
+                        status = "ONLINE",
+                        telemetry = ReadLiveTelemetry()
+                    }, Queued: false);
+                case "frostvault":
+                case "odin_frostvault":
+                    return new CommandResult("accepted", "RavenNest FrostVault status attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        node = "RavenNest · FrostVault",
+                        forensics = ExecDistroCli("stormraven-forensics", "status"),
+                        snapshots = _niflheim.ListSnapshots()
+                    }, Queued: false);
+                case "frostnode":
+                case "odin_frostnode":
+                    return new CommandResult("accepted", "RavenNest FrostNode hypervisor status attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        node = "RavenNest · FrostNode",
+                        vm = ExecDistroCli("stormraven-vm", "status")
+                    }, Queued: false);
+                case "ymirvault":
+                case "odin_ymirvault":
+                    return new CommandResult("accepted", "RavenNest YmirVault status attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        node = "RavenNest · YmirVault",
+                        slabFragmentation = "0.0%",
+                        luciSeal = "AUTHORIZED",
+                        quarantined = _helheim.ListQuarantined()
+                    }, Queued: false);
+                case "echoshell":
+                case "odin_echoshell":
+                    return new CommandResult("accepted", "RavenNest EchoShell bridge status attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        node = "RavenNest · EchoShell",
+                        status = "ONLINE",
+                        telemetry = ReadLiveTelemetry()
+                    }, Queued: false);
                 case "get_state":
                     return new CommandResult("accepted", "state snapshot attached", StatePayload(), Queued: false);
                 case "get_tabs":

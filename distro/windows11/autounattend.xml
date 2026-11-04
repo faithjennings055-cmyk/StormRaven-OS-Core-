@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- StormRaven OS — Windows 11 Edition Unattended ISO Customization Manifest (#63) -->
+<!-- StormRaven OS — Windows 11 Edition Unattended ISO Customization Manifest (#63, #80) -->
+<!-- Security Hardened: No plaintext credentials; SHA-256 checksum verified prior to execution -->
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
   <settings pass="oobeSystem">
     <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
@@ -10,24 +11,11 @@
         <HideWirelessSetupInOOBE>false</HideWirelessSetupInOOBE>
         <ProtectYourPC>3</ProtectYourPC>
       </OOBE>
-      <UserAccounts>
-        <LocalAccounts>
-          <LocalAccount wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-            <Name>stormraven</Name>
-            <DisplayName>StormRaven Sovereign</DisplayName>
-            <Group>Administrators</Group>
-            <Password>
-              <Value>Stormraven</Value>
-              <PlainText>true</PlainText>
-            </Password>
-          </LocalAccount>
-        </LocalAccounts>
-      </UserAccounts>
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
           <Order>1</Order>
-          <Description>Bootstrap StormRaven OS Windows 11 Edition</Description>
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "irm https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 | iex"</CommandLine>
+          <Description>Verify SHA-256 Checksum and Bootstrap StormRaven OS Windows 11 Edition</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$u='https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app'; Invoke-WebRequest \"$u/install-win11.ps1\" -OutFile \"$env:TEMP\install-win11.ps1\"; Invoke-WebRequest \"$u/install-win11.ps1.sha256\" -OutFile \"$env:TEMP\install-win11.ps1.sha256\"; $expected=(Get-Content \"$env:TEMP\install-win11.ps1.sha256\").Split()[0].ToLower(); $actual=(Get-FileHash \"$env:TEMP\install-win11.ps1\" -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $expected) { throw 'SHA-256 verification failed for install-win11.ps1' }; &amp; \"$env:TEMP\install-win11.ps1\""</CommandLine>
         </SynchronousCommand>
       </FirstLogonCommands>
     </component>

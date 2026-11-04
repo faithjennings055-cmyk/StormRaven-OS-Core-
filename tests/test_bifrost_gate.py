@@ -46,6 +46,19 @@ class BifrostGateContract(unittest.TestCase):
         # Regression for the escaped-quote compile bug found in review.
         self.assertNotIn('realm="stormraven-bifrost""', GATEWAY_SRC)
 
+    def test_runic_and_ravennest_intents_allowlisted(self):
+        for intent in ("fehu", "algiz", "isa", "raido", "ravencore", "frostvault", "frostnode", "ymirvault", "echoshell"):
+            self.assertIn(f'case "{intent}":', GATEWAY_SRC, f"BifrostGateway must allow-list '{intent}'")
+
+    def test_win11_autounattend_scrubbed_and_checksum_verified(self):
+        xml_path = os.path.join(ROOT, "distro", "windows11", "autounattend.xml")
+        with open(xml_path, encoding="utf-8") as xf:
+            xml_src = xf.read()
+        self.assertNotIn("<PlainText>true</PlainText>", xml_src)
+        self.assertNotIn("<Value>Stormraven</Value>", xml_src)
+        self.assertIn("Get-FileHash", xml_src)
+        self.assertIn("install-win11.ps1.sha256", xml_src)
+
 
 if __name__ == "__main__":
     unittest.main()
