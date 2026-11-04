@@ -105,6 +105,17 @@ EOF
 $SUDO chmod +x "${CHROOT_DIR}/usr/sbin/policy-rc.d"
 
 echo "==> [4/7] Installing Ubuntu 24.04 LTS kernel, systemd, casper, Python & runtime packages..."
+# --- Google Chrome: download on host into chroot /tmp (Faith's request) ---
+echo "==> Downloading Google Chrome for chroot install..."
+CHROME_DEB_HOST="${CHROOT_DIR}/tmp/google-chrome-stable_current_amd64.deb"
+CHROME_DEB="/tmp/google-chrome-stable_current_amd64.deb"
+for i in 1 2 3; do
+  wget -q --timeout=120 -O "${CHROME_DEB_HOST}" https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && break
+done
+if [ ! -s "${CHROME_DEB_HOST}" ]; then
+  echo "WARNING: Chrome .deb download failed; continuing without Chrome"
+fi
+
 $SUDO chroot "${CHROOT_DIR}" /bin/bash -e <<EOF
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
@@ -213,23 +224,16 @@ apt-get install -y --no-install-recommends \
   timeshift \
   libnss-systemd
 
-# --- Google Chrome baked into the ISO (Faith's request) ---
-echo "==> Installing Google Chrome..."
-CHROME_DEB="/tmp/google-chrome-stable_current_amd64.deb"
-for i in 1 2 3; do
-  wget -q --timeout=120 -O "${CHROME_DEB}" https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && break
-  sleep 10
-done
+# --- Google Chrome (downloaded on host into chroot /tmp above) ---
 if [ -s "${CHROME_DEB}" ]; then
+  echo "==> Installing Google Chrome in chroot..."
   apt-get install -y --no-install-recommends "${CHROME_DEB}" || dpkg -i "${CHROME_DEB}" || true
   rm -f "${CHROME_DEB}"
   if command -v google-chrome >/dev/null 2>&1; then
-    echo "Google Chrome $(google-chrome --version 2>/dev/null || echo unknown) installed"
+    echo "Google Chrome installed: \$(google-chrome --version 2>/dev/null || echo unknown)"
   else
     echo "WARNING: google-chrome binary not found after install"
   fi
-else
-  echo "WARNING: Chrome .deb download failed; continuing without Chrome"
 fi
 
 apt-get clean
@@ -538,12 +542,12 @@ cat > /etc/hosts <<'HOSTS'
 ::1         localhost ip6-localhost ip6-loopback
 HOSTS
 
-# Re-apply StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS) /usr/lib/os-release & /etc/os-release
+# Re-apply StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS) /usr/lib/os-release & /etc/os-release
 rm -f /etc/os-release /usr/lib/os-release
 cat > /usr/lib/os-release <<'OSREL'
-PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)"
+PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS)"
 NAME="StormRaven OS"
-VERSION_ID="3.9.0"
+VERSION_ID="3.9.4"
 VERSION="24.04 LTS (Noble Numbat)"
 VERSION_CODENAME=noble
 ID=stormraven
@@ -561,7 +565,7 @@ cat > /etc/lsb-release <<'LSBREL'
 DISTRIB_ID=StormRaven
 DISTRIB_RELEASE=24.04
 DISTRIB_CODENAME=noble
-DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)"
+DISTRIB_DESCRIPTION="StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS)"
 LSBREL
 
 # Install Plymouth and set the StormRaven Void theme inside chroot
@@ -658,7 +662,7 @@ menuentry "StormRaven OS 24.04 - Boot Rescue, GParted & Forensics Mode" {
 EOF
 
 mkdir -p "${ISO_STAGING}/.disk" "${ISO_STAGING}/EFI/BOOT"
-echo "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
+echo "StormRaven OS: Infinity Protocol v3.9.4 (Ubuntu 24.04 LTS) - Release amd64 ($(date -u +%Y%m%d))" > "${ISO_STAGING}/.disk/info"
 
 # Stage standalone UEFI x86_64 binaries (BOOTX64.EFI + grubx64.efi + signed shim when available) (#61)
 if command -v grub-mkstandalone >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
