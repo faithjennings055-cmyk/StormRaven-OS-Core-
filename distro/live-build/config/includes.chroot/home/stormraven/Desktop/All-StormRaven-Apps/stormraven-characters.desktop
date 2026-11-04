@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Character Map
+Comment=Runic, Unicode & Emoji Character Map
+Exec=/usr/local/bin/stormraven-app-exec characters
+Icon=accessories-character-map
+Terminal=false
+Categories=Utility;
+StartupNotify=false

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Virtual Machine Manager
+Comment=KVM / QEMU Hypervisor & VM Manager
+Exec=/usr/local/bin/stormraven-app-exec virtmanager
+Icon=computer
+Terminal=false
+Categories=System;Emulator;
+StartupNotify=false

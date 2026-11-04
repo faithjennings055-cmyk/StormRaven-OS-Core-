@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LibreOffice Calc
+Comment=Spreadsheet Editor
+Exec=/usr/local/bin/stormraven-app-exec localc
+Icon=x-office-spreadsheet
+Terminal=false
+Categories=Office;Spreadsheet;
+StartupNotify=false

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Boot Repair & EFI
+Comment=Repair UEFI/BIOS GRUB bootloaders and partitions
+Exec=/usr/local/bin/stormraven-app-exec bootrepair
+Icon=preferences-system
+Terminal=false
+Categories=System;
+StartupNotify=false

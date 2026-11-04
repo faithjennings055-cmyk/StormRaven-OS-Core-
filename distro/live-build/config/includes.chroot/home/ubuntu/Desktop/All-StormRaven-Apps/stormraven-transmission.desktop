@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Transmission Torrents
+Comment=BitTorrent & ISO Downloader
+Exec=/usr/local/bin/stormraven-app-exec transmission
+Icon=folder-download
+Terminal=false
+Categories=Network;FileTransfer;
+StartupNotify=false

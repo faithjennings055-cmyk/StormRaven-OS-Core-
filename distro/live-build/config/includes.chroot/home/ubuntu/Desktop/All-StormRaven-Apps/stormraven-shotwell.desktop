@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Shotwell Photos
+Comment=Photo Viewer & Wallpaper Gallery
+Exec=feh /usr/share/backgrounds/stormraven
+Icon=applets-screenshooter
+Terminal=false
+Categories=Graphics;Photography;
+StartupNotify=false

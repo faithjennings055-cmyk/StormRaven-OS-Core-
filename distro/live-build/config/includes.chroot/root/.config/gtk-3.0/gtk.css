@@ -1,0 +1,19 @@
+window, dialog, .background, .view, treeview, textview, notebook, scrolledwindow {
+  background-color: #050d1a;
+  color: #e0f2fe;
+}
+headerbar, .titlebar, toolbar, menubar {
+  background-image: linear-gradient(to right, #06182e, #040b18);
+  color: #38bdf8;
+  border-bottom: 1px solid #0284c7;
+}
+button, entry {
+  background-color: #081c36;
+  color: #f0f9ff;
+  border: 1px solid #0284c7;
+  border-radius: 6px;
+}
+button:hover {
+  background-color: #0c2d54;
+  border-color: #38bdf8;
+}

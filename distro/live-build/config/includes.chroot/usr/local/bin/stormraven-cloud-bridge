@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+import hashlib, hmac, json, os, socket, subprocess, sys, time, urllib.request
+
+CLOUD_URL = os.environ.get("STORMRAVEN_CLOUD_URL", "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app")
+PYTHON_DIR = "/opt/stormraven/python"
+if os.path.isdir(PYTHON_DIR) and PYTHON_DIR not in sys.path:
+    sys.path.insert(0, PYTHON_DIR)
+
+START_TS = time.time()
+
+# Strict Heimdall Allow-List (zero catch-all fallback, shell=False argv lists only)
+HEIMDALL_ALLOWLIST = {
+    "fehu": ["/usr/local/bin/fehu"],
+    "odin_fehu": ["/usr/local/bin/fehu"],
+    "runic_fehu": ["/usr/local/bin/fehu"],
+    "algiz": ["/usr/local/bin/algiz"],
+    "odin_algiz": ["/usr/local/bin/algiz"],
+    "runic_algiz": ["/usr/local/bin/algiz"],
+    "isa": ["/usr/local/bin/isa"],
+    "odin_isa": ["/usr/local/bin/isa"],
+    "runic_isa": ["/usr/local/bin/isa"],
+    "raido": ["/usr/local/bin/stormraven", "status"],
+    "odin_raido": ["/usr/local/bin/stormraven", "status"],
+    "runic_raido": ["/usr/local/bin/stormraven", "status"],
+    "ravencore": ["/usr/local/bin/stormraven", "health"],
+    "frostvault": ["/usr/local/bin/stormraven-forensics", "status"],
+    "frostnode": ["/usr/local/bin/stormraven-vm", "status"],
+    "ymirvault": ["/usr/local/bin/stormraven", "luci"],
+    "echoshell": ["/usr/local/bin/stormraven", "realms"],
+    "pc_launch_hud": ["/usr/local/bin/stormraven", "status"],
+}
+
+def load_luci_key():
+    for p in ("/etc/stormraven/Luci.key", os.path.expanduser("~/.stormraven_luci.key")):
+        if os.path.isfile(p):
+            try:
+                return open(p, "r", encoding="utf-8").read().strip()
+            except Exception:
+                pass
+    return "SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3"
+
+def sign_payload(raw_bytes):
+    key = load_luci_key().encode("utf-8")
+    return hmac.new(key, raw_bytes, hashlib.sha256).hexdigest()
+
+def get_telemetry():
+    try:
+        import psutil
+        return {"cpu": round(psutil.cpu_percent(interval=0.1), 1), "ram": round(psutil.virtual_memory().percent, 1), "cores": psutil.cpu_count() or 4}
+    except Exception:
+        return {"cpu": 12.0, "ram": 24.0, "cores": 4}
+
+def heimdall_audit_and_exec(cmd_name):
+    norm = (cmd_name or "").strip().lower()
+    argv = HEIMDALL_ALLOWLIST.get(norm)
+    if argv is None:
+        return {
+            "ok": False,
+            "heimdallAudit": "BLOCKED",
+            "intent": norm,
+            "error": f"Rejected by Heimdall Zero-Trust Allow-List: '{norm}' is not an authorized intent."
+        }
+    try:
+        from heimdall import Heimdall
+        if not Heimdall().audit(" ".join(argv)):
+            return {"ok": False, "heimdallAudit": "BLOCKED", "intent": norm, "error": "Blocked by Heimdall policy."}
+    except Exception:
+        pass
+    out = subprocess.run(argv, capture_output=True, text=True, timeout=5, shell=False).stdout.strip()
+    return {
+        "ok": True,
+        "heimdallAudit": "PASS",
+        "intent": norm,
+        "host": socket.gethostname(),
+        "output": out,
+        "telemetry": get_telemetry()
+    }
+
+while True:
+    try:
+        hb_bytes = json.dumps({
+            "hostname": socket.gethostname(),
+            "distro": "StormRaven OS: Ymir Edition v3.9.0 (Live Hardware)",
+            "uptimeSec": int(time.time() - START_TS),
+            "telemetry": get_telemetry()
+        }).encode("utf-8")
+        sig = sign_payload(hb_bytes)
+        req = urllib.request.Request(
+            f"{CLOUD_URL}/bridge/heartbeat",
+            data=hb_bytes,
+            headers={"Content-Type": "application/json", "X-Luci-Signature": sig},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            raw_resp = resp.read()
+            srv_sig = resp.headers.get("X-Luci-Signature", "")
+            data = json.loads(raw_resp.decode("utf-8"))
+            cmd = data.get("command") or ""
+            cmd_sig = data.get("signature") or ""
+            if cmd:
+                expected_sig = sign_payload(cmd.encode("utf-8"))
+                if not hmac.compare_digest(cmd_sig, expected_sig):
+                    res = {"ok": False, "heimdallAudit": "BLOCKED", "error": "Invalid HMAC-SHA256 Luci signature on command"}
+                else:
+                    res = heimdall_audit_and_exec(cmd)
+                rbody = json.dumps({"machineId": "stormraven", "result": res}).encode("utf-8")
+                rreq = urllib.request.Request(
+                    f"{CLOUD_URL}/bridge/result",
+                    data=rbody,
+                    headers={"Content-Type": "application/json", "X-Luci-Signature": sign_payload(rbody)},
+                    method="POST"
+                )
+                urllib.request.urlopen(rreq, timeout=5).read()
+    except Exception:
+        pass
+    time.sleep(2)

@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set +e
+APP_ID="${1:-desktop}"
+export DISPLAY="${DISPLAY:-:0}"
+
+# Ensure local gateway is up on 3887 & 8787
+if ! ss -tln 2>/dev/null | grep -q ":8787 "; then
+  python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
+fi
+if ! ss -tln 2>/dev/null | grep -q ":3887 "; then
+  STORMRAVEN_GATEWAY_PORT=3887 STORMRAVEN_UI_PORT=3000 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
+fi
+
+run_term() {
+  local title="$1"
+  shift
+  if command -v lxterminal >/dev/null 2>&1; then
+    exec lxterminal --geometry=95x28 --title="${title}" -e "/bin/bash -c \"$*\""
+  else
+    exec xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -geometry 95x28 -T "${title}" -e "/bin/bash -c \"$*\""
+  fi
+}
+
+case "${APP_ID}" in
+  installos|startupdisk|iso)
+    run_term "StormRaven OS — Try / Install & Boot Rescue Wizard" "sudo /usr/local/bin/stormraven-installer; exec /bin/bash"
+    ;;
+  gparted)
+    if command -v gparted >/dev/null 2>&1; then exec sudo -E gparted; fi
+    run_term "StormRaven Disks & Partitions" "lsblk -f; echo ''; sudo fdisk -l; exec /bin/bash"
+    ;;
+  bootrepair|rescue)
+    run_term "StormRaven Boot Repair & Rescue Suite" "stormraven baseline-audit || true; lsblk -f; exec /bin/bash"
+    ;;
+  firmware|hp-w2558hc)
+    run_term "StormRaven HP w2558hc & 2011-2026 Firmware Manager" "/usr/local/bin/stormraven-display-hp; echo ''; inxi -Gxx || lspci -k | grep -EA3 'VGA|3D|Display'; echo ''; read -p 'Press Enter to keep shell open...'; exec /bin/bash"
+    ;;
+  browser)
+    if [ -x /usr/local/bin/google-chrome ]; then exec /usr/local/bin/google-chrome "http://127.0.0.1:3887/"; fi
+    if command -v google-chrome-stable >/dev/null 2>&1; then exec google-chrome-stable --no-sandbox "http://127.0.0.1:3887/"; fi
+    if command -v chromium >/dev/null 2>&1; then exec chromium --no-sandbox "http://127.0.0.1:3887/"; fi
+    if command -v firefox >/dev/null 2>&1; then exec firefox "http://127.0.0.1:3887/"; fi
+    exec /usr/local/bin/stormraven-open-ui
+    ;;
+  files|fafnir)
+    exec pcmanfm /home/ubuntu
+    ;;
+  resources|system)
+    if command -v htop >/dev/null 2>&1; then
+      run_term "StormRaven System Resources (htop)" "htop"
+    fi
+    run_term "StormRaven System Telemetry" "stormraven status; exec /bin/bash"
+    ;;
+  security)
+    run_term "Heimdall & Luci Security Center" "stormraven status; echo ''; sudo ufw status verbose || true; exec /bin/bash"
+    ;;
+  sovereign|odin)
+    run_term "Sovereign AI — Odin & Freya Pantheon" "stormraven odin; exec /bin/bash"
+    ;;
+  virtmanager|boxes)
+    if command -v virt-manager >/dev/null 2>&1; then exec virt-manager; fi
+    run_term "StormRaven KVM / QEMU Hypervisor" "stormraven-vm status || true; exec /bin/bash"
+    ;;
+  settings)
+    if command -v lxappearance >/dev/null 2>&1; then exec lxappearance; fi
+    exec /usr/local/bin/stormraven-open-ui
+    ;;
+  camera)
+    run_term "HP w2558hc Webcam & V4L2 Devices" "lsusb; echo ''; ls -la /dev/video* 2>/dev/null || echo 'Plug in HP w2558hc USB upstream cable to enable built-in 2MP webcam'; exec /bin/bash"
+    ;;
+  software)
+    run_term "StormRaven Software Installer" "echo '=== StormRaven Software Center ==='; echo 'Type: install chrome | install vlc | install gimp | install libreoffice | install steam'; echo ''; exec /bin/bash"
+    ;;
+  *)
+    exec /usr/local/bin/stormraven-open-ui "${APP_ID}"
+    ;;
+esac

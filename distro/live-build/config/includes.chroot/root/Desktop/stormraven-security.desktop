@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Heimdall Security Center
+Comment=Zero-Trust Gatekeeper, Luci Key & Firewall
+Exec=/usr/local/bin/stormraven-app-exec security
+Icon=security-high
+Terminal=false
+Categories=System;Security;
+StartupNotify=false

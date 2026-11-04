@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Web Browser
+Comment=Browse the web and open StormRaven Command Center
+Exec=/usr/local/bin/stormraven-app-exec browser
+Icon=web-browser
+Terminal=false
+Categories=Network;WebBrowser;
+StartupNotify=false

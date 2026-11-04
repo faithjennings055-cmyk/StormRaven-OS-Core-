@@ -63,8 +63,14 @@ if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && command -v dbus-launch >/dev/null 2
   eval "$(dbus-launch --sh-syntax --exit-with-session)" 2>/dev/null || true
 fi
 
-xset s off -dpms 2>/dev/null || true
-xsetroot -solid "#07030a" 2>/dev/null || true
+xset s off -dpms s noblank 2>/dev/null || true
+xsetroot -solid "#050d1a" 2>/dev/null || true
+if [ -x /usr/local/bin/stormraven-display-hp ]; then
+  /usr/local/bin/stormraven-display-hp >/tmp/stormraven-display-hp.log 2>&1 || true
+fi
+if [ -x /usr/local/bin/stormraven-cloud-bridge ] && ! pgrep -f stormraven-cloud-bridge >/dev/null 2>&1; then
+  nohup /usr/local/bin/stormraven-cloud-bridge >/tmp/stormraven-cloud-bridge.log 2>&1 &
+fi
 if [ -f "${WALLPAPER}" ] && command -v feh >/dev/null 2>&1; then
   feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
 fi

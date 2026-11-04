@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Rescue & Recovery
+Comment=Forensics, TestDisk, PhotoRec, WireGuard & System Audit
+Exec=/usr/local/bin/stormraven-app-exec rescue
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;
+StartupNotify=false

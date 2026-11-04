@@ -115,14 +115,53 @@ systemctl restart stormraven-kernel.service 2>/dev/null || true
 EOF
 chmod +x /usr/local/bin/fehu /usr/local/bin/algiz /usr/local/bin/isa /usr/local/bin/raido
 
-# 4. Install Live Mobile-to-PC Hardware Remote Control Daemon
-echo "==> [4/5] Starting Live Mobile-to-PC Remote Control Bridge..."
+# 4. Install Heimdall-Gated, HMAC-Signed Mobile-to-PC Bridge Daemon (runs as unprivileged user ubuntu)
+echo "==> [4/5] Starting Heimdall-Gated Mobile-to-PC Bridge (HMAC-SHA256 Luci Signed)..."
 cat > /usr/local/bin/stormraven-cloud-bridge <<'PY'
 #!/usr/bin/env python3
-import json, os, socket, subprocess, time, urllib.request
+import hashlib, hmac, json, os, socket, subprocess, sys, time, urllib.request
 
 CLOUD_URL = os.environ.get("STORMRAVEN_CLOUD_URL", "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app")
+PYTHON_DIR = "/opt/stormraven/python"
+if os.path.isdir(PYTHON_DIR) and PYTHON_DIR not in sys.path:
+    sys.path.insert(0, PYTHON_DIR)
+
 START_TS = time.time()
+
+# Strict Heimdall Allow-List (zero catch-all fallback, shell=False argv lists only)
+HEIMDALL_ALLOWLIST = {
+    "fehu": ["/usr/local/bin/fehu"],
+    "odin_fehu": ["/usr/local/bin/fehu"],
+    "runic_fehu": ["/usr/local/bin/fehu"],
+    "algiz": ["/usr/local/bin/algiz"],
+    "odin_algiz": ["/usr/local/bin/algiz"],
+    "runic_algiz": ["/usr/local/bin/algiz"],
+    "isa": ["/usr/local/bin/isa"],
+    "odin_isa": ["/usr/local/bin/isa"],
+    "runic_isa": ["/usr/local/bin/isa"],
+    "raido": ["/usr/local/bin/stormraven", "status"],
+    "odin_raido": ["/usr/local/bin/stormraven", "status"],
+    "runic_raido": ["/usr/local/bin/stormraven", "status"],
+    "ravencore": ["/usr/local/bin/stormraven", "health"],
+    "frostvault": ["/usr/local/bin/stormraven-forensics", "status"],
+    "frostnode": ["/usr/local/bin/stormraven-vm", "status"],
+    "ymirvault": ["/usr/local/bin/stormraven", "luci"],
+    "echoshell": ["/usr/local/bin/stormraven", "realms"],
+    "pc_launch_hud": ["/usr/local/bin/stormraven", "status"],
+}
+
+def load_luci_key():
+    for p in ("/etc/stormraven/Luci.key", os.path.expanduser("~/.stormraven_luci.key")):
+        if os.path.isfile(p):
+            try:
+                return open(p, "r", encoding="utf-8").read().strip()
+            except Exception:
+                pass
+    return "SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3"
+
+def sign_payload(raw_bytes):
+    key = load_luci_key().encode("utf-8")
+    return hmac.new(key, raw_bytes, hashlib.sha256).hexdigest()
 
 def get_telemetry():
     try:
@@ -131,44 +170,66 @@ def get_telemetry():
     except Exception:
         return {"cpu": 12.0, "ram": 24.0, "cores": 4}
 
-def exec_local(cmd):
-    c = cmd.strip().lower()
-    env = os.environ.copy()
-    env["DISPLAY"] = ":0"
-    if c in ("fehu", "odin_fehu", "runic_fehu"):
-        out = subprocess.run(["/usr/local/bin/fehu"], capture_output=True, text=True, timeout=5).stdout
-        return {"rune": "ᚠ FEHU", "host": socket.gethostname(), "output": out, "telemetry": get_telemetry()}
-    if c in ("algiz", "odin_algiz", "runic_algiz"):
-        out = subprocess.run(["/usr/local/bin/algiz"], capture_output=True, text=True, timeout=5).stdout
-        return {"rune": "ᛉ ALGIZ", "host": socket.gethostname(), "output": out, "telemetry": get_telemetry()}
-    if c in ("isa", "odin_isa", "runic_isa"):
-        out = subprocess.run(["/usr/local/bin/isa"], capture_output=True, text=True, timeout=5).stdout
-        return {"rune": "ᛁ ISA", "host": socket.gethostname(), "output": out, "telemetry": get_telemetry()}
-    if c in ("raido", "odin_raido", "runic_raido"):
-        out = subprocess.run(["/usr/local/bin/raido"], capture_output=True, text=True, timeout=5).stdout
-        return {"rune": "ᚱ RAIDO", "host": socket.gethostname(), "output": out, "telemetry": get_telemetry()}
-    if c in ("pc_launch_hud", "echoshell", "odin_echoshell"):
-        subprocess.Popen(["su", "-", "ubuntu", "-c", "DISPLAY=:0 falkon http://127.0.0.1:3000 >/dev/null 2>&1 &"])
-        return {"node": "EchoShell", "status": "Launched Ymir Edition HUD on physical monitor :0", "telemetry": get_telemetry()}
-    out = subprocess.run(["/usr/local/bin/stormraven", "status"], capture_output=True, text=True, timeout=5).stdout
-    return {"executedOnPc": cmd, "host": socket.gethostname(), "output": out, "telemetry": get_telemetry()}
+def heimdall_audit_and_exec(cmd_name):
+    norm = (cmd_name or "").strip().lower()
+    argv = HEIMDALL_ALLOWLIST.get(norm)
+    if argv is None:
+        return {
+            "ok": False,
+            "heimdallAudit": "BLOCKED",
+            "intent": norm,
+            "error": f"Rejected by Heimdall Zero-Trust Allow-List: '{norm}' is not an authorized intent."
+        }
+    try:
+        from heimdall import Heimdall
+        if not Heimdall().audit(" ".join(argv)):
+            return {"ok": False, "heimdallAudit": "BLOCKED", "intent": norm, "error": "Blocked by Heimdall policy."}
+    except Exception:
+        pass
+    out = subprocess.run(argv, capture_output=True, text=True, timeout=5, shell=False).stdout.strip()
+    return {
+        "ok": True,
+        "heimdallAudit": "PASS",
+        "intent": norm,
+        "host": socket.gethostname(),
+        "output": out,
+        "telemetry": get_telemetry()
+    }
 
 while True:
     try:
-        hb = json.dumps({
+        hb_bytes = json.dumps({
             "hostname": socket.gethostname(),
             "distro": "StormRaven OS: Ymir Edition v3.9.0 (Live Hardware)",
             "uptimeSec": int(time.time() - START_TS),
             "telemetry": get_telemetry()
         }).encode("utf-8")
-        req = urllib.request.Request(f"{CLOUD_URL}/bridge/heartbeat", data=hb, headers={"Content-Type": "application/json"}, method="POST")
+        sig = sign_payload(hb_bytes)
+        req = urllib.request.Request(
+            f"{CLOUD_URL}/bridge/heartbeat",
+            data=hb_bytes,
+            headers={"Content-Type": "application/json", "X-Luci-Signature": sig},
+            method="POST"
+        )
         with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            raw_resp = resp.read()
+            srv_sig = resp.headers.get("X-Luci-Signature", "")
+            data = json.loads(raw_resp.decode("utf-8"))
             cmd = data.get("command") or ""
+            cmd_sig = data.get("signature") or ""
             if cmd:
-                res = exec_local(cmd)
+                expected_sig = sign_payload(cmd.encode("utf-8"))
+                if not hmac.compare_digest(cmd_sig, expected_sig):
+                    res = {"ok": False, "heimdallAudit": "BLOCKED", "error": "Invalid HMAC-SHA256 Luci signature on command"}
+                else:
+                    res = heimdall_audit_and_exec(cmd)
                 rbody = json.dumps({"machineId": "stormraven", "result": res}).encode("utf-8")
-                rreq = urllib.request.Request(f"{CLOUD_URL}/bridge/result", data=rbody, headers={"Content-Type": "application/json"}, method="POST")
+                rreq = urllib.request.Request(
+                    f"{CLOUD_URL}/bridge/result",
+                    data=rbody,
+                    headers={"Content-Type": "application/json", "X-Luci-Signature": sign_payload(rbody)},
+                    method="POST"
+                )
                 urllib.request.urlopen(rreq, timeout=5).read()
     except Exception:
         pass
@@ -176,11 +237,16 @@ while True:
 PY
 chmod +x /usr/local/bin/stormraven-cloud-bridge
 pkill -f stormraven-cloud-bridge 2>/dev/null || true
-nohup /usr/local/bin/stormraven-cloud-bridge >/tmp/stormraven-cloud-bridge.log 2>&1 &
+if id -u ubuntu >/dev/null 2>&1; then
+  su - ubuntu -c "nohup /usr/local/bin/stormraven-cloud-bridge >/tmp/stormraven-cloud-bridge.log 2>&1 &"
+else
+  nohup /usr/local/bin/stormraven-cloud-bridge >/tmp/stormraven-cloud-bridge.log 2>&1 &
+fi
 
 # 5. Refresh live desktop wallpaper, Openbox theme, single tint2 dock & Ymir HUD window
 echo "==> [5/5] Refreshing live X11 screen (:0) with Ymir Edition HUD..."
 export DISPLAY=:0
+xset s off -dpms s noblank 2>/dev/null || su - ubuntu -c "DISPLAY=:0 xset s off -dpms s noblank" 2>/dev/null || true
 feh --bg-fill "${WALLPAPER}" 2>/dev/null || su - ubuntu -c "DISPLAY=:0 feh --bg-fill '${WALLPAPER}'" 2>/dev/null || true
 openbox --reconfigure 2>/dev/null || su - ubuntu -c "DISPLAY=:0 openbox --reconfigure" 2>/dev/null || true
 # Clean up duplicate tint2 bars if more than one is running
@@ -188,7 +254,7 @@ if [ "$(pgrep -c tint2 2>/dev/null || echo 0)" -gt 1 ]; then
   pkill tint2 2>/dev/null || true
   su - ubuntu -c "DISPLAY=:0 tint2 >/dev/null 2>&1 &" || true
 fi
-su - ubuntu -c "DISPLAY=:0 falkon http://127.0.0.1:3000 >/dev/null 2>&1 &" || true
+su - ubuntu -c "DISPLAY=:0 /usr/local/bin/stormraven-open-ui >/dev/null 2>&1 &" || true
 
 echo "======================================================================="
 echo " ❄️  YMIR EDITION ACTIVE! Your phone and physical PC are now paired."

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Remmina Remote Desktop
+Comment=RDP, VNC & SSH Remote Client
+Exec=/usr/local/bin/stormraven-app-exec remmina
+Icon=preferences-system-network
+Terminal=false
+Categories=Network;RemoteAccess;
+StartupNotify=false

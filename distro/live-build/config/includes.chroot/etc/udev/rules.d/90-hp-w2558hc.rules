@@ -1,0 +1,4 @@
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="03f0", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="04f2", MODE="0666", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03f0", MODE="0666", TAG+="uaccess"
+ACTION=="change", SUBSYSTEM=="drm", RUN+="/usr/local/bin/stormraven-display-hp"

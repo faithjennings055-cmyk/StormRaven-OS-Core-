@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=System Monitor
+Comment=Live CPU, RAM, Disk & Process Monitor (htop)
+Exec=/usr/local/bin/stormraven-app-exec system
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;
+StartupNotify=false

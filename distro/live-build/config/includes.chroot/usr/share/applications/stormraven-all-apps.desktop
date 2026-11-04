@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=StormRaven All 33 Apps
+Comment=Open the StormRaven OS 33-App Launcher & Command Center
+Exec=/usr/local/bin/stormraven-open-ui
+Icon=view-app-grid
+Terminal=false
+Categories=System;Utility;
+StartupNotify=false

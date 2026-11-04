@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Software Center
+Comment=Install Chrome, VLC, LibreOffice, GIMP, and Ubuntu packages
+Exec=/usr/local/bin/stormraven-app-exec software
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;
+StartupNotify=false

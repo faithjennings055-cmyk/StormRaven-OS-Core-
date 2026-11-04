@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=HP w2558hc Display Setup
+Comment=Configure HP w2558hc (1920x1200@60Hz) & HP W2072a (1600x900) Display, Webcam & Audio
+Exec=/usr/local/bin/stormraven-app-exec hp-w2558hc
+Icon=video-display
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupNotify=false

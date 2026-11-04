@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Fafnir File Explorer
+Comment=Browse local drives, USB volumes, and applications
+Exec=pcmanfm /home/ubuntu
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;
+StartupNotify=false

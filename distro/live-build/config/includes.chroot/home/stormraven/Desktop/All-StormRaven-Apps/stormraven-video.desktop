@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Video Player
+Comment=Play local media and streams
+Exec=/usr/local/bin/stormraven-app-exec video
+Icon=applications-multimedia
+Terminal=false
+Categories=AudioVideo;Player;
+StartupNotify=false

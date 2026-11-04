@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LibreOffice Writer
+Comment=Word Processor & Document Editor
+Exec=/usr/local/bin/stormraven-app-exec lowriter
+Icon=x-office-document
+Terminal=false
+Categories=Office;WordProcessor;
+StartupNotify=false

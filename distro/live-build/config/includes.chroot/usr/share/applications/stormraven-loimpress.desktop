@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LibreOffice Impress
+Comment=Presentations
+Exec=/usr/local/bin/stormraven-app-exec loimpress
+Icon=x-office-presentation
+Terminal=false
+Categories=Office;Presentation;
+StartupNotify=false
