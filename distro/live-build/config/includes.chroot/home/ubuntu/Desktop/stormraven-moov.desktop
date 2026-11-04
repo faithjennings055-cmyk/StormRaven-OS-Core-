@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Moov AI Banking & Check Deposit
+Comment=Originate Same-Day ACH Transfers & Cash Checks via Mobile Deposit (mRDC)
+Exec=/usr/local/bin/stormraven-app-exec moov
+Icon=accessories-calculator
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=false

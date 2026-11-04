@@ -137,6 +137,13 @@ case "${APP_ID}" in
     if command -v cheese >/dev/null 2>&1; then exec cheese; fi
     run_term "HP w2558hc Webcam & V4L2 Devices" "lsusb; echo ''; ls -la /dev/video* 2>/dev/null || echo 'Plug in HP w2558hc USB upstream cable to enable built-in 2MP webcam'; exec /bin/bash"
     ;;
+  moov|ach|banking)
+    if [ -x /usr/local/bin/google-chrome ]; then exec /usr/local/bin/google-chrome "http://127.0.0.1:3887/moov"; fi
+    if command -v google-chrome-stable >/dev/null 2>&1; then exec google-chrome-stable --no-sandbox "http://127.0.0.1:3887/moov"; fi
+    if command -v chromium >/dev/null 2>&1; then exec chromium --no-sandbox "http://127.0.0.1:3887/moov"; fi
+    if command -v firefox >/dev/null 2>&1; then exec firefox "http://127.0.0.1:3887/moov"; fi
+    exec /usr/local/bin/stormraven-open-ui moov
+    ;;
   software)
     run_term "StormRaven Software Installer" "echo '=== StormRaven Software Center ==='; echo 'Type: install chrome | install vlc | install gimp | install libreoffice | install steam'; echo ''; exec /bin/bash"
     ;;

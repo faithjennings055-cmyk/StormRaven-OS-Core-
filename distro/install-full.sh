@@ -33,7 +33,7 @@ fi
 
 echo "======================================================================="
 echo " ✦ STORMRAVEN OS v${VERSION} — FULL DECKED-OUT ALL-FATHER INSTALLER"
-echo "   Every Bell & Whistle · 36 Native Apps · Ymir HUD · Pantheon · Drivers"
+echo "   Every Bell & Whistle · Moov AI ACH/mRDC · 37 Apps · Ymir HUD · Drivers"
 echo "======================================================================="
 
 export DEBIAN_FRONTEND=noninteractive
@@ -116,8 +116,9 @@ fi
 echo ""
 echo "======================================================================="
 echo " ✦ STORMRAVEN OS v${VERSION} (ALL-FATHER EDITION) IS LIVE & DECKED OUT!"
-echo "   • 36 Native Apps:       Desktop/All-StormRaven-Apps & Applications Menu"
-echo "   • Ymir 3-Panel HUD:     http://127.0.0.1:3887/ (and open on screen)"
+echo "   • Moov AI Banking:      stormraven moov status | stormraven ach | stormraven deposit-check"
+echo "   • 37 Native Apps:       Desktop/All-StormRaven-Apps & Applications Menu"
+echo "   • Ymir 3-Panel HUD:     http://127.0.0.1:3887/ (and /moov Check Deposit UI)"
 echo "   • Runic Commands:       fehu  |  algiz  |  isa  |  raido"
 echo "   • Smart App Installer:  install chrome | install vlc | install steam"
 echo "   • HP Monitor Driver:    stormraven-display-hp (auto EDID)"

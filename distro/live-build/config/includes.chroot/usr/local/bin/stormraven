@@ -269,6 +269,19 @@ SSHD
     cd "${SR_OPT_DIR}/python"
     exec python3 "${SR_OPT_DIR}/python/odin.py" "$@"
     ;;
+  moov|ach|deposit-check)
+    SUB_CMD="$1"
+    shift || true
+    for mv in "${SCRIPT_BIN_DIR}/stormraven-moov" "${SNAP:-}/bin/stormraven-moov" "/usr/local/bin/stormraven-moov"; do
+      if [ -f "$mv" ]; then
+        if [ "$SUB_CMD" = "ach" ] || [ "$SUB_CMD" = "deposit-check" ]; then
+          exec python3 "$mv" "$SUB_CMD" "$@"
+        else
+          exec python3 "$mv" "$@"
+        fi
+      fi
+    done
+    ;;
   installer|install)
     shift || true
     for inst in "${SCRIPT_BIN_DIR}/stormraven-installer" "${SNAP:-}/bin/stormraven-installer" "/usr/local/bin/stormraven-installer"; do
@@ -321,7 +334,7 @@ DESK
     esac
     ;;
   *)
-    echo "Usage: stormraven {status|ui|autostart [enable|disable]|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
+    echo "Usage: stormraven {status|moov [status|ach|deposit-check]|ui|autostart [enable|disable]|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
     exit 1
     ;;
 esac

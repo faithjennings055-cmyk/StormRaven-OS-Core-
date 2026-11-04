@@ -96,7 +96,7 @@ def run_cli_json(script_name, *args):
         return {"script": script_name, "status": "unavailable"}
     try:
         proc = subprocess.run(
-            ["/bin/bash", path, *args],
+            ([ "python3", path, *args ] if "python" in open(path, "r", encoding="utf-8", errors="ignore").readline() else ["/bin/bash", path, *args]),
             capture_output=True,
             text=True,
             timeout=3,
@@ -208,6 +208,37 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-forensics", "status"), "telemetry": tel}
     elif norm in ("installer", "installer_status", "install_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-installer", "--status-json"), "telemetry": tel}
+    elif norm in ("moov", "moov_status", "odin_moov", "odin_moov_status"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-moov", "status"), "telemetry": tel}
+    elif norm in ("moov_ach", "odin_moov_ach"):
+        res = {
+            "timeUtc": now_iso,
+            **run_cli_json(
+                "stormraven-moov",
+                "ach",
+                "--amount", str(body_dict.get("amount") or 250.00),
+                "--routing", str(body_dict.get("routing") or "021000021"),
+                "--account", str(body_dict.get("account") or "4829104921"),
+                "--direction", str(body_dict.get("direction") or "debit"),
+                "--sec-code", str(body_dict.get("secCode") or "WEB"),
+                "--memo", str(body_dict.get("memo") or "StormRaven Moov ACH Transfer"),
+            ),
+            "telemetry": tel,
+        }
+    elif norm in ("moov_deposit_check", "odin_moov_deposit_check"):
+        res = {
+            "timeUtc": now_iso,
+            **run_cli_json(
+                "stormraven-moov",
+                "deposit-check",
+                "--amount", str(body_dict.get("amount") or 500.00),
+                "--routing", str(body_dict.get("routing") or "021000021"),
+                "--account", str(body_dict.get("account") or "981240112"),
+                "--check-number", str(body_dict.get("checkNumber") or "1042"),
+                "--payer", str(body_dict.get("payer") or "Sovereign Client"),
+            ),
+            "telemetry": tel,
+        }
     elif norm == "evaluate":
         dec = {
             "id": f"DEC-{int(time.time())}",

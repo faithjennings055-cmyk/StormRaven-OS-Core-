@@ -619,6 +619,7 @@
 
   /* ---------- StormRaven Desktop App Grid (29 Apps + Ubuntu/Win11 Mode) ---------- */
   var desktopApps = [
+    { id: 'moov', label: 'Moov AI Banking', icon: '🏦', bg: 'linear-gradient(135deg,#10b981,#0284c7)' },
     { id: 'installos', label: 'Install StormRaven', icon: '💿', bg: 'linear-gradient(135deg,#06b6d4,#a855f7)' },
     { id: 'gparted', label: 'GParted Disks', icon: '🖴', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
     { id: 'bootrepair', label: 'Boot Repair & EFI', icon: '🛠', bg: 'linear-gradient(135deg,#10b981,#059669)' },
@@ -675,6 +676,68 @@
     if (!win || !title || !body) return;
     title.textContent = (label || appId) + ' — StormRaven OS';
     win.classList.remove('hidden');
+
+    if (appId === 'moov') {
+      body.innerHTML =
+        '<h3>🏦 Moov AI Financial — ACH Transfers &amp; Mobile Check Deposit (mRDC)</h3>' +
+        '<p class="muted" style="margin:6px 0 12px">NACHA Same-Day ACH · FedNow/RTP Instant Rails · X9.37 Check 21 Mobile Check Deposit with MICR E-13B Extraction</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">' +
+          '<div class="card" style="margin:0;border:1px solid rgba(16,185,129,0.45)">' +
+            '<h4>⚡ Originate ACH Transfer</h4>' +
+            '<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">' +
+              '<select id="srMoovAchDir" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px"><option value="debit">ACH Debit / Pull (Deposit to Wallet)</option><option value="credit">ACH Credit / Push (Send Payout)</option></select>' +
+              '<input id="srMoovAchAmt" type="number" step="0.01" value="250.00" placeholder="Amount USD" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px">' +
+              '<input id="srMoovAchRt" type="text" value="021000021" placeholder="9-Digit ABA Routing #" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px">' +
+              '<input id="srMoovAchAcct" type="text" value="4829104921" placeholder="Account #" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px">' +
+              '<button id="srMoovAchBtn" class="btn small" style="background:linear-gradient(135deg,#10b981,#0284c7);color:#fff;border:0">Execute ACH Transfer</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="card" style="margin:0;border:1px solid rgba(6,182,212,0.45)">' +
+            '<h4>📸 Mobile Check Deposit (Cash Check)</h4>' +
+            '<div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">' +
+              '<input id="srMoovChkAmt" type="number" step="0.01" value="500.00" placeholder="Check Amount USD" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px">' +
+              '<input id="srMoovChkPayer" type="text" value="Sovereign Client" placeholder="Payor / Maker Name" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px">' +
+              '<input id="srMoovChkNum" type="text" value="1042" placeholder="Check Number" style="background:#07030a;color:#fff;border:1px solid #06b6d4;border-radius:6px;padding:6px">' +
+              '<input id="srMoovChkImg" type="file" accept="image/*" capture="environment" style="font-size:11px;color:#94a3b8">' +
+              '<button id="srMoovChkBtn" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;border:0">Scan MICR &amp; Cash Check</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<pre id="srMoovOutBox" class="code-box">Loading Moov Sovereign Treasury Wallet…</pre>';
+      api('/command', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'moov_status' }) })
+        .then(function (r) { if ($('srMoovOutBox')) $('srMoovOutBox').textContent = JSON.stringify(r.result || r, null, 2); })
+        .catch(function () {});
+      if ($('srMoovAchBtn')) $('srMoovAchBtn').addEventListener('click', function () {
+        $('srMoovOutBox').textContent = 'Originating Moov Same-Day ACH transfer…';
+        api('/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: 'moov_ach',
+            direction: $('srMoovAchDir').value,
+            amount: Number($('srMoovAchAmt').value || 250),
+            routing: $('srMoovAchRt').value || '021000021',
+            account: $('srMoovAchAcct').value || '4829104921'
+          })
+        }).then(function (r) { $('srMoovOutBox').textContent = JSON.stringify(r.result || r, null, 2); });
+      });
+      if ($('srMoovChkBtn')) $('srMoovChkBtn').addEventListener('click', function () {
+        $('srMoovOutBox').textContent = 'Scanning MICR E-13B & clearing X9.37 Mobile Check Deposit…';
+        api('/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: 'moov_deposit_check',
+            amount: Number($('srMoovChkAmt').value || 500),
+            payer: $('srMoovChkPayer').value || 'Sovereign Client',
+            checkNumber: $('srMoovChkNum').value || '1042',
+            routing: $('srMoovAchRt') ? $('srMoovAchRt').value : '021000021',
+            account: '981240112'
+          })
+        }).then(function (r) { $('srMoovOutBox').textContent = JSON.stringify(r.result || r, null, 2); });
+      });
+      return;
+    }
 
     if (appId === 'calc') {
       body.innerHTML =
