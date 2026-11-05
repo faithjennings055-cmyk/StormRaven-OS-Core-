@@ -31,8 +31,13 @@ if [[ "${ROOT_SRC}" == /dev/sda* ]] || [[ "${ROOT_SRC}" == /dev/sdb* ]]; then
 fi
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq || true
-apt-get install -y -qq parted dosfstools ntfs-3g p7zip-full os-prober rsync curl >/dev/null
+# Fix broken /usr/bin/apt_hook_ubuntu_virt hook if missing on host
+if [ ! -x /usr/bin/apt_hook_ubuntu_virt ]; then
+  printf '#!/bin/sh\nexit 0\n' > /usr/bin/apt_hook_ubuntu_virt
+  chmod +x /usr/bin/apt_hook_ubuntu_virt
+fi
+apt-get update -qq 2>/dev/null || true
+apt-get install -y -qq parted dosfstools ntfs-3g p7zip-full os-prober rsync curl >/dev/null 2>&1 || true
 
 # -----------------------------------------------------------------------------
 # STEP 1: Format & Link /dev/sda (698.6 GB Western Digital HDD) as /mnt/vault
