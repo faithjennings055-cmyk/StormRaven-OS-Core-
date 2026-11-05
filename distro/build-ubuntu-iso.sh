@@ -461,6 +461,7 @@ Unattended-Upgrade::Allowed-Origins {
     "${distro_id}:${distro_codename}";
     "${distro_id}:${distro_codename}-security";
     "${distro_id}:${distro_codename}-updates";
+    "${distro_id}:${distro_codename}-backports";
     "${distro_id}ESM:${distro_codename}";
     "${distro_id}ESM:${distro_codename}-security";
 };
@@ -469,6 +470,15 @@ Unattended-Upgrade::Automatic-Reboot "false";
 Unattended-Upgrade::SyslogEnable "true";
 Unattended-Upgrade::SyslogFacility "daemon";
 SRUU
+mkdir -p /etc/update-manager
+cat > /etc/update-manager/release-upgrades <<'RELUP'
+[DEFAULT]
+Prompt=normal
+RELUP
+if [ ! -x /usr/bin/apt_hook_ubuntu_virt ]; then
+  printf '#!/bin/sh\nexit 0\n' > /usr/bin/apt_hook_ubuntu_virt
+  chmod +x /usr/bin/apt_hook_ubuntu_virt
+fi
 # apt-daily timers: make sure the systemd timers that actually run the job are on.
 systemctl enable apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
 ln -sf /lib/systemd/system/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily.timer 2>/dev/null || true
