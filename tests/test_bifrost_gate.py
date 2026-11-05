@@ -73,3 +73,12 @@ class BifrostGateContract(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_addon_vm_win11_sh_scrubbed_and_checksum_verified(self):
+        addon_path = os.path.join(ROOT, "addons", "stormraven-win11-moov-addon", "vm-win11.sh")
+        with open(addon_path, encoding="utf-8") as af:
+            addon_src = af.read()
+        self.assertNotIn("<PlainText>true</PlainText>", addon_src)
+        self.assertNotIn("<Value>Stormraven</Value>", addon_src)
+        self.assertIn("Get-FileHash", addon_src)
+        self.assertNotIn("install-win11.ps1 | iex", addon_src)

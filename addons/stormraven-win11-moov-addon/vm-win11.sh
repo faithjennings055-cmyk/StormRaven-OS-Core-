@@ -189,26 +189,18 @@ cat > "${PAYLOAD_DIR}/autounattend.xml" << 'EOF'
             <Name>stormraven</Name>
             <DisplayName>StormRaven Sovereign</DisplayName>
             <Group>Administrators</Group>
-            <Password>
-              <Value>Stormraven</Value>
-              <PlainText>true</PlainText>
-            </Password>
           </LocalAccount>
         </LocalAccounts>
       </UserAccounts>
       <AutoLogon>
-        <Password>
-          <Value>Stormraven</Value>
-          <PlainText>true</PlainText>
-        </Password>
-        <Enabled>true</Enabled>
+        <Enabled>false</Enabled>
         <Username>stormraven</Username>
       </AutoLogon>
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add">
           <Order>1</Order>
           <Description>Bootstrap StormRaven OS Windows 11 Edition + Moov AI</Description>
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "foreach ($d in [IO.DriveInfo]::GetDrives()) { $p = Join-Path $d.RootDirectory.FullName 'Install-StormRaven-Win11.ps1'; if (Test-Path $p) { &amp; $p; exit 0 } }; irm https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 | iex"</CommandLine>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$u='https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app'; $found=$null; foreach ($d in [IO.DriveInfo]::GetDrives()) { $p = Join-Path $d.RootDirectory.FullName 'Install-StormRaven-Win11.ps1'; if (Test-Path $p) { $found=$p; break } }; if ($found) { &amp; $found; exit 0 }; Invoke-WebRequest "$u/install-win11.ps1" -OutFile "$env:TEMP\install-win11.ps1"; Invoke-WebRequest "$u/install-win11.ps1.sha256" -OutFile "$env:TEMP\install-win11.ps1.sha256"; $expected=(Get-Content "$env:TEMP\install-win11.ps1.sha256").Split()[0].ToLower(); $actual=(Get-FileHash "$env:TEMP\install-win11.ps1" -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $expected) { throw 'SHA-256 verification failed for install-win11.ps1' }; &amp; "$env:TEMP\install-win11.ps1""</CommandLine>
         </SynchronousCommand>
       </FirstLogonCommands>
     </component>
