@@ -1,0 +1,73 @@
+name: Build StormRaven Windows 11 Custom ISO (ADK + DISM + Oscdimg)
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_win11_iso_url:
+        description: "Direct HTTPS URL to official Windows 11 x64 base ISO"
+        required: true
+        type: string
+      base_win11_iso_sha256:
+        description: "Expected SHA-256 hash of the base Windows 11 ISO (verified before mounting)"
+        required: true
+        type: string
+      image_index:
+        description: "WIM edition index to service (default: 1)"
+        required: false
+        default: "1"
+        type: string
+
+jobs:
+  build-win11-iso:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Ensure Windows ADK Deployment Tools (DISM + Oscdimg) are installed
+        shell: pwsh
+        run: |
+          $AdkOscdimg = "${env:ProgramFiles(x86)}\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\amd64\Oscdimg\oscdimg.exe"
+          if (-not (Test-Path $AdkOscdimg)) {
+            Write-Host "Installing Windows ADK Deployment Tools via winget..."
+            winget install --id Microsoft.WindowsADK -e --accept-source-agreements --accept-package-agreements --override "/quiet /norestart /features OptionId.DeploymentTools"
+          }
+
+      - name: Download and verify base Windows 11 ISO (SHA-256)
+        shell: pwsh
+        env:
+          ISO_URL: ${{ inputs.base_win11_iso_url }}
+          ISO_SHA: ${{ inputs.base_win11_iso_sha256 }}
+        run: |
+          $BaseIso = "$env:RUNNER_TEMP\Win11-Base-x64.iso"
+          & curl.exe -fL --retry 3 -o $BaseIso "$env:ISO_URL"
+          $Actual = (Get-FileHash -Path $BaseIso -Algorithm SHA256).Hash.ToLower()
+          $Expected = $env:ISO_SHA.Trim().ToLower()
+          if ($Actual -ne $Expected) {
+            throw "Base Windows 11 ISO checksum verification failed! ($Actual != $Expected)"
+          }
+          Write-Host "Verified base Windows 11 ISO SHA-256: $Actual"
+
+      - name: Service Windows 11 WIM via DISM and pack Custom ISO via Oscdimg
+        shell: pwsh
+        run: |
+          $BaseIso = "$env:RUNNER_TEMP\Win11-Base-x64.iso"
+          $OutIso  = "$env:GITHUB_WORKSPACE\StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+          pwsh -NoProfile -ExecutionPolicy Bypass -File .\distro\windows11\Build-StormRaven-Win11-ISO.ps1 `
+            -SourceIso $BaseIso `
+            -OutputIso $OutIso `
+            -ImageIndex ([int]"${{ inputs.image_index }}")
+
+      - name: Upload Custom Windows 11 StormRaven ISO & SHA-256 Sidecar
+        uses: actions/upload-artifact@v4
+        with:
+          name: StormRavenOS-Win11-Ymir-v3.9.0-amd64
+          path: |
+            StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso
+            StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso.sha256
+          if-no-files-found: error
