@@ -442,6 +442,49 @@ ln -sf /lib/systemd/system/bluetooth.service /etc/systemd/system/multi-user.targ
 ln -sf /lib/systemd/system/cups.service /etc/systemd/system/multi-user.target.wants/cups.service || true
 ln -sf /lib/systemd/system/ufw.service /etc/systemd/system/multi-user.target.wants/ufw.service || true
 ln -sf /lib/systemd/system/unattended-upgrades.service /etc/systemd/system/multi-user.target.wants/unattended-upgrades.service || true
+
+# Automatic updates for ALL StormRaven OS versions: ship explicit
+# unattended-upgrades config so installed machines self-update without
+# prompting (the package alone does not guarantee this when built in chroot).
+mkdir -p /etc/apt/apt.conf.d
+# 20auto-upgrades: turn on periodic download + unattended install.
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<'AUTOU'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::AutocleanInterval "7";
+AUTOU
+# 51stormraven-unattended: what origins are allowed to auto-install.
+# Security + stable updates from the OS, plus StormRaven's own updates.
+cat > /etc/apt/apt.conf.d/51stormraven-unattended <<'SRUU'
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}";
+    "${distro_id}:${distro_codename}-security";
+    "${distro_id}:${distro_codename}-updates";
+    "${distro_id}ESM:${distro_codename}";
+    "${distro_id}ESM:${distro_codename}-security";
+};
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::SyslogEnable "true";
+Unattended-Upgrade::SyslogFacility "daemon";
+SRUU
+# apt-daily timers: make sure the systemd timers that actually run the job are on.
+systemctl enable apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+ln -sf /lib/systemd/system/apt-daily.timer /etc/systemd/system/timers.target.wants/apt-daily.timer 2>/dev/null || true
+ln -sf /lib/systemd/system/apt-daily-upgrade.timer /etc/systemd/system/timers.target.wants/apt-daily-upgrade.timer 2>/dev/null || true
+# stormraven update CLI: on-demand version of the same auto-update path.
+mkdir -p /usr/local/bin
+cat > /usr/local/bin/stormraven-update <<'SRUPD'
+#!/bin/bash
+# StormRaven OS updater - same policy the machine applies automatically.
+echo "StormRaven OS updater"
+echo "Automatic updates are enabled; this runs the same update on demand."
+export DEBIAN_FRONTEND=noninteractive
+apt-get update && apt-get -y unattended-upgrade || apt-get -y upgrade
+echo "Done. Reboot if the kernel was updated."
+SRUPD
+chmod 755 /usr/local/bin/stormraven-update
 ln -sf /lib/systemd/system/systemd-networkd.service /etc/systemd/system/multi-user.target.wants/systemd-networkd.service || true
 ln -sf /lib/systemd/system/systemd-resolved.service /etc/systemd/system/multi-user.target.wants/systemd-resolved.service || true
 
