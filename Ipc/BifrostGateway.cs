@@ -105,12 +105,20 @@ namespace StormRaven.Kernel.Ipc
 
         private static object ExecDistroCli(string scriptName, params string[] args)
         {
-            string[] candidates =
-            {
-                $"/usr/local/bin/{scriptName}",
-                Path.Combine(AppContext.BaseDirectory, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", scriptName),
-                Path.Combine(Directory.GetCurrentDirectory(), "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", scriptName)
-            };
+            var isWin = OperatingSystem.IsWindows();
+            string[] candidates = isWin
+                ? new[]
+                {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), $"{scriptName}.cmd"),
+                    Path.Combine(@"C:\ProgramData\StormRaven\bin", $"{scriptName}.cmd"),
+                    Path.Combine(AppContext.BaseDirectory, $"{scriptName}.cmd")
+                }
+                : new[]
+                {
+                    $"/usr/local/bin/{scriptName}",
+                    Path.Combine(AppContext.BaseDirectory, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", scriptName),
+                    Path.Combine(Directory.GetCurrentDirectory(), "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", scriptName)
+                };
             string? scriptPath = null;
             foreach (var c in candidates)
             {
@@ -121,12 +129,13 @@ namespace StormRaven.Kernel.Ipc
 
             try
             {
-                var psi = new ProcessStartInfo("/bin/bash")
+                var psi = new ProcessStartInfo(isWin ? "cmd.exe" : "/bin/bash")
                 {
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false
                 };
+                if (isWin) psi.ArgumentList.Add("/c");
                 psi.ArgumentList.Add(scriptPath);
                 foreach (var a in args) psi.ArgumentList.Add(a);
                 using var proc = Process.Start(psi);
