@@ -247,7 +247,7 @@ echo "==> [5.1/7] Building StormRaven.Kernel from source..."
     cd "${REPO_ROOT}"
     # Use dotnet-install script for ephemeral build environments if dotnet is missing
     if ! command -v dotnet >/dev/null 2>&1; then
-        curl -fsSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir "${WORK_DIR}/dotnet"
+        curl -fsSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir "${WORK_DIR}/dotnet"
         export PATH="${WORK_DIR}/dotnet:${PATH}"
     fi
     dotnet publish StormRaven.Kernel.csproj -c Release -r linux-x64 --self-contained true -o "${CHROOT_DIR}/opt/stormraven/" /p:PublishSingleFile=true /p:PublishTrimmed=true
