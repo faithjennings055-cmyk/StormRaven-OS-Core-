@@ -148,7 +148,7 @@ apt-get install -y --no-install-recommends \
   python3-rich \
   python3-psutil \
   locales \
-  libicu74 \
+  libicu78 \
   libssl3t64 \
   less \
   nano
