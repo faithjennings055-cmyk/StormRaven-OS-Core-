@@ -208,6 +208,10 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-forensics", "status"), "telemetry": tel}
     elif norm in ("installer", "installer_status", "install_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-installer", "--status-json"), "telemetry": tel}
+    elif norm in ("update_check", "odin_update_check", "check_updates"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-update", "--status-json"), "telemetry": tel}
+    elif norm in ("raido", "odin_raido", "runic_raido", "system_update", "odin_system_update", "update_apply", "odin_update_apply", "update_install"):
+        res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json"), "telemetry": tel}
     elif norm in ("moov", "moov_status", "odin_moov", "odin_moov_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-moov", "status"), "telemetry": tel}
     elif norm in ("moov_ach", "odin_moov_ach"):

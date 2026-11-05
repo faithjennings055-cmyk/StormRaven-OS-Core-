@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
-echo "=== [ᚱ RAIDO — Bifrost & Pantheon Sync] ==="
-systemctl restart stormraven-kernel.service 2>/dev/null || true
-/usr/local/bin/stormraven status 2>/dev/null || true
+echo "=== [ᚱ RAIDO — Check & Install System + Pantheon Updates] ==="
+if [ -x /usr/local/bin/stormraven-update ]; then
+  /usr/local/bin/stormraven-update apply
+else
+  systemctl restart stormraven-kernel.service 2>/dev/null || true
+  /usr/local/bin/stormraven status 2>/dev/null || true
+fi

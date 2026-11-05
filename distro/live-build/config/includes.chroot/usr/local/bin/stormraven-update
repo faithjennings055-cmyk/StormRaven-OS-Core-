@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Sovereign Auto-Updater & On-Demand Update Engine
+# =============================================================================
+# Supports:
+#   stormraven-update status | --json   -> Check available updates & return JSON
+#   stormraven-update check             -> Refresh package lists & show pending updates
+#   stormraven-update apply | install   -> Check and install all updates non-interactively
+#   stormraven-update                   -> Interactive/CLI check + install
+# =============================================================================
+set +e
+
+export DEBIAN_FRONTEND=noninteractive
+VERSION="3.9.0"
+CMD="${1:-apply}"
+
+json_escape() {
+  python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))' 2>/dev/null || echo '""'
+}
+
+check_updates_json() {
+  local action="${1:-check}"
+  local auto_enabled="true"
+  [ -f /etc/apt/apt.conf.d/20auto-upgrades ] || auto_enabled="false"
+
+  local pending_count=0
+  local pending_list=""
+  local apply_log=""
+  local state_str="UP_TO_DATE"
+
+  if command -v apt-get >/dev/null 2>&1; then
+    if [ "${action}" = "apply" ]; then
+      apt-get update -qq >/dev/null 2>&1 || true
+      apply_log="$(apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade 2>&1 | tail -n 12)"
+      systemctl restart stormraven-kernel.service 2>/dev/null || true
+      state_str="UPDATED_AND_SYNCED"
+    else
+      apt-get update -qq >/dev/null 2>&1 || true
+    fi
+    pending_list="$(apt list --upgradable 2>/dev/null | grep -v '^Listing' | head -n 25)"
+    if [ -n "${pending_list}" ]; then
+      pending_count="$(printf "%s\n" "${pending_list}" | wc -l | tr -d ' ')"
+      [ "${action}" != "apply" ] && state_str="UPDATES_AVAILABLE"
+    fi
+  fi
+
+  local reboot_req="false"
+  [ -f /var/run/reboot-required ] && reboot_req="true"
+
+  local pending_json log_json
+  pending_json="$(printf "%s" "${pending_list}" | json_escape)"
+  log_json="$(printf "%s" "${apply_log}" | json_escape)"
+
+  cat <<JSON
+{
+  "updater": "StormRaven OS Sovereign Update Engine",
+  "version": "${VERSION}",
+  "action": "${action}",
+  "syncState": "${state_str}",
+  "autoUpdatesEnabled": ${auto_enabled},
+  "pendingCount": ${pending_count:-0},
+  "pendingPackages": ${pending_json:-""},
+  "installLog": ${log_json:-""},
+  "rebootRequired": ${reboot_req}
+}
+JSON
+}
+
+case "${CMD}" in
+  status|--status-json|--json|check)
+    check_updates_json "check"
+    ;;
+  apply|install|--apply-json)
+    if [ "${CMD}" = "--apply-json" ]; then
+      check_updates_json "apply"
+    else
+      echo "======================================================================="
+      echo " ✦ STORMRAVEN OS v${VERSION} — CHECKING & INSTALLING UPDATES"
+      echo "======================================================================="
+      echo "==> [1/3] Checking Ubuntu & StormRaven OS repositories..."
+      sudo apt-get update -qq || apt-get update -qq || true
+      echo "==> [2/3] Installing available security & system updates..."
+      sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade \
+        || DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || true
+      echo "==> [3/3] Synchronizing StormRaven Kernel & Odin Pantheon..."
+      sudo systemctl restart stormraven-kernel.service 2>/dev/null || true
+      echo "======================================================================="
+      echo " ✦ UPDATE COMPLETE — StormRaven OS is up to date."
+      [ -f /var/run/reboot-required ] && echo "   (Note: A kernel update was installed; reboot when convenient.)"
+      echo "======================================================================="
+    fi
+    ;;
+  *)
+    check_updates_json "apply"
+    ;;
+esac

@@ -282,6 +282,14 @@ SSHD
       fi
     done
     ;;
+  update|upgrade)
+    shift || true
+    for upd in "${SCRIPT_BIN_DIR}/stormraven-update" "${SNAP:-}/bin/stormraven-update" "/usr/local/bin/stormraven-update"; do
+      if [ -f "$upd" ]; then
+        exec bash "$upd" "$@"
+      fi
+    done
+    ;;
   installer|install)
     shift || true
     for inst in "${SCRIPT_BIN_DIR}/stormraven-installer" "${SNAP:-}/bin/stormraven-installer" "/usr/local/bin/stormraven-installer"; do
@@ -334,7 +342,7 @@ DESK
     esac
     ;;
   *)
-    echo "Usage: stormraven {status|moov [status|ach|deposit-check]|ui|autostart [enable|disable]|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
+    echo "Usage: stormraven {status|update [check|apply]|moov [status|ach|deposit-check]|ui|autostart [enable|disable]|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
     exit 1
     ;;
 esac

@@ -121,6 +121,7 @@
               <div class="ymir-sub-logo">Y M I R &nbsp; E D I T I O N</div>
               <div class="ymir-quick-actions">
                 <button type="button" class="ymir-action-btn" data-ViewJump="desktop">⠿ Open 29-App Suite</button>
+                <button type="button" id="ymirUpdateBtn" class="ymir-action-btn" data-rune="system_update">🔄 Check &amp; Install Updates</button>
                 <button type="button" class="ymir-action-btn" data-rune="pc_launch_hud">🖥 Push Ymir HUD to PC</button>
               </div>
             </div>
@@ -229,6 +230,7 @@
           </div>
           <div id="srTopClock" class="sr-top-clock">Nov 2 &nbsp;00:10</div>
           <div class="sr-top-right">
+            <button id="srTopUpdateBtn" class="btn small" style="padding:3px 10px;font-size:10.5px;background:linear-gradient(135deg,#10b981,#0284c7);color:#fff;border:0">🔄 Check &amp; Install Updates</button>
             <button id="srTryInstallBtn" class="btn small" style="padding:3px 10px;font-size:10.5px;background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff">💿 Install StormRaven OS</button>
             <button id="srModeToggleBtn" class="btn small accent-outline" style="padding:3px 8px;font-size:10px">Switch to Windows 11 Mode</button>
             <span>🖧</span><span>🔊</span><span>⏻</span>
@@ -239,6 +241,7 @@
           <!-- Left Vertical Dock (Ubuntu Mode) / Bottom Centered Taskbar (Win11 Mode) -->
           <aside id="srDock" class="sr-left-dock">
             <button class="sr-dock-item" data-app="installos" title="Install StormRaven OS v3.9.0">💿</button>
+            <button class="sr-dock-item" data-app="systemupdate" title="Check &amp; Install System Updates">🔄</button>
             <button class="sr-dock-item" data-app="gparted" title="GParted Partition Editor">🖴</button>
             <button class="sr-dock-item" data-app="files" title="Files (Fafnir)">📁</button>
             <button class="sr-dock-item" data-app="music" title="Rhythmbox Music">💿</button>
@@ -311,8 +314,12 @@
         <div class="card stat"><div class="stat-label">Decisions</div><div id="stDecisions" class="stat-val">—</div></div>
       </div>
       <div class="card">
-        <h2>Kernel &amp; Distro Health</h2>
+        <div class="row-between">
+          <h2>Kernel &amp; Distro Health</h2>
+          <button id="statusUpdateBtn" class="btn small" style="background:linear-gradient(135deg,#10b981,#0284c7);color:#fff;border:0">🔄 Check &amp; Install Updates</button>
+        </div>
         <div id="healthList" class="health-list"><div class="muted">Waiting for kernel…</div></div>
+        <pre id="statusUpdateBox" class="code-box hidden" style="margin-top:10px"></pre>
       </div>
       <div class="card">
         <div class="row-between">
@@ -485,6 +492,7 @@
       <div class="card">
         <h2>Odin Pantheon Mobile Actions</h2>
         <div class="chip-grid">
+          <button class="chip-btn" data-odin="system_update" style="border-color:#10b981;color:#10b981;font-weight:700">🔄 Check &amp; Install Updates</button>
           <button class="chip-btn" data-odin="telemetry">⚡ Telemetry</button>
           <button class="chip-btn" data-odin="check_ip">🌐 Check IP</button>
           <button class="chip-btn" data-odin="heimdall_scan">🛡 Heimdall Scan</button>

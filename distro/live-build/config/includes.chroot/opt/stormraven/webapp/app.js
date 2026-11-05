@@ -619,6 +619,7 @@
 
   /* ---------- StormRaven Desktop App Grid (29 Apps + Ubuntu/Win11 Mode) ---------- */
   var desktopApps = [
+    { id: 'systemupdate', label: 'System Updates', icon: '🔄', bg: 'linear-gradient(135deg,#10b981,#0284c7)' },
     { id: 'moov', label: 'Moov AI Banking', icon: '🏦', bg: 'linear-gradient(135deg,#10b981,#0284c7)' },
     { id: 'installos', label: 'Install StormRaven', icon: '💿', bg: 'linear-gradient(135deg,#06b6d4,#a855f7)' },
     { id: 'gparted', label: 'GParted Disks', icon: '🖴', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
@@ -676,6 +677,33 @@
     if (!win || !title || !body) return;
     title.textContent = (label || appId) + ' — StormRaven OS';
     win.classList.remove('hidden');
+
+    if (appId === 'systemupdate') {
+      body.innerHTML =
+        '<h3>🔄 StormRaven OS Sovereign Update Center (All Versions)</h3>' +
+        '<p class="muted" style="margin:6px 0 12px">Unattended Automatic Updates (Enabled) · On-Demand Repository Check &amp; Upgrade · Kernel &amp; Odin Pantheon Sync</p>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">' +
+          '<button id="srCheckUpdatesNowBtn" class="btn small accent-outline">🔍 Check for Updates</button>' +
+          '<button id="srApplyUpdatesNowBtn" class="btn small" style="background:linear-gradient(135deg,#10b981,#0284c7);color:#fff;border:0">⚡ Check &amp; Install All Updates Now</button>' +
+        '</div>' +
+        '<pre id="srUpdateStatusBox" class="code-box">Checking StormRaven OS &amp; Ubuntu package repositories…</pre>';
+      runCommand('update_check', false).then(function (r) {
+        if ($('srUpdateStatusBox')) $('srUpdateStatusBox').textContent = JSON.stringify(r, null, 2);
+      });
+      if ($('srCheckUpdatesNowBtn')) $('srCheckUpdatesNowBtn').addEventListener('click', function () {
+        $('srUpdateStatusBox').textContent = 'Checking package lists and StormRaven OS channels…';
+        runCommand('update_check', false).then(function (r) {
+          $('srUpdateStatusBox').textContent = JSON.stringify(r, null, 2);
+        });
+      });
+      if ($('srApplyUpdatesNowBtn')) $('srApplyUpdatesNowBtn').addEventListener('click', function () {
+        $('srUpdateStatusBox').textContent = 'Checking repositories and installing all available updates (apt + StormRaven Kernel + Odin Pantheon)…';
+        runCommand('system_update', false).then(function (r) {
+          $('srUpdateStatusBox').textContent = JSON.stringify(r, null, 2);
+        });
+      });
+      return;
+    }
 
     if (appId === 'moov') {
       body.innerHTML =
@@ -882,6 +910,21 @@
   }
   if ($('srTryInstallBtn')) {
     $('srTryInstallBtn').addEventListener('click', function () { openDesktopApp('installos', 'Install StormRaven OS v3.9.0'); });
+  }
+  if ($('srTopUpdateBtn')) {
+    $('srTopUpdateBtn').addEventListener('click', function () { openDesktopApp('systemupdate', 'StormRaven OS System Updates'); });
+  }
+  if ($('statusUpdateBtn')) {
+    $('statusUpdateBtn').addEventListener('click', function () {
+      var box = $('statusUpdateBox');
+      if (box) {
+        box.classList.remove('hidden');
+        box.textContent = '🔄 Checking repositories and installing updates…';
+      }
+      runCommand('system_update', false).then(function (r) {
+        if (box) box.textContent = JSON.stringify(r, null, 2);
+      });
+    });
   }
   if ($('srBannerTryBtn')) {
     $('srBannerTryBtn').addEventListener('click', function () {

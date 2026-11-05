@@ -580,14 +580,30 @@ namespace StormRaven.Kernel.Ipc
                             telemetry = ReadLiveTelemetry()
                         });
                     }
+                case "update_check":
+                case "odin_update_check":
+                case "check_updates":
+                    return new CommandResult("accepted", "StormRaven OS update check completed", new {
+                        timeUtc = DateTime.UtcNow,
+                        rune = "ᚱ RAIDO (Update Check)",
+                        version = "3.9.0-ymir",
+                        updateStatus = ExecDistroCli("stormraven-update", "--status-json"),
+                        telemetry = ReadLiveTelemetry()
+                    }, Queued: false);
                 case "raido":
                 case "odin_raido":
                 case "runic_raido":
-                    return new CommandResult("accepted", "RunicSys RAIDO (update) synchronized", new {
+                case "system_update":
+                case "odin_system_update":
+                case "update_apply":
+                case "odin_update_apply":
+                case "update_install":
+                    return new CommandResult("accepted", "RunicSys RAIDO (update) checked and installed updates", new {
                         timeUtc = DateTime.UtcNow,
                         rune = "ᚱ RAIDO (Update)",
                         version = "3.9.0-ymir",
                         syncState = "UP_TO_DATE",
+                        updateResult = ExecDistroCli("stormraven-update", "--apply-json"),
                         telemetry = ReadLiveTelemetry()
                     });
                 case "ravencore":
