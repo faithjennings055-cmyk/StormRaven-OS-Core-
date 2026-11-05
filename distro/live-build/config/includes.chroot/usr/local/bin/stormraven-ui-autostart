@@ -22,6 +22,9 @@ else
 fi
 
 # 1. Ensure local gateway is listening on :8787 and :3000
+if [ -x /usr/local/bin/stormraven-theme-layout ]; then
+  /usr/local/bin/stormraven-theme-layout apply >/dev/null 2>&1 || true
+fi
 if ! curl -fsS --max-time 1 "http://127.0.0.1:${GATEWAY_PORT}/health" >/dev/null 2>&1; then
   for gw in \
     "${SCRIPT_BIN_DIR}/stormraven-local-gateway" \

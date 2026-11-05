@@ -327,6 +327,8 @@ python3 - <<'PYAPPS'
 import os, pathlib
 
 apps = [
+    ("stormraven-update", "Check & Install Updates", "Check for and install StormRaven OS + Ubuntu system updates", "/usr/local/bin/stormraven-app-exec systemupdate", "system-software-update", "System;Settings;PackageManager;", True),
+    ("stormraven-layout-toggle", "Switch Ubuntu / Win11 Layout", "Toggle GNOME Shell between Ubuntu Left Dock and Windows 11 Centered Bottom Taskbar (Ymir Theme)", "/usr/local/bin/stormraven-app-exec layout-toggle", "preferences-desktop-theme", "Settings;DesktopSettings;", True),
     ("stormraven-moov", "Moov AI Banking & Check Deposit", "Originate Same-Day ACH Transfers & Cash Checks via Mobile Deposit (mRDC)", "/usr/local/bin/stormraven-app-exec moov", "accessories-calculator", "Office;Finance;", True),
     ("stormraven-all-apps", "StormRaven All 33 Apps", "Open the StormRaven OS 33-App Launcher & Command Center", "/usr/local/bin/stormraven-open-ui", "view-app-grid", "System;Utility;", True),
     ("stormraven-hp-w2558hc", "HP w2558hc Display Setup", "Configure HP w2558hc (1920x1200@60Hz) & HP W2072a (1600x900) Display, Webcam & Audio", "/usr/local/bin/stormraven-app-exec hp-w2558hc", "video-display", "Settings;HardwareSettings;", True),

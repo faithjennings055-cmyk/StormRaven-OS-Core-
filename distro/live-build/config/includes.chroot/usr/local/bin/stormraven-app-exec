@@ -22,6 +22,13 @@ run_term() {
 }
 
 case "${APP_ID}" in
+  systemupdate|update|updates)
+    run_term "StormRaven OS — Check & Install System Updates" "sudo /usr/local/bin/stormraven-update apply; read -p 'Press Enter to close...'; exec /bin/bash"
+    ;;
+  layout-toggle|switch-layout|win11-mode)
+    /usr/local/bin/stormraven-theme-layout toggle
+    exit 0
+    ;;
   installos|startupdisk|iso)
     run_term "StormRaven OS — Try / Install & Boot Rescue Wizard" "sudo /usr/local/bin/stormraven-installer; exec /bin/bash"
     ;;

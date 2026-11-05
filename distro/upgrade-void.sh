@@ -247,8 +247,33 @@ else
   nohup /usr/local/bin/stormraven-cloud-bridge >/tmp/stormraven-cloud-bridge.log 2>&1 &
 fi
 
-# 5. Refresh live desktop wallpaper, Openbox theme, single tint2 dock & Ymir HUD window
-echo "==> [5/5] Refreshing live X11 screen (:0) with Ymir Edition HUD..."
+# 5. Refresh live desktop wallpaper, GNOME/Openbox theme, single tint2 dock & Ymir HUD window
+echo "==> [5/5] Refreshing live GNOME & X11 screen (:0) with Ymir Edition HUD & Wallpaper..."
+mkdir -p /usr/share/backgrounds/stormraven /etc/dconf/profile /etc/dconf/db/local.d
+cp -f "${WALLPAPER}" /usr/share/backgrounds/stormraven/ymir-bg.jpg 2>/dev/null || true
+cat > /etc/dconf/profile/user <<'DPROF'
+user-db:user
+system-db:local
+DPROF
+cat > /etc/dconf/db/local.d/01-stormraven-ymir <<'DCONF'
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/stormraven/ymir-bg.jpg'
+picture-uri-dark='file:///usr/share/backgrounds/stormraven/ymir-bg.jpg'
+picture-options='zoom'
+
+[org/gnome/desktop/screensaver]
+picture-uri='file:///usr/share/backgrounds/stormraven/ymir-bg.jpg'
+
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+gtk-theme='Yaru-blue-dark'
+icon-theme='Yaru-blue-dark'
+cursor-theme='Yaru'
+DCONF
+dconf update 2>/dev/null || true
+if [ -x /usr/local/bin/stormraven-theme-layout ]; then
+  /usr/local/bin/stormraven-theme-layout apply || true
+fi
 export DISPLAY=:0
 xset s off -dpms s noblank 2>/dev/null || su - ubuntu -c "DISPLAY=:0 xset s off -dpms s noblank" 2>/dev/null || true
 feh --bg-fill "${WALLPAPER}" 2>/dev/null || su - ubuntu -c "DISPLAY=:0 feh --bg-fill '${WALLPAPER}'" 2>/dev/null || true

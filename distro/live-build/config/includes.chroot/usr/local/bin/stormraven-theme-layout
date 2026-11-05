@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Ymir Edition — GNOME / Openbox Theme & Layout Engine
+# =============================================================================
+# Applies Faith's Ymir Edition theme (ice/aurora Raven-Skull wallpaper, cryo-blue
+# Yaru-blue-dark/Adwaita-dark accent, dark GTK3/GTK4) and switches the native
+# GNOME desktop layout between:
+#   - ubuntu : Left dock (panel mode) + Ymir Edition theme
+#   - win11  : Centered bottom taskbar (Windows 11 style) + Ymir Edition theme
+#   - toggle : Toggles between Ubuntu and Windows 11 layout while keeping Ymir theme
+# =============================================================================
+set +e
+
+MODE="${1:-apply}"
+WALLPAPER="/usr/share/backgrounds/stormraven/ymir-bg.jpg"
+if [ ! -s "${WALLPAPER}" ] && [ -s "/opt/stormraven/webapp/ymir-bg.jpg" ]; then
+  mkdir -p /usr/share/backgrounds/stormraven 2>/dev/null || true
+  cp -f /opt/stormraven/webapp/ymir-bg.jpg "${WALLPAPER}" 2>/dev/null || WALLPAPER="/opt/stormraven/webapp/ymir-bg.jpg"
+fi
+if [ ! -s "${WALLPAPER}" ] && [ -s "/usr/share/backgrounds/stormraven/ethereal-void-desktop.png" ]; then
+  WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
+fi
+
+STATE_FILE="${HOME:-/tmp}/.config/stormraven-layout-mode"
+
+run_gsettings() {
+  if command -v gsettings >/dev/null 2>&1; then
+    gsettings "$@" 2>/dev/null || true
+  fi
+  # If invoked via sudo, also apply inside the active desktop user's D-Bus session
+  if [ "$(id -u)" -eq 0 ]; then
+    for u in stormraven ubuntu; do
+      if id -u "$u" >/dev/null 2>&1; then
+        local uid
+        uid="$(id -u "$u")"
+        if [ -S "/run/user/${uid}/bus" ]; then
+          sudo -u "$u" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${uid}/bus" gsettings "$@" 2>/dev/null || true
+        fi
+      fi
+    done
+  fi
+}
+
+apply_ymir_theme() {
+  local uri="file://${WALLPAPER}"
+  run_gsettings set org.gnome.desktop.background picture-uri "${uri}"
+  run_gsettings set org.gnome.desktop.background picture-uri-dark "${uri}"
+  run_gsettings set org.gnome.desktop.background picture-options 'zoom'
+  run_gsettings set org.gnome.desktop.screensaver picture-uri "${uri}"
+  run_gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  run_gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-blue-dark'
+  run_gsettings set org.gnome.desktop.interface icon-theme 'Yaru-blue-dark'
+  run_gsettings set org.gnome.desktop.interface cursor-theme 'Yaru'
+
+  # Also refresh Openbox/feh if running X11 fallback
+  if command -v feh >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
+  fi
+}
+
+apply_ubuntu_layout() {
+  apply_ymir_theme
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'LEFT'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock extend-height true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode 'FIXED'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-opacity 0.35
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock custom-background-color true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-color '#06182e'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top false
+  mkdir -p "$(dirname "${STATE_FILE}")" 2>/dev/null || true
+  echo "ubuntu" > "${STATE_FILE}" 2>/dev/null || true
+  echo "[StormRaven Ymir UI] Applied Ubuntu Layout (Left Dock + Ymir Cryo-Glass Theme)."
+}
+
+apply_win11_layout() {
+  apply_ymir_theme
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock always-center-icons true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode 'FIXED'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-opacity 0.55
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock custom-background-color true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-color '#06182e'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true
+  mkdir -p "$(dirname "${STATE_FILE}")" 2>/dev/null || true
+  echo "win11" > "${STATE_FILE}" 2>/dev/null || true
+  echo "[StormRaven Ymir UI] Applied Windows 11 Layout (Centered Bottom Taskbar + Ymir Cryo-Glass Theme)."
+}
+
+case "${MODE}" in
+  ubuntu)
+    apply_ubuntu_layout
+    ;;
+  win11|windows11)
+    apply_win11_layout
+    ;;
+  toggle)
+    CUR="$(cat "${STATE_FILE}" 2>/dev/null || echo ubuntu)"
+    if [ "${CUR}" = "win11" ]; then
+      apply_ubuntu_layout
+    else
+      apply_win11_layout
+    fi
+    ;;
+  *)
+    apply_ymir_theme
+    CUR="$(cat "${STATE_FILE}" 2>/dev/null || echo ubuntu)"
+    if [ "${CUR}" = "win11" ]; then
+      apply_win11_layout
+    else
+      apply_ubuntu_layout
+    fi
+    ;;
+esac
