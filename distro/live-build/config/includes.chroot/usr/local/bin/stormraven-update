@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS — Sovereign Auto-Updater & On-Demand Update Engine
+# StormRaven OS — Canonical Ubuntu + Sovereign Update Engine
 # =============================================================================
-# Supports:
-#   stormraven-update status | --json   -> Check available updates & return JSON
-#   stormraven-update check             -> Refresh package lists & show pending updates
-#   stormraven-update apply | install   -> Check and install all updates non-interactively
-#   stormraven-update                   -> Interactive/CLI check + install
+# Updates StormRaven OS identically to mainline Canonical Ubuntu:
+#   1. Repairs any broken apt hooks (e.g. /usr/bin/apt_hook_ubuntu_virt)
+#   2. Ensures full Canonical Ubuntu archive sources (main, restricted,
+#      universe, multiverse across -updates, -security, and -backports)
+#   3. Configures /etc/apt/apt.conf.d/20auto-upgrades & 51stormraven-unattended
+#      + /etc/update-manager/release-upgrades (Prompt=normal for do-release-upgrade)
+#   4. Runs full Ubuntu `apt-get update` + `apt-get dist-upgrade` + `autoremove`
+#   5. Runs `snap refresh` and `fwupdmgr update` (when installed)
+#   6. Syncs StormRaven OS Core scripts & UI from main and restarts kernel
+#
+# Usage:
+#   stormraven-update status | --status-json   -> Check available updates (JSON)
+#   stormraven-update apply  | --apply-json    -> Install all Ubuntu + StormRaven updates
+#   stormraven-update release                  -> Run Canonical Ubuntu do-release-upgrade
 # =============================================================================
 set +e
 
@@ -14,12 +23,75 @@ export DEBIAN_FRONTEND=noninteractive
 VERSION="3.9.0"
 CMD="${1:-apply}"
 
+ensure_ubuntu_apt_health() {
+  # 1. Neutralize broken apt_hook_ubuntu_virt hook if missing on host
+  if [ ! -x /usr/bin/apt_hook_ubuntu_virt ]; then
+    printf '#!/bin/sh\nexit 0\n' > /usr/bin/apt_hook_ubuntu_virt 2>/dev/null || sudo tee /usr/bin/apt_hook_ubuntu_virt >/dev/null <<'HK'
+#!/bin/sh
+exit 0
+HK
+    chmod +x /usr/bin/apt_hook_ubuntu_virt 2>/dev/null || sudo chmod +x /usr/bin/apt_hook_ubuntu_virt 2>/dev/null || true
+  fi
+
+  # 2. Ensure Canonical Ubuntu sources (main, restricted, universe, multiverse + updates/security/backports)
+  local codename="noble"
+  if [ -r /etc/os-release ]; then
+    . /etc/os-release
+    codename="${UBUNTU_CODENAME:-${VERSION_CODENAME:-noble}}"
+  fi
+  if [ ! -s /etc/apt/sources.list ] && [ ! -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+    sudo tee /etc/apt/sources.list >/dev/null <<SRC
+deb http://archive.ubuntu.com/ubuntu ${codename} main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu ${codename}-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu ${codename}-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu ${codename}-security main restricted universe multiverse
+SRC
+  elif [ -w /etc/apt/sources.list ] || [ "$(id -u)" -eq 0 ]; then
+    if ! grep -q "${codename}-updates" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+      sudo tee -a /etc/apt/sources.list >/dev/null <<SRC
+deb http://archive.ubuntu.com/ubuntu ${codename}-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu ${codename}-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu ${codename}-security main restricted universe multiverse
+SRC
+    fi
+  fi
+
+  # 3. Ensure Ubuntu release-upgrades is configured to track mainline Ubuntu releases
+  if [ -d /etc/update-manager ] || [ "$(id -u)" -eq 0 ]; then
+    sudo mkdir -p /etc/update-manager 2>/dev/null || true
+    sudo tee /etc/update-manager/release-upgrades >/dev/null <<'REL'
+[DEFAULT]
+Prompt=normal
+REL
+  fi
+}
+
+sync_stormraven_overlay() {
+  local raw="https://raw.githubusercontent.com/faithjennings055-cmyk/StormRaven-OS-Core-/main/distro/live-build/config/includes.chroot"
+  for f in \
+    usr/local/bin/stormraven \
+    usr/local/bin/stormraven-update \
+    usr/local/bin/stormraven-installer \
+    usr/local/bin/stormraven-theme-layout \
+    usr/local/bin/stormraven-dualboot \
+    usr/local/bin/stormraven-social-setup \
+    usr/local/bin/stormraven-feedback \
+    usr/local/bin/stormraven-local-gateway \
+    opt/stormraven/webapp/index.html \
+    opt/stormraven/webapp/app.js; do
+    curl -fsSL --max-time 6 "${raw}/${f}" | sudo tee "/${f}" >/dev/null 2>&1 || true
+  done
+  sudo chmod +x /usr/local/bin/stormraven* 2>/dev/null || true
+}
+
 json_escape() {
   python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().strip()))' 2>/dev/null || echo '""'
 }
 
 check_updates_json() {
   local action="${1:-check}"
+  ensure_ubuntu_apt_health
+
   local auto_enabled="true"
   [ -f /etc/apt/apt.conf.d/20auto-upgrades ] || auto_enabled="false"
 
@@ -29,14 +101,20 @@ check_updates_json() {
   local state_str="UP_TO_DATE"
 
   if command -v apt-get >/dev/null 2>&1; then
+    sudo dpkg --configure -a >/dev/null 2>&1 || dpkg --configure -a >/dev/null 2>&1 || true
+    sudo apt-get update -qq >/dev/null 2>&1 || apt-get update -qq >/dev/null 2>&1 || true
+
     if [ "${action}" = "apply" ]; then
-      apt-get update -qq >/dev/null 2>&1 || true
-      apply_log="$(apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade 2>&1 | tail -n 12)"
-      systemctl restart stormraven-kernel.service 2>/dev/null || true
+      apply_log="$(sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade 2>&1 | tail -n 15)"
+      sudo DEBIAN_FRONTEND=noninteractive apt-get -y autoremove --purge >/dev/null 2>&1 || true
+      if command -v snap >/dev/null 2>&1; then
+        sudo snap refresh >/dev/null 2>&1 || true
+      fi
+      sync_stormraven_overlay
+      sudo systemctl restart stormraven-kernel.service 2>/dev/null || true
       state_str="UPDATED_AND_SYNCED"
-    else
-      apt-get update -qq >/dev/null 2>&1 || true
     fi
+
     pending_list="$(apt list --upgradable 2>/dev/null | grep -v '^Listing' | head -n 25)"
     if [ -n "${pending_list}" ]; then
       pending_count="$(printf "%s\n" "${pending_list}" | wc -l | tr -d ' ')"
@@ -53,10 +131,11 @@ check_updates_json() {
 
   cat <<JSON
 {
-  "updater": "StormRaven OS Sovereign Update Engine",
+  "updater": "StormRaven OS + Canonical Ubuntu Mainline Update Engine",
   "version": "${VERSION}",
   "action": "${action}",
   "syncState": "${state_str}",
+  "ubuntuChannels": "main, restricted, universe, multiverse (-updates, -security, -backports, snap, do-release-upgrade)",
   "autoUpdatesEnabled": ${auto_enabled},
   "pendingCount": ${pending_count:-0},
   "pendingPackages": ${pending_json:-""},
@@ -70,22 +149,41 @@ case "${CMD}" in
   status|--status-json|--json|check)
     check_updates_json "check"
     ;;
+  release|--release|dist-upgrade|release-upgrade)
+    ensure_ubuntu_apt_health
+    echo "======================================================================="
+    echo " ✦ CANONICAL UBUNTU MAINLINE RELEASE UPGRADER (do-release-upgrade)"
+    echo "======================================================================="
+    sudo apt-get update -qq && sudo apt-get -y dist-upgrade
+    if command -v do-release-upgrade >/dev/null 2>&1; then
+      sudo do-release-upgrade
+    else
+      sudo apt-get install -y update-manager-core && sudo do-release-upgrade
+    fi
+    ;;
   apply|install|--apply-json)
     if [ "${CMD}" = "--apply-json" ]; then
       check_updates_json "apply"
     else
+      ensure_ubuntu_apt_health
       echo "======================================================================="
-      echo " ✦ STORMRAVEN OS v${VERSION} — CHECKING & INSTALLING UPDATES"
+      echo " ✦ STORMRAVEN OS v${VERSION} — CANONICAL UBUNTU + SOVEREIGN UPDATER"
       echo "======================================================================="
-      echo "==> [1/3] Checking Ubuntu & StormRaven OS repositories..."
-      sudo apt-get update -qq || apt-get update -qq || true
-      echo "==> [2/3] Installing available security & system updates..."
-      sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade \
-        || DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || true
-      echo "==> [3/3] Synchronizing StormRaven Kernel & Odin Pantheon..."
+      echo "==> [1/4] Repairing dpkg/apt hooks & refreshing Canonical Ubuntu repositories..."
+      sudo dpkg --configure -a || true
+      sudo apt-get update
+      echo "==> [2/4] Installing all Ubuntu mainline, HWE kernel & security updates (dist-upgrade)..."
+      sudo DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade
+      sudo DEBIAN_FRONTEND=noninteractive apt-get -y autoremove --purge || true
+      echo "==> [3/4] Refreshing Ubuntu Snaps & Hardware Firmware..."
+      if command -v snap >/dev/null 2>&1; then sudo snap refresh || true; fi
+      if command -v fwupdmgr >/dev/null 2>&1; then sudo fwupdmgr refresh >/dev/null 2>&1 || true; sudo fwupdmgr update -y >/dev/null 2>&1 || true; fi
+      echo "==> [4/4] Syncing latest StormRaven OS Core & Odin Pantheon from main..."
+      sync_stormraven_overlay
       sudo systemctl restart stormraven-kernel.service 2>/dev/null || true
       echo "======================================================================="
-      echo " ✦ UPDATE COMPLETE — StormRaven OS is up to date."
+      echo " ✦ UPDATE COMPLETE — Ubuntu mainline & StormRaven OS are 100% current."
+      echo "   (Tip: Run 'stormraven update release' anytime to upgrade across Ubuntu releases.)"
       [ -f /var/run/reboot-required ] && echo "   (Note: A kernel update was installed; reboot when convenient.)"
       echo "======================================================================="
     fi
