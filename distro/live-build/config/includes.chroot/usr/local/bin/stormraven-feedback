@@ -3,12 +3,18 @@
 # StormRaven OS — Worldwide 1,000-Slot Beta Telemetry & Feedback CLI
 # =============================================================================
 # Usage:
+#   stormraven feedback set-token <tester-token> [slot-number]
 #   stormraven feedback "Summary of bug or working hardware" ["Optional details"]
-#   stormraven beta-status
+#   stormraven feedback status
 # =============================================================================
 set +e
 
 BETA_API="${STORMRAVEN_BETA_API:-https://echo-at-faith-s-workspace-2.skydive.app}"
+USER_CONF="${HOME:-/root}/.config/stormraven/beta.env"
+SYS_CONF="/etc/stormraven/beta.env"
+[ -f "${SYS_CONF}" ] && . "${SYS_CONF}"
+[ -f "${USER_CONF}" ] && . "${USER_CONF}"
+
 CMD="${1:-}"
 
 if [ "${CMD}" = "status" ] || [ "${CMD}" = "--status" ]; then
@@ -17,11 +23,36 @@ if [ "${CMD}" = "status" ] || [ "${CMD}" = "--status" ]; then
   exit 0
 fi
 
+if [ "${CMD}" = "set-token" ] || [ "${CMD}" = "token" ] || [ "${CMD}" = "register" ]; then
+  TOK="${2:-}"
+  SLOT="${3:-${STORMRAVEN_BETA_SLOT:-}}"
+  if [ -z "${TOK}" ]; then
+    echo "Usage: stormraven feedback set-token <tester-token> [slot-number]"
+    exit 1
+  fi
+  mkdir -p "$(dirname "${USER_CONF}")" 2>/dev/null || true
+  {
+    printf 'STORMRAVEN_BETA_TOKEN="%s"\n' "${TOK}"
+    [ -n "${SLOT}" ] && printf 'STORMRAVEN_BETA_SLOT="%s"\n' "${SLOT}"
+  } > "${USER_CONF}"
+  chmod 0600 "${USER_CONF}" 2>/dev/null || true
+  echo "[StormRaven Beta] Saved tester token to ${USER_CONF}${SLOT:+ (Slot #${SLOT})}."
+  exit 0
+fi
+
 SUMMARY="${1:-}"
 DETAILS="${2:-}"
 
 if [ -z "${SUMMARY}" ]; then
   echo "=== StormRaven OS Worldwide 1,000-Slot Beta Feedback ==="
+  if [ -z "${STORMRAVEN_BETA_TOKEN:-}" ]; then
+    read -r -p "Tester Token (from /beta signup, or press Enter for anonymous): " INPUT_TOK
+    [ -n "${INPUT_TOK}" ] && STORMRAVEN_BETA_TOKEN="${INPUT_TOK}"
+  fi
+  if [ -z "${STORMRAVEN_BETA_SLOT:-}" ] && [ -n "${STORMRAVEN_BETA_TOKEN:-}" ]; then
+    read -r -p "Beta Slot # (1-1000, optional): " INPUT_SLOT
+    [ -n "${INPUT_SLOT}" ] && STORMRAVEN_BETA_SLOT="${INPUT_SLOT}"
+  fi
   read -r -p "One-line summary (what worked or what needs fixing): " SUMMARY
   [ -z "${SUMMARY}" ] && { echo "Aborted (empty summary)."; exit 1; }
   read -r -p "Details / logs (optional): " DETAILS
@@ -33,9 +64,33 @@ if command -v lscpu >/dev/null 2>&1; then
   [ -n "${CPU_MODEL}" ] && HW_INFO="${HW_INFO} · ${CPU_MODEL}"
 fi
 
-PAYLOAD="$(python3 -c 'import json,sys; print(json.dumps({"edition":"ubuntu-26.04","severity":"normal","hardwareInfo":sys.argv[1],"summary":sys.argv[2],"details":sys.argv[3]}))' "${HW_INFO}" "${SUMMARY}" "${DETAILS}")"
+TOK="${STORMRAVEN_BETA_TOKEN:-}"
+SLOT="${STORMRAVEN_BETA_SLOT:-}"
+
+PAYLOAD="$(python3 -c '
+import json, sys
+hw, summary, details, tok, slot = sys.argv[1:6]
+body = {
+    "edition": "ubuntu-26.04",
+    "severity": "normal",
+    "hardwareInfo": hw,
+    "summary": summary,
+    "details": details,
+}
+if tok:
+    body["testerToken"] = tok
+    body["token"] = tok
+if slot and slot.isdigit():
+    body["slotNumber"] = int(slot)
+print(json.dumps(body))
+' "${HW_INFO}" "${SUMMARY}" "${DETAILS}" "${TOK}" "${SLOT}")"
+
+HEADERS=(-H "Content-Type: application/json")
+if [ -n "${TOK}" ]; then
+  HEADERS+=(-H "X-Beta-Token: ${TOK}" -H "Authorization: Bearer ${TOK}")
+fi
 
 curl -fsSL -X POST "${BETA_API}/api/beta/feedback" \
-  -H "Content-Type: application/json" \
+  "${HEADERS[@]}" \
   -d "${PAYLOAD}"
 echo ""
