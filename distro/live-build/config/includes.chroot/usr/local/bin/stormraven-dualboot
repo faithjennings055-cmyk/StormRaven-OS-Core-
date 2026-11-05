@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Ymir Edition (v3.9.0) — Dual-Boot USB & Disk Builder
+# =============================================================================
+# Puts BOTH flagship StormRaven OS ISOs (Ubuntu 26.04 LTS + Custom Windows 11 25H2)
+# onto a single Dual-Boot USB stick (UEFI + Legacy BIOS), OR configures bare-metal
+# dual-boot on your internal drives with a unified StormRaven GRUB menu.
+#
+# Usage:
+#   sudo stormraven-dualboot list
+#   sudo stormraven-dualboot usb /dev/sdX
+#   sudo stormraven-dualboot grub-add-win11 /dev/sdXY
+# =============================================================================
+set -euo pipefail
+
+UBUNTU_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso"
+UBUNTU_ISO_SHA="acfe854c42e8e50c4ff50edbf69fd97bb875e1c0264f636da04f112b7c24496b"
+WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+WIN11_ISO_SHA="4b3d34edd30948e858662a410ee7815f66e1ffdc4ee1d72cbed8f9c3a1ce509b"
+
+CACHE_DIR="/var/tmp/stormraven-dualboot-cache"
+UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-ubuntu-24.04-amd64.iso"
+WIN11_ISO="${CACHE_DIR}/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+
+list_disks() {
+  echo "======================================================================="
+  echo " ✦ DETECTED DRIVES (USB & INTERNAL)"
+  echo "======================================================================="
+  lsblk -d -o NAME,SIZE,TRAN,RM,TYPE,MODEL | awk 'NR==1 || $5=="disk"'
+  echo ""
+  echo "Tip: Look for RM=1 or TRAN=usb for your USB flash drive (16GB+ recommended)."
+  echo "To build a Dual-Boot USB (Ubuntu 26.04 + Custom Windows 11 on one stick):"
+  echo "  sudo stormraven-dualboot usb /dev/sdX"
+  echo "======================================================================="
+}
+
+download_and_verify_isos() {
+  mkdir -p "${CACHE_DIR}"
+
+  echo "==> [1/5] Checking & verifying StormRaven OS Ubuntu 26.04 Ymir ISO (1.7 GB)..."
+  if [ ! -s "${UBUNTU_ISO}" ] || [ "$(sha256sum "${UBUNTU_ISO}" | awk '{print $1}')" != "${UBUNTU_ISO_SHA}" ]; then
+    curl -fL --retry 3 -o "${UBUNTU_ISO}" "${UBUNTU_ISO_URL}"
+  fi
+  echo "${UBUNTU_ISO_SHA}  ${UBUNTU_ISO}" | sha256sum -c -
+
+  echo "==> [2/5] Checking & verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
+  if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
+    curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+  fi
+  echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
+}
+
+build_dualboot_usb() {
+  local TARGET_DEV="${1:-}"
+  if [ -z "${TARGET_DEV}" ] || [ ! -b "${TARGET_DEV}" ]; then
+    echo "ERROR: Please pass a valid block device (e.g., sudo stormraven-dualboot usb /dev/sdb)"
+    list_disks
+    exit 1
+  fi
+
+  # Safety check: refuse to wipe the currently mounted root disk
+  local ROOT_SRC
+  ROOT_SRC="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
+  if [ -n "${ROOT_SRC}" ] && [[ "${ROOT_SRC}" == "${TARGET_DEV}"* ]]; then
+    echo "CRITICAL SAFETY STOP: ${TARGET_DEV} is your active root drive (${ROOT_SRC})! Refusing to overwrite."
+    exit 1
+  fi
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq || true
+  apt-get install -y -qq parted dosfstools ntfs-3g exfatprogs grub-efi-amd64-bin grub-pc-bin p7zip-full rsync wimtools >/dev/null
+
+  download_and_verify_isos
+
+  echo "==> [3/5] Partitioning ${TARGET_DEV} for Dual-Boot (BIOS Boot + 1GB EFI + 3GB Ubuntu Live + NTFS Windows 11)..."
+  for mp in $(lsblk -ln -o NAME "${TARGET_DEV}" | tail -n +2); do
+    umount -lf "/dev/${mp}" 2>/dev/null || true
+  done
+
+  wipefs -a "${TARGET_DEV}" >/dev/null 2>&1 || true
+  parted -s "${TARGET_DEV}" mklabel gpt
+  parted -s "${TARGET_DEV}" mkpart bios_grub 1MiB 3MiB
+  parted -s "${TARGET_DEV}" set 1 bios_grub on
+  parted -s "${TARGET_DEV}" mkpart SR_EFI fat32 3MiB 515MiB
+  parted -s "${TARGET_DEV}" set 2 esp on
+  parted -s "${TARGET_DEV}" mkpart SR_UBUNTU ext4 515MiB 3587MiB
+  parted -s "${TARGET_DEV}" mkpart SR_WIN11 ntfs 3587MiB 100%
+  partprobe "${TARGET_DEV}" 2>/dev/null || true
+  sleep 2
+
+  local P_PREFIX="${TARGET_DEV}"
+  case "${TARGET_DEV}" in
+    *nvme*|*mmcblk*|*loop*) P_PREFIX="${TARGET_DEV}p" ;;
+  esac
+  local P_EFI="${P_PREFIX}2"
+  local P_UBU="${P_PREFIX}3"
+  local P_WIN="${P_PREFIX}4"
+
+  mkfs.vfat -F 32 -n "SR_EFI" "${P_EFI}" >/dev/null
+  mkfs.ext4 -F -L "SR_UBUNTU" "${P_UBU}" >/dev/null
+  mkfs.ntfs -Q -F -L "SR_WIN11" "${P_WIN}" >/dev/null
+
+  local MNT_BASE="/mnt/sr-dualboot"
+  mkdir -p "${MNT_BASE}/efi" "${MNT_BASE}/ubuntu" "${MNT_BASE}/win11"
+  mount "${P_EFI}" "${MNT_BASE}/efi"
+  mount "${P_UBU}" "${MNT_BASE}/ubuntu"
+  mount "${P_WIN}" "${MNT_BASE}/win11"
+
+  echo "==> [4/5] Extracting StormRaven Ubuntu 26.04 & Custom Windows 11 25H2 onto ${TARGET_DEV}..."
+  7z x -y "${UBUNTU_ISO}" -o"${MNT_BASE}/ubuntu" >/dev/null
+  7z x -y "${WIN11_ISO}" -o"${MNT_BASE}/win11" >/dev/null
+
+  # Copy UEFI bootloaders to the ESP and install unified Dual-Boot GRUB menu
+  cp -a "${MNT_BASE}/win11/efi" "${MNT_BASE}/efi/" 2>/dev/null || true
+  cp -a "${MNT_BASE}/win11/boot" "${MNT_BASE}/efi/" 2>/dev/null || true
+
+  echo "==> [5/5] Installing Unified StormRaven Dual-Boot GRUB Bootloader (UEFI + BIOS)..."
+  grub-install --target=i386-pc --boot-directory="${MNT_BASE}/efi/boot" --recheck "${TARGET_DEV}" 2>/dev/null || true
+  grub-install --target=x86_64-efi --efi-directory="${MNT_BASE}/efi" --boot-directory="${MNT_BASE}/efi/boot" --removable --no-nvram 2>/dev/null || true
+
+  local UBU_UUID WIN_UUID
+  UBU_UUID="$(blkid -s UUID -o value "${P_UBU}")"
+  WIN_UUID="$(blkid -s UUID -o value "${P_WIN}")"
+
+  mkdir -p "${MNT_BASE}/efi/boot/grub"
+  cat > "${MNT_BASE}/efi/boot/grub/grub.cfg" <<GRUBCFG
+set timeout=15
+set default=0
+
+insmod part_gpt
+insmod ext2
+insmod fat
+insmod ntfs
+insmod search_fs_uuid
+insmod chain
+
+menuentry "1) StormRaven OS: Ymir Edition — Ubuntu 26.04 LTS (Try or Install)" {
+    search --no-floppy --fs-uuid --set=root ${UBU_UUID}
+    linux /casper/vmlinuz boot=casper ignore_uuid quiet splash
+    initrd /casper/initrd
+}
+
+menuentry "2) StormRaven OS: Ymir Edition — Custom Windows 11 (25H2 Installer)" {
+    search --no-floppy --fs-uuid --set=root ${WIN_UUID}
+    chainloader /efi/boot/bootx64.efi
+}
+
+menuentry "3) StormRaven OS: Ubuntu 26.04 — Bare-Metal Disk Installer" {
+    search --no-floppy --fs-uuid --set=root ${UBU_UUID}
+    linux /casper/vmlinuz boot=casper ignore_uuid stormraven.mode=install
+    initrd /casper/initrd
+}
+
+menuentry "4) StormRaven OS: Ubuntu 26.04 — Safe Graphics Mode (nomodeset)" {
+    search --no-floppy --fs-uuid --set=root ${UBU_UUID}
+    linux /casper/vmlinuz boot=casper ignore_uuid nomodeset
+    initrd /casper/initrd
+}
+GRUBCFG
+
+  sync
+  umount -lf "${MNT_BASE}/win11" "${MNT_BASE}/ubuntu" "${MNT_BASE}/efi" 2>/dev/null || true
+
+  echo "======================================================================="
+  echo " ✦ STORMRAVEN OS DUAL-BOOT USB COMPLETE ON ${TARGET_DEV}!"
+  echo "   • Option 1: StormRaven OS — Ubuntu 26.04 LTS Ymir Edition"
+  echo "   • Option 2: StormRaven OS — Custom Windows 11 (25H2) Ymir Edition"
+  echo "   Reboot and press F9/F12 to boot from ${TARGET_DEV}."
+  echo "======================================================================="
+}
+
+stage_internal_dualboot() {
+  local TARGET_PART="${1:-}"
+  if [ -z "${TARGET_PART}" ] || [ ! -b "${TARGET_PART}" ]; then
+    echo "Usage: sudo stormraven-dualboot disk-part /dev/sdXY"
+    echo "Formats the target partition as NTFS, extracts the Custom Windows 11 Ymir ISO onto it,"
+    echo "and adds 'StormRaven OS — Custom Windows 11 (25H2) Ymir Edition' to your HP GRUB boot menu!"
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT
+    exit 1
+  fi
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq || true
+  apt-get install -y -qq ntfs-3g p7zip-full os-prober >/dev/null
+
+  echo "==> Verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
+  mkdir -p "${CACHE_DIR}"
+  if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
+    curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+  fi
+  echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
+
+  umount -lf "${TARGET_PART}" 2>/dev/null || true
+  mkfs.ntfs -Q -F -L "SR_WIN11_BOOT" "${TARGET_PART}"
+  mkdir -p /mnt/sr-win11-part
+  mount "${TARGET_PART}" /mnt/sr-win11-part
+  7z x -y "${WIN11_ISO}" -o/mnt/sr-win11-part >/dev/null
+  sync
+  umount /mnt/sr-win11-part
+
+  local PART_UUID
+  PART_UUID="$(blkid -s UUID -o value "${TARGET_PART}")"
+  cat > /etc/grub.d/40_custom <<GRUB40
+#!/bin/sh
+exec tail -n +3 \$0
+menuentry "StormRaven OS — Custom Windows 11 (25H2) Ymir Edition" {
+    insmod part_gpt
+    insmod part_msdos
+    insmod ntfs
+    search --no-floppy --fs-uuid --set=root ${PART_UUID}
+    chainloader /efi/boot/bootx64.efi
+}
+GRUB40
+  chmod +x /etc/grub.d/40_custom
+  sed -i 's/^#*GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub 2>/dev/null || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
+  update-grub
+
+  echo "======================================================================="
+  echo " ✦ INTERNAL DUAL-BOOT CONFIGURED ON ${TARGET_PART}!"
+  echo "   Reboot your HP to pick between StormRaven Ubuntu 26.04 and"
+  echo "   StormRaven Custom Windows 11 (25H2) right from the GRUB menu."
+  echo "======================================================================="
+}
+
+case "${1:-list}" in
+  list|disks|status)
+    list_disks
+    ;;
+  usb|flash)
+    build_dualboot_usb "${2:-}"
+    ;;
+  disk-part|internal|grub-add-win11)
+    stage_internal_dualboot "${2:-}"
+    ;;
+  *)
+    list_disks
+    ;;
+esac
