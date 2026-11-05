@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Omnichannel Social Media Setup & Auto-Publisher
+# =============================================================================
+# 1. `stormraven-social-setup init`
+#      Pre-populates StormRaven OS brand identity, opens signup/profile pages
+#      for X/Twitter, LinkedIn, Reddit, YouTube, TikTok, Discord & Bluesky,
+#      and seals API/Webhook credentials into /etc/stormraven/social.env (0600).
+# 2. `stormraven-social-setup post [message]`
+#      Publishes the Worldwide 1,000-Slot Beta announcement (or custom update)
+#      simultaneously across all configured social APIs & webhooks.
+# =============================================================================
+set -euo pipefail
+
+SOCIAL_ENV="/etc/stormraven/social.env"
+BETA_URL="https://echo-at-faith-s-workspace-2.skydive.app/beta"
+SHOWCASE_URL="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/"
+
+BRAND_NAME="StormRaven OS"
+BRAND_HANDLE="StormRavenOS"
+BRAND_EMAIL="mrstormraven@stormravenoddities.com"
+BRAND_BIO="StormRaven OS: Ymir Edition (v3.9.0) ❄️ Dual-OS Flagship (Ubuntu 26.04 LTS + Custom Windows 11 25H2). Simple daily tasks to Ring-0 ops. Info comes in, never leaks out. 1,000-Slot Beta open through 01-01-2027:"
+
+DEFAULT_LAUNCH_POST="❄️ StormRaven OS: Ymir Edition (v3.9.0) — Worldwide 1,000-Slot Beta is LIVE (Now through 01-01-2027)!
+
+🐧 Ubuntu 26.04 LTS (Linux 7.0 HWE) ISO
+🪟 Custom Windows 11 (25H2 WIM-Baked) ISO
+⚡ 1-Click Ubuntu ↔ Win11 Layout Switch + 1-Tap Updates
+🛡️ Heimdall One-Way Data Diode: Info comes in, never goes back out — zero leaks.
+
+Claim your Beta Slot (#2–#1,000) & SHA-256 verified ISOs:
+${BETA_URL}"
+
+ensure_env_file() {
+  sudo mkdir -p /etc/stormraven
+  if [ ! -f "${SOCIAL_ENV}" ]; then
+    sudo tee "${SOCIAL_ENV}" >/dev/null <<'EOF'
+# StormRaven OS Sealed Social Media Credentials (chmod 0600, root-only)
+# Populate any channel below to enable 1-command omnichannel publishing:
+DISCORD_WEBHOOK_URL=""
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_CHAT_ID=""
+BLUESKY_HANDLE=""
+BLUESKY_APP_PASSWORD=""
+MASTODON_INSTANCE="https://fosstodon.org"
+MASTODON_ACCESS_TOKEN=""
+X_BEARER_or_WEBHOOK_URL=""
+LINKEDIN_WEBHOOK_URL=""
+REDDIT_WEBHOOK_URL=""
+EOF
+    sudo chmod 0600 "${SOCIAL_ENV}"
+  fi
+}
+
+print_brand_kit() {
+  cat <<EOF
+=======================================================================
+ ✦ STORMRAVEN OS — OFFICIAL SOCIAL MEDIA BRAND PROFILE KIT
+=======================================================================
+  • Display Name:   ${BRAND_NAME}
+  • Handle:         @${BRAND_HANDLE}
+  • Official Email: ${BRAND_EMAIL}
+  • Website / CTA:  ${BETA_URL}
+  • Showcase URL:   ${SHOWCASE_URL}
+  • Bio (160 char): ${BRAND_BIO}
+=======================================================================
+EOF
+}
+
+open_signup_tabs() {
+  print_brand_kit
+  echo "==> Launching official social account signup/setup pages in your browser..."
+  URLS=(
+    "https://x.com/i/flow/signup"
+    "https://www.linkedin.com/company/setup/new/"
+    "https://www.reddit.com/register/"
+    "https://discord.com/register"
+    "https://bsky.app/"
+    "https://www.youtube.com/create_channel"
+    "https://www.tiktok.com/signup"
+  )
+  for b in google-chrome google-chrome-stable chromium chromium-browser firefox xdg-open; do
+    if command -v "$b" >/dev/null 2>&1; then
+      nohup "$b" "${URLS[@]}" >/dev/null 2>&1 &
+      break
+    fi
+  done
+  if command -v xclip >/dev/null 2>&1; then
+    printf "%s" "${DEFAULT_LAUNCH_POST}" | xclip -selection clipboard 2>/dev/null || true
+    echo "    ✓ Copied 1,000-Slot Beta Launch Post to your clipboard!"
+  fi
+  echo ""
+  echo "==> Copy-Paste Launch Post for all channels:"
+  echo "-----------------------------------------------------------------------"
+  echo "${DEFAULT_LAUNCH_POST}"
+  echo "-----------------------------------------------------------------------"
+}
+
+configure_credentials() {
+  ensure_env_file
+  echo "======================================================================="
+  echo " 🔒 SEALING SOCIAL API / WEBHOOK CREDENTIALS (${SOCIAL_ENV})"
+  echo "======================================================================="
+  read -r -p "Discord Webhook URL (or Enter to skip): " disc_url
+  read -r -p "Bluesky Handle e.g. stormravenos.bsky.social (or Enter to skip): " bsky_h
+  read -r -s -p "Bluesky App Password (or Enter to skip): " bsky_p; echo ""
+  read -r -p "Mastodon Access Token (or Enter to skip): " masto_t
+  read -r -p "X / LinkedIn / Automation Webhook URL (or Enter to skip): " x_url
+
+  sudo python3 - "${SOCIAL_ENV}" "${disc_url}" "${bsky_h}" "${bsky_p}" "${masto_t}" "${x_url}" <<'PY'
+import sys, pathlib
+p = pathlib.Path(sys.argv[1])
+lines = p.read_text().splitlines()
+updates = {
+    "DISCORD_WEBHOOK_URL": sys.argv[2],
+    "BLUESKY_HANDLE": sys.argv[3],
+    "BLUESKY_APP_PASSWORD": sys.argv[4],
+    "MASTODON_ACCESS_TOKEN": sys.argv[5],
+    "X_BEARER_or_WEBHOOK_URL": sys.argv[6],
+}
+out = []
+for line in lines:
+    replaced = False
+    for k, v in updates.items():
+        if v and line.startswith(k + "="):
+            out.append(f'{k}="{v}"')
+            replaced = True
+            break
+    if not replaced:
+        out.append(line)
+p.write_text("\n".join(out) + "\n")
+p.chmod(0o600)
+PY
+  echo "✓ Sealed credentials in ${SOCIAL_ENV} (mode 0600)."
+}
+
+publish_all() {
+  ensure_env_file
+  # shellcheck disable=SC1090
+  sudo test -r "${SOCIAL_ENV}" && . "${SOCIAL_ENV}" || true
+  local msg="${1:-$DEFAULT_LAUNCH_POST}"
+  local sent=0
+
+  echo "======================================================================="
+  echo " 📡 PUBLISHING STORMRAVEN OS 1,000-SLOT BETA CAMPAIGN"
+  echo "======================================================================="
+
+  if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"username":"StormRaven OS · Ymir Edition","content":sys.argv[1]}))' "$msg")"
+    if curl -fsSL -X POST -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK_URL}" >/dev/null 2>&1; then
+      echo "  [✓] Published to Discord Webhook"
+      sent=$((sent + 1))
+    fi
+  fi
+
+  if [ -n "${BLUESKY_HANDLE:-}" ] && [ -n "${BLUESKY_APP_PASSWORD:-}" ]; then
+    if python3 - "${BLUESKY_HANDLE}" "${BLUESKY_APP_PASSWORD}" "${msg}" <<'PY'
+import json, sys, datetime, urllib.request
+handle, pwd, text = sys.argv[1], sys.argv[2], sys.argv[3]
+req = urllib.request.Request(
+    "https://bsky.social/xrpc/com.atproto.server.createSession",
+    data=json.dumps({"identifier": handle, "password": pwd}).encode(),
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+with urllib.request.urlopen(req, timeout=10) as r:
+    sess = json.loads(r.read().decode())
+now = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+post_req = urllib.request.Request(
+    "https://bsky.social/xrpc/com.atproto.repo.createRecord",
+    data=json.dumps({
+        "repo": sess["did"],
+        "collection": "app.bsky.feed.post",
+        "record": {"$type": "app.bsky.feed.post", "text": text[:300], "createdAt": now},
+    }).encode(),
+    headers={"Content-Type": "application/json", "Authorization": "Bearer " + sess["accessJwt"]},
+    method="POST",
+)
+urllib.request.urlopen(post_req, timeout=10).read()
+PY
+    then
+      echo "  [✓] Published to Bluesky (@${BLUESKY_HANDLE})"
+      sent=$((sent + 1))
+    fi
+  fi
+
+  if [ -n "${MASTODON_ACCESS_TOKEN:-}" ]; then
+    if curl -fsSL -X POST "${MASTODON_INSTANCE:-https://fosstodon.org}/api/v1/statuses" \
+      -H "Authorization: Bearer ${MASTODON_ACCESS_TOKEN}" \
+      -F "status=${msg}" >/dev/null 2>&1; then
+      echo "  [✓] Published to Mastodon (${MASTODON_INSTANCE:-https://fosstodon.org})"
+      sent=$((sent + 1))
+    fi
+  fi
+
+  if [ -n "${X_BEARER_or_WEBHOOK_URL:-}" ]; then
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"text":sys.argv[1],"campaign":"stormraven-1000-beta","endUtc":"2027-01-01T00:00:00Z"}))' "$msg")"
+    if curl -fsSL -X POST -H "Content-Type: application/json" -d "$payload" "${X_BEARER_or_WEBHOOK_URL}" >/dev/null 2>&1; then
+      echo "  [✓] Triggered X / LinkedIn / Social Syndication Webhook"
+      sent=$((sent + 1))
+    fi
+  fi
+
+  if [ "$sent" -eq 0 ]; then
+    echo "  [!] No API tokens/webhooks configured yet in ${SOCIAL_ENV}."
+    echo "      Run:  sudo stormraven-social-setup configure"
+    echo "      Or:   stormraven-social-setup init   (to open all signup tabs & copy post)"
+  else
+    echo "======================================================================="
+    echo " ✦ Published to ${sent} connected social channel(s)!"
+    echo "======================================================================="
+  fi
+}
+
+case "${1:-init}" in
+  init|signup|open)
+    open_signup_tabs
+    ;;
+  configure|auth|setup)
+    configure_credentials
+    ;;
+  post|publish|blast)
+    shift || true
+    publish_all "${*:-}"
+    ;;
+  *)
+    print_brand_kit
+    echo "Usage: stormraven-social-setup {init|configure|post [custom message]}"
+    ;;
+esac
