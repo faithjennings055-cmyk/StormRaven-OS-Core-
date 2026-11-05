@@ -282,6 +282,14 @@ SSHD
       fi
     done
     ;;
+  feedback|beta)
+    shift || true
+    for fb in "${SCRIPT_BIN_DIR}/stormraven-feedback" "${SNAP:-}/bin/stormraven-feedback" "/usr/local/bin/stormraven-feedback"; do
+      if [ -f "$fb" ]; then
+        exec bash "$fb" "$@"
+      fi
+    done
+    ;;
   update|upgrade)
     shift || true
     for upd in "${SCRIPT_BIN_DIR}/stormraven-update" "${SNAP:-}/bin/stormraven-update" "/usr/local/bin/stormraven-update"; do
