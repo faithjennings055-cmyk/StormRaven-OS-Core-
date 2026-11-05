@@ -11,7 +11,9 @@ set +e
 VERSION="3.9.0"
 
 if [ "${1:-}" = "--status-json" ]; then
-  DISKS="$(lsblk -d -n -o NAME,SIZE,MODEL,TRAN,RM,TYPE 2>/dev/null | awk '$6=="disk"{printf "%s (%s %s)\n",$1,$2,$3}' | paste -sd ', ' -)"
+  # Space-safe: TYPE is a single token in a fixed column; MODEL (which may contain
+  # spaces, e.g. "WDC WD7500B..." or "Micron 1100 SATA") is last and never parsed positionally.
+  DISKS="$(lsblk -d -n -o NAME,SIZE,TYPE,MODEL 2>/dev/null | awk '$3=="disk"{m=$4; for(i=5;i<=NF;i++) m=m" "$i; printf "%s (%s %s)\n",$1,$2,m}' | paste -sd ', ' -)"
   [ -n "${DISKS}" ] || DISKS="nvme0n1 (512G NVMe), sda (Live USB)"
   cat <<JSON
 {
@@ -163,12 +165,19 @@ show_tui() {
         exit 0
         ;;
       2)
-        DISK_LIST=$(lsblk -d -n -o NAME,SIZE,MODEL,TYPE | awk '$4=="disk"{printf "/dev/%s \"%s_%s\" ", $1, $2, $3}')
-        if [ -z "${DISK_LIST}" ]; then
-          whiptail --msgbox "No target hard drives detected." 10 50
+        # Space-safe disk enumeration: never positionally parse MODEL, never eval.
+        declare -a MENU_ITEMS=()
+        while IFS= read -r dname dsize dtype dmodel; do
+          [ "${dtype}" = "disk" ] || continue
+          [ -b "/dev/${dname}" ] || continue
+          MENU_ITEMS+=("/dev/${dname}" "${dsize:-?} ${dmodel:-Internal disk}")
+        done < <(lsblk -d -n -o NAME,SIZE,TYPE,MODEL 2>/dev/null)
+        if [ ${#MENU_ITEMS[@]} -eq 0 ]; then
+          whiptail --msgbox "No target hard drives detected.\n\nConnect the drive and try again (Rescue shell: 'lsblk' to inspect)." 12 60
           continue
         fi
-        TARGET=$(eval "whiptail --title 'Select Target Drive' --menu 'Choose disk to install StormRaven OS v${VERSION} onto (ALL DATA ON SELECTED DISK WILL BE ERASED):' 16 70 6 ${DISK_LIST}" 3>&1 1>&2 2>&3) || continue
+        TARGET=$(whiptail --title 'Select Target Drive' --menu "Choose disk to install StormRaven OS v${VERSION} onto (ALL DATA ON SELECTED DISK WILL BE ERASED):" 16 70 6 "${MENU_ITEMS[@]}" 3>&1 1>&2 2>&3) || { unset MENU_ITEMS; continue; }
+        unset MENU_ITEMS
         if whiptail --yesno "WARNING: This will format ${TARGET} and install StormRaven OS v${VERSION} (UEFI + BIOS bootable).\n\nProceed with installation on ${TARGET}?" 12 65; then
           sudo bash "$0" --install-disk "${TARGET}"
           read -r -p "Press Enter to continue..." _
