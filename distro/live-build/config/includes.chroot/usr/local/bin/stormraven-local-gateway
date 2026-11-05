@@ -114,10 +114,16 @@ def run_cli_json(script_name, *args):
 def health_payload():
     now_iso = datetime.now(timezone.utc).isoformat()
     tel = read_telemetry()
+    edition = "win11" if os.path.isfile("/etc/stormraven/edition") and "win11" in open("/etc/stormraven/edition").read() else os.environ.get("STORMRAVEN_DEFAULT_OS", "win11")
+    distro_title = (
+        "StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI"
+        if edition == "win11"
+        else "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS + Moov AI)"
+    )
     return {
         "kernel": "StormRaven OS",
-        "distro": "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)",
-        "distroVersion": "24.04 Noble · Infinity Protocol v3.9.0",
+        "distro": distro_title,
+        "distroVersion": "v3.9.0 · Windows 11 Edition + Moov AI" if edition == "win11" else "24.04 Noble · Infinity Protocol v3.9.0",
         "status": "online",
         "health": "online",
         "version": "3.9.0",
@@ -212,6 +218,8 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-update", "--status-json"), "telemetry": tel}
     elif norm in ("raido", "odin_raido", "runic_raido", "system_update", "odin_system_update", "update_apply", "odin_update_apply", "update_install"):
         res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json"), "telemetry": tel}
+    elif norm in ("layout_toggle", "layout_ubuntu", "layout_win11"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-theme-layout", norm.replace("layout_", "")), "telemetry": tel}
     elif norm in ("moov", "moov_status", "odin_moov", "odin_moov_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-moov", "status"), "telemetry": tel}
     elif norm in ("moov_ach", "odin_moov_ach"):
@@ -306,6 +314,71 @@ class GatewayHandler(BaseHTTPRequestHandler):
             return self._send_json({"ok": True, "data": {"count": len(DECISIONS), "decisions": DECISIONS}})
         if path == "/signals":
             return self._send_json({"ok": True, "data": {"count": len(TABS), "signals": TABS}})
+        if path in ("/api/moov", "/api/moov/status"):
+            return self._send_json(run_cli_json("stormraven-moov", "status"))
+        if path == "/moov":
+            accept = self.headers.get("Accept", "")
+            if "application/json" in accept and "text/html" not in accept:
+                return self._send_json(run_cli_json("stormraven-moov", "status"))
+            st = run_cli_json("stormraven-moov", "status")
+            bal = float(st.get("availableBalance", 12450.00))
+            html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>StormRaven OS — Windows 11 Edition · Moov AI Banking &amp; Check Deposit</title>
+<style>
+  body{{background:#050d1a;color:#e0f2fe;font-family:system-ui,-apple-system,sans-serif;margin:0;padding:20px}}
+  .wrap{{max-width:960px;margin:0 auto}}
+  .card{{background:#08172e;border:1px solid rgba(56,189,248,0.35);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 12px 32px rgba(0,0,0,0.45)}}
+  h1{{font-size:20px;color:#38bdf8;margin:0 0 6px}} h2{{font-size:14px;color:#7dd3fc;text-transform:uppercase;letter-spacing:.08em;margin:0 0 12px}}
+  .bal{{font-size:32px;font-weight:800;color:#4ade80}}
+  .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}}
+  label{{display:block;font-size:12px;color:#94a3b8;margin:8px 0 4px}}
+  input,select{{width:100%;box-sizing:border-box;background:#040b18;border:1px solid #0284c7;color:#f0f9ff;padding:9px 10px;border-radius:8px;font-size:13px}}
+  button{{background:linear-gradient(135deg,#0284c7,#7c3aed);color:#fff;border:0;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:12px;width:100%}}
+  pre{{background:#030712;border:1px solid #1e293b;border-radius:8px;padding:12px;font-size:12px;overflow:auto;color:#a5f3fc;max-height:320px}}
+</style></head><body><div class="wrap">
+<div class="card"><h1>🪟 StormRaven OS — Windows 11 Edition · Moov AI Banking &amp; Mobile Check Deposit</h1>
+<div style="color:#94a3b8;font-size:13px;margin-bottom:10px">Wallet: <code>{st.get("walletId", "moov_wallet_stormraven_sovereign_01")}</code> · SQLite DB: <code>{st.get("sqliteDb", "/var/lib/stormraven/moov/moov_ledger.db")}</code></div>
+<div class="bal" id="balDisp">${bal:,.2f} USD</div></div>
+<div class="grid">
+  <div class="card"><h2>⚡ Originate Same-Day ACH Transfer (.ach NACHA File)</h2>
+    <label>Direction</label><select id="achDir"><option value="debit">ACH Debit / Pull (Deposit into StormRaven Wallet)</option><option value="credit">ACH Credit / Push (Send Payout to Bank)</option></select>
+    <label>Amount (USD)</label><input id="achAmt" type="number" step="0.01" value="250.00">
+    <label>ABA Routing Number (9 digits, Mod-10 verified)</label><input id="achRt" value="021000021">
+    <label>Account Number</label><input id="achAcct" value="4829104921">
+    <label>SEC Code &amp; Memo</label><input id="achMemo" value="StormRaven Same-Day ACH Transfer">
+    <button onclick="submitAch()">Execute Moov ACH Transfer &amp; Generate NACHA File</button>
+  </div>
+  <div class="card"><h2>📸 Mobile Check Deposit (X9.37 Check 21 mRDC)</h2>
+    <label>Check Amount (USD)</label><input id="chkAmt" type="number" step="0.01" value="500.00">
+    <label>Payor / Maker Name</label><input id="chkPayer" value="Sovereign Client">
+    <label>MICR Routing Number (9 digits)</label><input id="chkRt" value="021000021">
+    <label>MICR Account Number</label><input id="chkAcct" value="981240112">
+    <label>Check Number</label><input id="chkNum" value="1042">
+    <label>Check Photo Path or Upload</label><input id="chkImg" type="text" placeholder="/path/to/check.png or leave default" value="camera_captured">
+    <button onclick="submitCheck()">Scan MICR &amp; Deposit Check Instantly (.x937 ICL)</button>
+  </div>
+</div>
+<div class="card"><h2>📜 Live Moov SQLite Ledger &amp; Generated NACHA (.ach) / Check 21 (.x937) Output</h2><pre id="outBox">{json.dumps(st, indent=2)}</pre></div>
+</div><script>
+async function submitAch(){{
+  const r = await fetch('/api/moov/ach',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{direction:document.getElementById('achDir').value,amount:Number(document.getElementById('achAmt').value),routing:document.getElementById('achRt').value,account:document.getElementById('achAcct').value,memo:document.getElementById('achMemo').value}})}}).then(x=>x.json());
+  document.getElementById('outBox').textContent = JSON.stringify(r, null, 2);
+  if(r.walletBalance!=null) document.getElementById('balDisp').textContent = '$'+Number(r.walletBalance).toLocaleString('en-US',{{minimumFractionDigits:2}})+' USD';
+}}
+async function submitCheck(){{
+  const r = await fetch('/api/moov/deposit-check',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{amount:Number(document.getElementById('chkAmt').value),payer:document.getElementById('chkPayer').value,routing:document.getElementById('chkRt').value,account:document.getElementById('chkAcct').value,checkNumber:document.getElementById('chkNum').value,frontImage:document.getElementById('chkImg').value||'camera_captured'}})}}).then(x=>x.json());
+  document.getElementById('outBox').textContent = JSON.stringify(r, null, 2);
+  if(r.walletBalance!=null) document.getElementById('balDisp').textContent = '$'+Number(r.walletBalance).toLocaleString('en-US',{{minimumFractionDigits:2}})+' USD';
+}}
+</script></body></html>"""
+            data = html.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(data)
+            return
 
         # Serve static files from WEBAPP_DIR
         rel = "index.html" if path == "/" else path.lstrip("/")
@@ -339,6 +412,49 @@ class GatewayHandler(BaseHTTPRequestHandler):
             TABS.clear()
             TABS.extend(parsed)
             return self._send_json({"ok": True, "data": {"ingested": len(TABS), "decisions": DECISIONS[:5]}})
+
+        if path in ("/api/moov/ach", "/moov/ach"):
+            p = parsed if isinstance(parsed, dict) else {}
+            return self._send_json(
+                run_cli_json(
+                    "stormraven-moov",
+                    "ach",
+                    "--amount", str(p.get("amount") or 250.00),
+                    "--routing", str(p.get("routing") or "021000021"),
+                    "--account", str(p.get("account") or "4829104921"),
+                    "--direction", str(p.get("direction") or "debit"),
+                    "--sec-code", str(p.get("secCode") or "WEB"),
+                    "--memo", str(p.get("memo") or "StormRaven Moov ACH Transfer"),
+                )
+            )
+
+        if path in ("/api/moov/deposit-check", "/moov/deposit-check"):
+            p = parsed if isinstance(parsed, dict) else {}
+            return self._send_json(
+                run_cli_json(
+                    "stormraven-moov",
+                    "deposit-check",
+                    "--amount", str(p.get("amount") or 500.00),
+                    "--routing", str(p.get("routing") or "021000021"),
+                    "--account", str(p.get("account") or "981240112"),
+                    "--check-number", str(p.get("checkNumber") or "1042"),
+                    "--payer", str(p.get("payer") or "Sovereign Client"),
+                    "--endorsement", str(p.get("endorsement") or "For Mobile Deposit Only - StormRaven OS"),
+                    "--front-image", str(p.get("frontImage") or ""),
+                )
+            )
+
+        if path in ("/api/moov/configure", "/moov/configure"):
+            p = parsed if isinstance(parsed, dict) else {}
+            return self._send_json(
+                run_cli_json(
+                    "stormraven-moov",
+                    "configure",
+                    "--public-key", str(p.get("publicKey") or ""),
+                    "--secret-key", str(p.get("secretKey") or ""),
+                    "--account-id", str(p.get("accountId") or ""),
+                )
+            )
 
         if path in ("/command", "/commands", "/api/command", "/decisions/evaluate"):
             if path == "/decisions/evaluate":

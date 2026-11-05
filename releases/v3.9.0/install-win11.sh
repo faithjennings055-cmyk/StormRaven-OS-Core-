@@ -214,14 +214,48 @@ Terminal=false
 Categories=Office;Finance;System;
 EOF
 
+cat > /usr/share/applications/stormraven-update.desktop << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Check & Install Updates
+Comment=Check and install all StormRaven OS and Ubuntu security & system updates
+Exec=/usr/local/bin/stormraven-app-exec stormraven-update
+Icon=system-software-update
+Terminal=false
+Categories=System;Settings;
+EOF
+
+cat > /usr/share/applications/stormraven-layout-toggle.desktop << 'EOF'
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Switch Ubuntu / Win11 Layout
+Comment=Toggle between Ubuntu Left Dock and Windows 11 Centered Bottom Taskbar (Ymir Edition)
+Exec=/usr/local/bin/stormraven-theme-layout toggle
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=System;Settings;
+EOF
+
 cp -f /usr/share/applications/stormraven-win11.desktop "${USER_HOME}/Desktop/StormRaven-OS-Windows-11-Edition.desktop"
 cp -f /usr/share/applications/stormraven-moov.desktop "${USER_HOME}/Desktop/Moov-AI-Banking-and-Check-Deposit.desktop"
-chmod 0755 "${USER_HOME}/Desktop/StormRaven-OS-Windows-11-Edition.desktop" "${USER_HOME}/Desktop/Moov-AI-Banking-and-Check-Deposit.desktop"
+cp -f /usr/share/applications/stormraven-update.desktop "${USER_HOME}/Desktop/stormraven-update.desktop"
+cp -f /usr/share/applications/stormraven-layout-toggle.desktop "${USER_HOME}/Desktop/stormraven-layout-toggle.desktop"
+chmod 0755 "${USER_HOME}/Desktop/StormRaven-OS-Windows-11-Edition.desktop" \
+           "${USER_HOME}/Desktop/Moov-AI-Banking-and-Check-Deposit.desktop" \
+           "${USER_HOME}/Desktop/stormraven-update.desktop" \
+           "${USER_HOME}/Desktop/stormraven-layout-toggle.desktop"
 chown -R "${REAL_USER}:${REAL_USER}" "${USER_HOME}/Desktop" 2>/dev/null || true
 
+if [ -x /usr/local/bin/stormraven-theme-layout ]; then
+  /usr/local/bin/stormraven-theme-layout win11 2>/dev/null || true
+fi
+
 if [ "${REAL_USER}" != "root" ] && command -v gio >/dev/null 2>&1; then
-  su - "${REAL_USER}" -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus gio set '${USER_HOME}/Desktop/StormRaven-OS-Windows-11-Edition.desktop' metadata::trusted true" 2>/dev/null || true
-  su - "${REAL_USER}" -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus gio set '${USER_HOME}/Desktop/Moov-AI-Banking-and-Check-Deposit.desktop' metadata::trusted true" 2>/dev/null || true
+  for dfile in StormRaven-OS-Windows-11-Edition.desktop Moov-AI-Banking-and-Check-Deposit.desktop stormraven-update.desktop stormraven-layout-toggle.desktop; do
+    su - "${REAL_USER}" -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus gio set '${USER_HOME}/Desktop/${dfile}' metadata::trusted true" 2>/dev/null || true
+  done
 fi
 
 # 6. Restart local gateway services and launch Windows 11 Edition + Moov AI UI
