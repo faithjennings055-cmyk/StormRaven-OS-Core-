@@ -189,6 +189,8 @@ apt-get install -y --no-install-recommends \
   libimage-exiftool-perl
 
 # --- Modern desktop baseline & Ethereal Void Graphical Desktop UI (#26, #48) ---
+# falkon's postinst symlinks into /usr/share/qt5 without creating the parent dir (resolute packaging bug)
+mkdir -p "${CHROOT_DIR}/usr/share/qt5"
 apt-get install -y --no-install-recommends \
   xorg \
   xinit \
