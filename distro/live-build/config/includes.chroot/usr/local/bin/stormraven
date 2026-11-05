@@ -282,6 +282,14 @@ SSHD
       fi
     done
     ;;
+  social|social-setup|promote)
+    shift || true
+    for soc in "${SCRIPT_BIN_DIR}/stormraven-social-setup" "${SNAP:-}/bin/stormraven-social-setup" "/usr/local/bin/stormraven-social-setup"; do
+      if [ -f "$soc" ]; then
+        exec bash "$soc" "$@"
+      fi
+    done
+    ;;
   feedback|beta)
     shift || true
     for fb in "${SCRIPT_BIN_DIR}/stormraven-feedback" "${SNAP:-}/bin/stormraven-feedback" "/usr/local/bin/stormraven-feedback"; do
