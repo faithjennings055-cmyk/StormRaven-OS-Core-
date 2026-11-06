@@ -212,6 +212,29 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-vm", "status"), "telemetry": tel}
     elif norm in ("forensics_status", "odin_forensics_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-forensics", "status"), "telemetry": tel}
+    elif norm in ("demogorgon", "demogorgon_status", "odin_demogorgon", "odin_demogorgon_status", "lynn", "lynn_status", "odin_lynn"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-demogorgon", "status"), "telemetry": tel}
+    elif norm in ("demogorgon_awaken", "odin_demogorgon_awaken"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-demogorgon", "awaken"), "telemetry": tel}
+    elif norm in ("demogorgon_banish", "odin_demogorgon_banish"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-demogorgon", "banish"), "telemetry": tel}
+    elif norm in ("demogorgon_probe", "odin_demogorgon_probe"):
+        probe_ip = str(body_dict.get("srcIp") or body_dict.get("target") or "198.51.100.42")
+        probe_res = run_cli_json("stormraven-demogorgon", "probe", probe_ip)
+        inc = probe_res.get("incident") if isinstance(probe_res, dict) else None
+        if isinstance(inc, dict) and inc.get("valkyrieAlert"):
+            DECISIONS.insert(
+                0,
+                {
+                    "id": f"DEC-VALKYRIE-{int(time.time())}",
+                    "time": now_iso,
+                    "severity": "warn",
+                    "summary": f"Valkyrie First-Contact Alert: Demogorgon trapped {inc.get('srcIp')} on port {inc.get('dstPort', 2222)} (held {inc.get('holdDurationSec')}s).",
+                    "evidence": inc,
+                    "explainability": {"ruleId": "sr.rule.demogorgon.valkyrie.v1", "rationale": "First contact from unseen source IP on Helheim Endlessh tarpit."},
+                },
+            )
+        res = {"timeUtc": now_iso, **probe_res, "telemetry": tel}
     elif norm in ("installer", "installer_status", "install_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-installer", "--status-json"), "telemetry": tel}
     elif norm in ("update_check", "odin_update_check", "check_updates"):
@@ -316,6 +339,10 @@ class GatewayHandler(BaseHTTPRequestHandler):
             return self._send_json({"ok": True, "data": {"count": len(TABS), "signals": TABS}})
         if path in ("/api/moov", "/api/moov/status"):
             return self._send_json(run_cli_json("stormraven-moov", "status"))
+        if path in ("/api/demogorgon", "/api/demogorgon/status", "/api/lynn"):
+            return self._send_json(run_cli_json("stormraven-demogorgon", "status"))
+        if path == "/api/vault":
+            return self._send_json({"ok": False, "error": {"code": "vault_locked", "message": "Raw vault dump endpoint is disabled under Zero-Trust policy (Core issue #92)."}}, status=403)
         if path == "/moov":
             accept = self.headers.get("Accept", "")
             if "application/json" in accept and "text/html" not in accept:
@@ -456,6 +483,14 @@ async function submitCheck(){{
                 )
             )
 
+        if path == "/api/demogorgon/awaken":
+            return self._send_json(handle_command_dict({"command": "demogorgon_awaken"}))
+        if path == "/api/demogorgon/banish":
+            return self._send_json(handle_command_dict({"command": "demogorgon_banish"}))
+        if path == "/api/demogorgon/probe":
+            p = parsed if isinstance(parsed, dict) else {}
+            return self._send_json(handle_command_dict({"command": "demogorgon_probe", "srcIp": p.get("srcIp") or "198.51.100.42"}))
+
         if path in ("/command", "/commands", "/api/command", "/decisions/evaluate"):
             if path == "/decisions/evaluate":
                 parsed = {"intent": "evaluate"}
@@ -474,6 +509,11 @@ def serve_port(port):
 
 
 def main():
+    try:
+        from demogorgon import get_demogorgon
+        get_demogorgon().awaken()
+    except Exception:
+        pass
     primary_port = int(os.environ.get("STORMRAVEN_GATEWAY_PORT", "8787"))
     ui_port = int(os.environ.get("STORMRAVEN_UI_PORT", "3000"))
     t = threading.Thread(target=serve_port, args=(ui_port,), daemon=True)

@@ -92,6 +92,15 @@ if (Test-Path "$DriversDir\HP-w2558hc-Win11.reg") {
 & powercfg.exe /change monitor-timeout-ac 0 2>$null | Out-Null
 & powercfg.exe /change standby-timeout-ac 0 2>$null | Out-Null
 
+# 4.5. Apply Compendium Hardening Matrix (#89 — Windows 11 Edition)
+Write-Host "==> [3.5/7] Applying Compendium Hardening Matrix (TCP SYN Protection, ICMP Stealth, ASLR/CFG, EventLog Audit)..." -ForegroundColor Cyan
+& reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v SynAttackProtect /t REG_DWORD /d 1 /f 2>$null | Out-Null
+& reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableICMPRedirect /t REG_DWORD /d 0 /f 2>$null | Out-Null
+& reg.exe add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v DisableIPSourceRouting /t REG_DWORD /d 2 /f 2>$null | Out-Null
+& reg.exe add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" /v Mitigations /t REG_DWORD /d 1 /f 2>$null | Out-Null
+& netsh.exe advfirewall firewall add rule name="StormRaven ICMP Echo Stealth" protocol=icmpv4:8,any dir=in action=block 2>$null | Out-Null
+& icacls.exe "$BinDir" /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" "Users:(OI)(CI)RX" 2>$null | Out-Null
+
 # 5. Apply Windows 11 Ymir Edition Dark Cryo-Glass Theme & Frost Giant Wallpaper
 Write-Host "==> [4/7] Applying Windows 11 Ymir Edition Dark Theme, Centered Taskbar & Wallpaper..." -ForegroundColor Cyan
 $PersonalizePath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
@@ -124,6 +133,8 @@ if /I "%~1"=="luci" goto luci
 if /I "%~1"=="ai" goto ai
 if /I "%~1"=="realms" goto realms
 if /I "%~1"=="odin" goto odin
+if /I "%~1"=="demogorgon" goto demogorgon
+if /I "%~1"=="lynn" goto demogorgon
 if /I "%~1"=="moov" goto moov
 if /I "%~1"=="ach" goto moov_ach
 if /I "%~1"=="deposit-check" goto moov_check
@@ -180,6 +191,17 @@ if exist "$StormRavenRoot\python-win64\python.exe" (
     python "$PythonDir\odin.py" %2 %3 %4
 ) else (
     curl.exe -fsS -X POST "$CloudUrl/command" -H "Content-Type: application/json" -d "{\"command\":\"odin telemetry\"}"
+    echo.
+)
+exit /b 0
+
+:demogorgon
+if exist "$StormRavenRoot\python-win64\python.exe" (
+    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\demogorgon.py" %2 %3 %4
+) else if exist "$PythonDir\demogorgon.py" (
+    python "$PythonDir\demogorgon.py" %2 %3 %4
+) else (
+    curl.exe -fsS "$CloudUrl/api/demogorgon"
     echo.
 )
 exit /b 0
@@ -301,14 +323,27 @@ echo {"subsystem":"Jotunheim & Heketa Windows 11 Forensics","status":"verified",
 "@
 Set-Content -Path "$env:SystemRoot\System32\stormraven-forensics.cmd" -Value $WinForensicsCmd -Encoding ASCII
 
+$WinDemogorgonCmd = @"
+@echo off
+if exist "$StormRavenRoot\python-win64\python.exe" (
+    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\demogorgon.py" %1 %2 %3
+) else if exist "$PythonDir\demogorgon.py" (
+    python "$PythonDir\demogorgon.py" %1 %2 %3
+) else (
+    echo {"module":"Demogorgon Endlessh Tarpit & Lynn Honeycomb Defense","active":true,"port":2222,"platform":"windows11"}
+)
+"@
+Set-Content -Path "$env:SystemRoot\System32\stormraven-demogorgon.cmd" -Value $WinDemogorgonCmd -Encoding ASCII
+
 # 7. Start StormRaven.Kernel.exe (:8787) and register Windows Scheduled Task on boot
 Write-Host "==> [6/7] Starting Native StormRaven.Kernel.exe on port 8787..." -ForegroundColor Cyan
 if (Test-Path "$BinDir\StormRaven.Kernel.exe") {
     Get-Process -Name "StormRaven.Kernel" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Process -FilePath "$BinDir\StormRaven.Kernel.exe" -WorkingDirectory $BinDir -WindowStyle Hidden
-    $Action  = New-ScheduledTaskAction -Execute "$BinDir\StormRaven.Kernel.exe" -WorkingDirectory $BinDir
-    $Trigger = New-ScheduledTaskTrigger -AtLogOn
-    Register-ScheduledTask -TaskName "StormRavenKernel" -Action $Action -Trigger $Trigger -Description "StormRaven OS Kernel & Bifrost Gateway (:8787)" -Force | Out-Null
+    $Action    = New-ScheduledTaskAction -Execute "$BinDir\StormRaven.Kernel.exe" -WorkingDirectory $BinDir
+    $Trigger   = New-ScheduledTaskTrigger -AtLogOn
+    $Principal = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\LocalService" -LogonType ServiceAccount -RunLevel Limited
+    Register-ScheduledTask -TaskName "StormRavenKernel" -Action $Action -Trigger $Trigger -Principal $Principal -Description "StormRaven OS Kernel & Bifrost Gateway (:8787) [Sandboxed LocalService]" -Force | Out-Null
 }
 
 # 8. Create Desktop & Start Menu Shortcuts for StormRaven OS + All 36 Apps
