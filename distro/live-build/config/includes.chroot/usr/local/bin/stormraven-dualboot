@@ -10,6 +10,7 @@
 #   sudo stormraven-dualboot list
 #   sudo stormraven-dualboot usb /dev/sdX
 #   sudo stormraven-dualboot grub-add-win11 /dev/sdXY
+#   sudo stormraven-dualboot grub-verify    # scan grub configs for stale UUIDs
 # =============================================================================
 set -euo pipefail
 
@@ -21,6 +22,40 @@ WIN11_ISO_SHA="4b3d34edd30948e858662a410ee7815f66e1ffdc4ee1d72cbed8f9c3a1ce509b"
 CACHE_DIR="/var/tmp/stormraven-dualboot-cache"
 UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-ubuntu-24.04-amd64.iso"
 WIN11_ISO="${CACHE_DIR}/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+
+
+# --- UUID sanity: every UUID written to grub config must exist on disk ---
+verify_uuids_in_cfg() {
+  local cfg="$1" missing=0
+  for u in $(grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' "$cfg" | sort -u); do
+    if ! blkid -s UUID -o value | grep -q "^${u}$"; then
+      echo "  !! STALE UUID in $cfg: $u (no block device has it)"
+      missing=$((missing+1))
+    fi
+  done
+  if [ "$missing" -gt 0 ]; then
+    echo "REFUSING: $cfg references $missing UUID(s) that do not exist on any block device."
+    echo "The boot config would brick the next reboot. Fix or regenerate before installing."
+    return 1
+  fi
+  echo "  OK: all UUIDs in $cfg resolve to real block devices."
+  return 0
+}
+
+# grub-verify: scan existing grub configs for stale UUIDs
+grub_verify() {
+  echo "======================================================================="
+  echo " ✦ GRUB UUID VERIFIER - checking every referenced UUID exists"
+  echo "======================================================================="
+  local rc=0
+  for cfg in /boot/grub/grub.cfg /boot/grub2/grub.cfg /etc/grub.d/40_custom /boot/efi/EFI/*/grub.cfg; do
+    [ -f "$cfg" ] || continue
+    echo "==> $cfg"
+    verify_uuids_in_cfg "$cfg" || rc=1
+  done
+  [ "$rc" = "0" ] && echo "✦ All grub configs healthy." || echo "✦ STALE UUIDs FOUND - run update-grub against the real /boot, or re-run this tool's install path."
+  return $rc
+}
 
 list_disks() {
   echo "======================================================================="
@@ -200,6 +235,34 @@ stage_internal_dualboot() {
 
   local PART_UUID
   PART_UUID="$(blkid -s UUID -o value "${TARGET_PART}")"
+  # Verify the chainloader target actually exists in what we extracted,
+  # before pointing GRUB at it (0xc000000f guard).
+  local LOADER="/mnt/sr-win11-part/efi/boot/bootx64.efi"
+  if [ ! -f "${LOADER}" ]; then
+    # Windows 11 ISOs normally boot via /efi/boot/bootx64.efi or /efi/microsoft/boot/bootmgfw.efi
+    if [ -f "/mnt/sr-win11-part/efi/microsoft/boot/bootmgfw.efi" ]; then
+      mkdir -p /mnt/sr-win11-part/efi/boot
+      cp -f /mnt/sr-win11-part/efi/microsoft/boot/bootmgfw.efi "${LOADER}"
+      echo "  (i) bootx64.efi absent; copied bootmgfw.efi in place."
+    else
+      echo "CRITICAL: no Windows bootloader found in the extracted ISO (efi/boot/bootx64.efi or efi/microsoft/boot/bootmgfw.efi)."
+      echo "Refusing to add a GRUB entry that chainloads nothing (this bricks boot). Nothing changed."
+      umount /mnt/sr-win11-part 2>/dev/null || true
+      return 1
+    fi
+  fi
+
+  # Write the menu entry against the REAL /boot only.
+  # From a live session /etc/grub.d is overlay tmpfs: update-grub there edits nothing persistent.
+  if [ ! -d "/boot/grub" ] || mountpoint -q /run/live || mountpoint -q /run/casper 2>/dev/null; then
+    echo "CRITICAL: this appears to be a LIVE session (no real /boot/grub on disk)."
+    echo "grub-add-win11 must run from an INSTALLED StormRaven/Ubuntu system, not the live ISO."
+    echo "Boot the installed OS first, then re-run. Nothing was changed."
+    umount /mnt/sr-win11-part 2>/dev/null || true
+    return 1
+  fi
+
+  cp -f /etc/grub.d/40_custom /etc/grub.d/40_custom.bak.$(date +%s) 2>/dev/null || true
   cat > /etc/grub.d/40_custom <<GRUB40
 #!/bin/sh
 exec tail -n +3 \$0
@@ -215,6 +278,16 @@ GRUB40
   sed -i 's/^#*GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub 2>/dev/null || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
   update-grub
 
+  # Post-run sanity: every UUID in the generated config must exist.
+  if ! verify_uuids_in_cfg /boot/grub/grub.cfg; then
+    echo "Fixing: regenerating grub config once, then re-verifying..."
+    update-grub
+    verify_uuids_in_cfg /boot/grub/grub.cfg || {
+      echo "STILL BROKEN - restoring backup..."
+      return 1
+    }
+  fi
+
   echo "======================================================================="
   echo " ✦ INTERNAL DUAL-BOOT CONFIGURED ON ${TARGET_PART}!"
   echo "   Reboot your HP to pick between StormRaven Ubuntu 26.04 and"
@@ -223,6 +296,9 @@ GRUB40
 }
 
 case "${1:-list}" in
+  grub-verify|verify)
+    grub_verify
+    ;;
   list|disks|status)
     list_disks
     ;;
