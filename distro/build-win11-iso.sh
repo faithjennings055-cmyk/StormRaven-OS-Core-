@@ -123,6 +123,14 @@ cat > "${SYS32}/stormraven-forensics.cmd" << 'EOF'
 @echo off
 echo {"subsystem":"Jotunheim & Heketa Windows 11 Forensics","status":"verified","chainOfCustody":"SHA-256 Get-FileHash + EventLog Audit","luciSeal":"AUTHORIZED","platform":"windows11"}
 EOF
+cat > "${SYS32}/stormraven-demogorgon.cmd" << 'EOF'
+@echo off
+if exist "C:\ProgramData\StormRaven\python-win64\python.exe" (
+    "C:\ProgramData\StormRaven\python-win64\python.exe" "C:\ProgramData\StormRaven\python\demogorgon.py" %1 %2 %3
+) else (
+    python "C:\ProgramData\StormRaven\python\demogorgon.py" %1 %2 %3
+)
+EOF
 
 # Replace default Windows 11 Bloom wallpaper (`img0.jpg` / `img19.jpg`) inside the WIM with Faith's Ymir Edition backdrop!
 if [ -s "${SR_ROOT}/webapp/ymir-bg.jpg" ]; then
@@ -136,6 +144,10 @@ cat > "${SCRIPTS}/SetupComplete.cmd" << 'EOF'
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 4 /f >nul 2>&1
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Personalization" /v Wallpaper /t REG_SZ /d "C:\ProgramData\StormRaven\webapp\ymir-bg.jpg" /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v SynAttackProtect /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableICMPRedirect /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v DisableIPSourceRouting /t REG_DWORD /d 2 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" /v Mitigations /t REG_DWORD /d 1 /f >nul 2>&1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\StormRaven\Install-StormRaven-Win11.ps1"
 EOF
 

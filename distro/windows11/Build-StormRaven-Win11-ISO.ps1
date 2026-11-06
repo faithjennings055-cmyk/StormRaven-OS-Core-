@@ -187,9 +187,13 @@ try {
         & reg.exe unload "HKLM\SR_SOFTWARE" | Out-Null
     }
 
-    # Wire SetupComplete.cmd so Windows Setup finalizes the StormRaven service & shortcuts offline/first-boot
+    # Wire SetupComplete.cmd so Windows Setup finalizes the StormRaven service & Compendium Hardening Matrix (#89)
     $SetupComplete = @"
 @echo off
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v SynAttackProtect /t REG_DWORD /d 1 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v EnableICMPRedirect /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" /v DisableIPSourceRouting /t REG_DWORD /d 2 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" /v Mitigations /t REG_DWORD /d 1 /f >nul 2>&1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\StormRaven\Install-StormRaven-Win11.ps1"
 "@
     Set-Content -Path (Join-Path $OfflineScripts "SetupComplete.cmd") -Value $SetupComplete -Encoding ASCII

@@ -47,7 +47,7 @@ class BifrostGateContract(unittest.TestCase):
         self.assertNotIn('realm="stormraven-bifrost""', GATEWAY_SRC)
 
     def test_runic_and_ravennest_intents_allowlisted(self):
-        for intent in ("fehu", "algiz", "isa", "raido", "ravencore", "frostvault", "frostnode", "ymirvault", "echoshell"):
+        for intent in ("fehu", "algiz", "isa", "raido", "ravencore", "frostvault", "frostnode", "ymirvault", "echoshell", "demogorgon", "lynn"):
             self.assertIn(f'case "{intent}":', GATEWAY_SRC, f"BifrostGateway must allow-list '{intent}'")
 
     def test_win11_autounattend_scrubbed_and_checksum_verified(self):

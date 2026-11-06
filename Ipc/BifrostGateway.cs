@@ -519,6 +519,23 @@ namespace StormRaven.Kernel.Ipc
                 case "forensics_status":
                 case "odin_forensics_status":
                     return new CommandResult("accepted", "forensic subsystem live status attached", ExecDistroCli("stormraven-forensics", "status"), Queued: false);
+                case "demogorgon":
+                case "demogorgon_status":
+                case "odin_demogorgon":
+                case "odin_demogorgon_status":
+                case "lynn":
+                case "lynn_status":
+                case "odin_lynn":
+                    return new CommandResult("accepted", "demogorgon endlessh tarpit & lynn honeycomb defense status attached", ExecDistroCli("stormraven-demogorgon", "status"), Queued: false);
+                case "demogorgon_awaken":
+                case "odin_demogorgon_awaken":
+                    return new CommandResult("accepted", "demogorgon endlessh tarpit awakened on port 2222", ExecDistroCli("stormraven-demogorgon", "awaken"), Queued: false);
+                case "demogorgon_banish":
+                case "odin_demogorgon_banish":
+                    return new CommandResult("accepted", "demogorgon endlessh tarpit banished", ExecDistroCli("stormraven-demogorgon", "banish"), Queued: false);
+                case "demogorgon_probe":
+                case "odin_demogorgon_probe":
+                    return new CommandResult("accepted", "demogorgon endlessh probe recorded with valkyrie alert check", ExecDistroCli("stormraven-demogorgon", "probe", string.IsNullOrWhiteSpace(target) ? "198.51.100.42" : target), Queued: false);
                 case "helheim_quarantine":
                     {
                         var targetId = string.IsNullOrWhiteSpace(target) ? "suspect-artifact" : target;

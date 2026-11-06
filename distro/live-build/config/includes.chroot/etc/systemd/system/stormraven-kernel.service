@@ -1,5 +1,5 @@
 [Unit]
-Description=StormRaven OS Kernel + Bifrost Gateway (Ubuntu 24.04 Noble)
+Description=StormRaven OS Kernel + Bifrost Gateway (Ubuntu 26.04 Resolute)
 Documentation=https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-
 After=network.target
 
@@ -7,14 +7,21 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/stormraven
-ExecStartPre=/usr/bin/install -d -m 0755 /var/lib/stormraven
+ExecStartPre=/usr/bin/install -d -m 0777 /var/lib/stormraven /var/log/raven /mnt/dev_drive/.shadow_logs
 ExecStart=/usr/bin/python3 /usr/local/bin/stormraven-local-gateway
 Environment=STORMRAVEN_DB=/var/lib/stormraven/kernel.db
 Environment=STORMRAVEN_GATEWAY_PORT=8787
 Environment=STORMRAVEN_UI_PORT=3000
 Environment=STORMRAVEN_WEBAPP_DIR=/opt/stormraven/webapp
 Environment=STORMRAVEN_PYTHON_DIR=/opt/stormraven/python
+Environment=STORMRAVEN_RAVEN_LOG_DIR=/var/log/raven
 Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
 Restart=always
 RestartSec=2
 

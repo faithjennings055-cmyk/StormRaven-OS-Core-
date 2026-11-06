@@ -14,11 +14,12 @@ ALLOWLIST: dict[str, str] = {
     "telemetry_snapshot": "ps -eo pid,pcpu,pmem,comm --sort=-pcpu",
     "disk_usage": "df -h /",
     "uptime": "uptime",
+    "demogorgon_status": "stormraven-demogorgon status",
 }
 
 # Commands whose *translation* is inherently a no-op echo are rejected, not
 # executed (the old `echo {intent}` fallback is gone).
-EXECUTABLE_INTENTS = set(ALLOWLIST) | {"telemetry", "status", "odin", "pantheon", "heimdall", "heimdall_scan", "audit", "freya", "freya_think", "think"}
+EXECUTABLE_INTENTS = set(ALLOWLIST) | {"telemetry", "status", "odin", "pantheon", "heimdall", "heimdall_scan", "audit", "freya", "freya_think", "think", "demogorgon", "lynn", "lynn_status"}
 
 INJECTION_SIGNATURES = (";", "&&", "|", "`", "$(", ">", "<", "\n", "\r")
 

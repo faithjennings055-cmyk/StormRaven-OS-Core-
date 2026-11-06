@@ -105,6 +105,15 @@ class Odin:
                 "telemetry": tel
             }
 
+        if lower in ("demogorgon", "demogorgon_status", "lynn", "lynn_status"):
+            from demogorgon import get_demogorgon
+            return {
+                "ok": True,
+                "module": "Demogorgon Endlessh Tarpit & Lynn Honeycomb Defense",
+                "demogorgon": get_demogorgon().status_report(limit=15),
+                "telemetry": tel,
+            }
+
         if lower in ("freya", "freya_think", "think"):
             chat_reply = self.mind.listen(cmd_str)
             return {
@@ -139,7 +148,7 @@ class Odin:
                 "module": "Heimdall Security Guard",
                 "intent": cmd_str,
                 "heimdallAudit": "BLOCKED",
-                "error": verdict["reason"] or "Command rejected by Heimdall security policy."
+                "error": "Command rejected by Heimdall security policy."
             }
         exec_cmd = (verdict["cmd"] if verdict["allowed"] and verdict["cmd"] else plan["cmd"])
         proc_out = self.hammer.strike_system(exec_cmd).get("output", "")

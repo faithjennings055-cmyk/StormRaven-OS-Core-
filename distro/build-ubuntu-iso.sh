@@ -436,6 +436,13 @@ mkdir -p /etc/systemd/system/multi-user.target.wants /etc/systemd/system/graphic
 ln -sf /lib/systemd/system/graphical.target /etc/systemd/system/default.target
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/multi-user.target.wants/stormraven-kernel.service
 ln -sf /etc/systemd/system/stormraven-kernel.service /etc/systemd/system/graphical.target.wants/stormraven-kernel.service
+ln -sf /etc/systemd/system/stormraven-demogorgon.service /etc/systemd/system/multi-user.target.wants/stormraven-demogorgon.service
+ln -sf /etc/systemd/system/stormraven-demogorgon.service /etc/systemd/system/graphical.target.wants/stormraven-demogorgon.service
+
+# Apply Compendium Hardening Matrix (#89) with hard regression guard on live-sudo (#58)
+if [ -x /usr/local/bin/stormraven-hardening ]; then
+  /usr/local/bin/stormraven-hardening --chroot-only
+fi
 rm -f /etc/systemd/system/multi-user.target.wants/stormraven-desktop.service /etc/systemd/system/graphical.target.wants/stormraven-desktop.service /etc/systemd/system/display-manager.service || true
 ln -sf /lib/systemd/system/libvirtd.service /etc/systemd/system/multi-user.target.wants/libvirtd.service || true
 ln -sf /lib/systemd/system/bluetooth.service /etc/systemd/system/multi-user.target.wants/bluetooth.service || true

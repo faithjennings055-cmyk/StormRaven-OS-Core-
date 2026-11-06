@@ -414,6 +414,7 @@
     var status = $('pulseStatus');
     var sub = $('pulseSub');
     var box = $('realmsLiveBox');
+    var demoBox = $('demogorgonLiveBox');
     if (status) status.textContent = 'Syncing Live Nine Realms Telemetry…';
     Promise.all([
       api('/status').catch(function () { return {}; }),
@@ -421,11 +422,19 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ command: 'odin telemetry', source: 'realms-pulse' })
+      }).catch(function () { return {}; }),
+      api('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: 'demogorgon_status', source: 'quadrant-a' })
       }).catch(function () { return {}; })
     ]).then(function (results) {
       var st = unwrap(results[0] || {});
       var cmdRes = results[1] || {};
+      var demoRes = results[2] || {};
       var payload = cmdRes.result || (cmdRes.data && cmdRes.data.result) || {};
+      var demoPayload = demoRes.result || (demoRes.data && demoRes.data.result) || demoRes || {};
+      var demoSum = demoPayload.summary || {};
       var tel = payload.telemetry || st.telemetry || { cpu: 0, ram: 0, cores: 8 };
       var up = fmtUptime(st.uptimeSec || 0);
       if (status) {
@@ -438,12 +447,18 @@
       if ($('rm-vanaheim')) $('rm-vanaheim').textContent = tel.cpu + '% / ' + tel.ram + '%';
       if ($('rm-vanaheim-sub')) $('rm-vanaheim-sub').textContent = 'CPU ' + tel.cpu + '% · RAM ' + tel.ram + '% (' + (tel.cores || 8) + ' cores)';
       if ($('rm-midgard-sub')) $('rm-midgard-sub').textContent = 'Bifrost v1 · ' + (st.openTabs || 3) + ' Active Streams';
+      if ($('rm-helheim')) $('rm-helheim').textContent = (demoSum.totalEvents || 0) + ' TRAPPED';
+      if ($('rm-helheim-sub')) $('rm-helheim-sub').textContent = (demoSum.uniqueSourceIps || 0) + ' Unique IPs · ' + (demoSum.valkyrieAlerts || 0) + ' Valkyrie Alerts';
+      if (demoBox) {
+        demoBox.textContent = JSON.stringify(demoPayload, null, 2);
+      }
       if (box) {
         box.textContent = JSON.stringify({
           pulseUtc: new Date().toISOString(),
           distro: st.distro || 'StormRaven OS 24.04 LTS',
           uptimeSec: st.uptimeSec,
           telemetry: tel,
+          demogorgonSummary: demoSum,
           pantheon: payload.pantheon || ['odin','freya','heimdall','thor','bifrost','loki','luci','solomon','heketa','lynn','yggdrasil','mjolnir'],
           realmsOnline: 9
         }, null, 2);
@@ -509,6 +524,15 @@
   if ($('evalQuickBtn')) $('evalQuickBtn').addEventListener('click', evaluateNow);
   if ($('evalEngineBtn')) $('evalEngineBtn').addEventListener('click', evaluateNow);
   if ($('refreshRealmsBtn')) $('refreshRealmsBtn').addEventListener('click', refreshRealms);
+  if ($('demogorgonRefreshBtn')) $('demogorgonRefreshBtn').addEventListener('click', refreshRealms);
+  if ($('demogorgonProbeBtn')) $('demogorgonProbeBtn').addEventListener('click', function () {
+    if ($('demogorgonLiveBox')) $('demogorgonLiveBox').textContent = 'Executing Endlessh tarpit probe & Valkyrie first-contact check…';
+    api('/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: 'demogorgon_probe', srcIp: '198.51.100.' + Math.floor(10 + Math.random() * 200) })
+    }).then(function () { refreshRealms(); });
+  });
   document.querySelectorAll('#realmsGrid .realm-stat').forEach(function (card) {
     card.style.cursor = 'pointer';
     card.addEventListener('click', function () {
@@ -519,7 +543,7 @@
         midgard: 'odin vpn_status',
         alfheim: 'odin check_ip',
         niflheim: 'niflheim_snapshot',
-        helheim: 'helheim_list',
+        helheim: 'demogorgon_status',
         muspelheim: 'muspelheim_fault',
         jotunheim: 'odin forensics_status',
         svartalfheim: 'odin heimdall_scan'

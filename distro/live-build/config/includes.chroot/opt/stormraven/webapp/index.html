@@ -441,9 +441,9 @@
           <div id="rm-niflheim-sub" class="muted text-xs">Immutable Snapshot Manager</div>
         </div>
         <div class="card realm-stat" data-realm="helheim">
-          <div class="stat-label">Helheim (Isolation)</div>
+          <div class="stat-label">Helheim (Demogorgon Tarpit)</div>
           <div id="rm-helheim" class="stat-val">ARMED</div>
-          <div id="rm-helheim-sub" class="muted text-xs">Quarantine Vault &amp; Tarpit</div>
+          <div id="rm-helheim-sub" class="muted text-xs">Lynn 616-Cell Honeycomb · Port 2222</div>
         </div>
         <div class="card realm-stat" data-realm="muspelheim">
           <div class="stat-label">Muspelheim (Chaos)</div>
@@ -460,6 +460,19 @@
           <div id="rm-svartalfheim" class="stat-val">LOCKED</div>
           <div id="rm-svartalfheim-sub" class="muted text-xs">Bitmap Buddy/SLAB · 0% Drift</div>
         </div>
+      </div>
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <h2>Quadrant A · Lynn Honeycomb Defense &amp; Demogorgon Tarpit</h2>
+            <div class="muted" style="font-size:11px">Port 2222 Endlessh Slow-Banner Hold · Loki JSONL/SQLite Trail · Valkyrie First-Contact Alerts</div>
+          </div>
+          <div class="row-actions">
+            <button id="demogorgonProbeBtn" class="btn small accent-outline">⚡ Simulate Tarpit Probe</button>
+            <button id="demogorgonRefreshBtn" class="btn small">Refresh Log</button>
+          </div>
+        </div>
+        <pre id="demogorgonLiveBox" class="code-box" style="margin-top:8px">Loading Lynn 616-cell Honeycomb &amp; Demogorgon SQLite incident trail…</pre>
       </div>
       <div class="card">
         <div class="row-between">
@@ -500,6 +513,7 @@
           <button class="chip-btn" data-odin="vpn_connect">🔒 VPN + Kill-Switch</button>
           <button class="chip-btn" data-odin="vm_status">🖥 KVM Hypervisor</button>
           <button class="chip-btn" data-odin="forensics_status">🔍 Forensics Suite</button>
+          <button class="chip-btn" data-odin="demogorgon_status">🕳 Demogorgon Tarpit</button>
           <button class="chip-btn" data-odin="evaluate">⚖️ Evaluate Focus</button>
           <button class="chip-btn" data-odin="ping">📡 Ping Kernel</button>
           <button class="chip-btn" data-odin="ingest_demo_tab">📑 Ingest Tab Signal</button>
