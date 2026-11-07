@@ -58,6 +58,23 @@ class BifrostGateContract(unittest.TestCase):
         self.assertNotIn("<Value>Stormraven</Value>", xml_src)
         self.assertIn("Get-FileHash", xml_src)
         self.assertIn("install-win11.ps1.sha256", xml_src)
+        # Issue #97: Ensure WindowsPE LabConfig hardware check bypasses are present
+        self.assertIn('pass="windowsPE"', xml_src)
+        for key in ("BypassTPMCheck", "BypassSecureBootCheck", "BypassRAMCheck", "BypassStorageCheck", "BypassCPUCheck"):
+            self.assertIn(key, xml_src, f"autounattend.xml must include LabConfig {key} (#97)")
+
+    def test_win11_iso_builders_assert_autounattend_and_labconfig_bypass(self):
+        sh_path = os.path.join(ROOT, "distro", "build-win11-iso.sh")
+        ps1_path = os.path.join(ROOT, "distro", "windows11", "Build-StormRaven-Win11-ISO.ps1")
+        with open(sh_path, encoding="utf-8") as sf:
+            sh_src = sf.read()
+        with open(ps1_path, encoding="utf-8") as pf:
+            ps1_src = pf.read()
+        for key in ("BypassTPMCheck", "BypassSecureBootCheck", "BypassRAMCheck", "BypassStorageCheck", "BypassCPUCheck"):
+            self.assertIn(key, sh_src, f"build-win11-iso.sh must assert LabConfig {key} (#97)")
+            self.assertIn(key, ps1_src, f"Build-StormRaven-Win11-ISO.ps1 must inject/assert LabConfig {key} (#97)")
+        self.assertIn("CRITICAL BUILD FAILURE (#97)", sh_src)
+        self.assertIn("CRITICAL BUILD FAILURE (#97)", ps1_src)
 
     def test_void_theme_assets_present_in_chroot(self):
         chroot = os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot")

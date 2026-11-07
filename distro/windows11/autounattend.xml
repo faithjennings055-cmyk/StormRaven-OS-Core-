@@ -1,9 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- StormRaven OS — Windows 11 Edition Unattended ISO Customization Manifest (#63, #80) -->
-<!-- Security Hardened: No plaintext credentials; SHA-256 checksum verified prior to execution -->
+<!-- StormRaven OS — Windows 11 Edition Unattended ISO Customization Manifest (#63, #80, #97) -->
+<!-- Security Hardened: No plaintext credentials; hardware LabConfig bypass; SHA-256 checksum verified prior to execution -->
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>Bypass Windows 11 TPM 2.0 Requirement</Description>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Description>Bypass Windows 11 Secure Boot Requirement</Description>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Description>Bypass Windows 11 RAM Requirement</Description>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Description>Bypass Windows 11 Storage Size Requirement</Description>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Description>Bypass Windows 11 CPU Generation Requirement</Description>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>6</Order>
+          <Description>Allow Upgrades on Unsupported TPM or CPU</Description>
+          <Path>reg add HKLM\SYSTEM\Setup\MoSetup /v AllowUpgradesWithUnsupportedTPMOrCPU /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>Enable Local Account Creation During Windows 11 OOBE (BypassNRO)</Description>
+          <Path>reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE /v BypassNRO /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
   <settings pass="oobeSystem">
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
       <OOBE>
         <HideEULAPage>true</HideEULAPage>
         <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
@@ -12,10 +59,10 @@
         <ProtectYourPC>3</ProtectYourPC>
       </OOBE>
       <FirstLogonCommands>
-        <SynchronousCommand wcm:action="add" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+        <SynchronousCommand wcm:action="add">
           <Order>1</Order>
-          <Description>Verify SHA-256 Checksum and Bootstrap StormRaven OS Windows 11 Edition</Description>
-          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$u='https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app'; Invoke-WebRequest \"$u/install-win11.ps1\" -OutFile \"$env:TEMP\install-win11.ps1\"; Invoke-WebRequest \"$u/install-win11.ps1.sha256\" -OutFile \"$env:TEMP\install-win11.ps1.sha256\"; $expected=(Get-Content \"$env:TEMP\install-win11.ps1.sha256\").Split()[0].ToLower(); $actual=(Get-FileHash \"$env:TEMP\install-win11.ps1\" -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $expected) { throw 'SHA-256 verification failed for install-win11.ps1' }; &amp; \"$env:TEMP\install-win11.ps1\""</CommandLine>
+          <Description>Verify SHA-256 Checksum and Bootstrap StormRaven OS Windows 11 Edition (Offline WIM or Verified Cloud Fallback)</Description>
+          <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$localPs1='C:\ProgramData\StormRaven\Install-StormRaven-Win11.ps1'; $localSha='C:\ProgramData\StormRaven\Install-StormRaven-Win11.ps1.sha256'; if ((Test-Path $localPs1) -and (Test-Path $localSha)) { $exp=(Get-Content $localSha).Split()[0].ToLower(); $act=(Get-FileHash $localPs1 -Algorithm SHA256).Hash.ToLower(); if ($act -ne $exp) { exit 1 }; &amp; $localPs1; exit 0 }; $u='https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app'; Invoke-WebRequest \"$u/install-win11.ps1\" -OutFile \"$env:TEMP\install-win11.ps1\"; Invoke-WebRequest \"$u/install-win11.ps1.sha256\" -OutFile \"$env:TEMP\install-win11.ps1.sha256\"; $expected=(Get-Content \"$env:TEMP\install-win11.ps1.sha256\").Split()[0].ToLower(); $actual=(Get-FileHash \"$env:TEMP\install-win11.ps1\" -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $expected) { exit 1 }; &amp; \"$env:TEMP\install-win11.ps1\""</CommandLine>
         </SynchronousCommand>
       </FirstLogonCommands>
     </component>

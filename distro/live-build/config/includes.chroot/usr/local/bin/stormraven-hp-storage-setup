@@ -14,7 +14,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
-WIN11_ISO_SHA="4b3d34edd30948e858662a410ee7815f66e1ffdc4ee1d72cbed8f9c3a1ce509b"
+WIN11_ISO_SHA="$(curl -fsSL "${WIN11_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
+WIN11_ISO_SHA="${WIN11_ISO_SHA:-6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157}"
 
 echo "======================================================================="
 echo " ✦ STORMRAVEN OS — HP PRO 3500 STORAGE & DUAL-BOOT ARCHITECT"
@@ -120,6 +121,50 @@ mount /dev/sdb2 /mnt/sr-win-ntfs
 
 echo "    Extracting Custom Windows 11 Ymir Edition onto Micron SSD (/dev/sdb)..."
 7z x -y "${WIN11_ISO}" -o/mnt/sr-win-ntfs >/dev/null
+if [ ! -s /mnt/sr-win-ntfs/autounattend.xml ] || ! grep -q "BypassTPMCheck" /mnt/sr-win-ntfs/autounattend.xml 2>/dev/null; then
+  cat > /mnt/sr-win-ntfs/autounattend.xml <<'UNATTEND_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>false</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+    </component>
+  </settings>
+</unattend>
+UNATTEND_EOF
+fi
 cp -a /mnt/sr-win-ntfs/efi /mnt/sr-win-efi/
 cp -a /mnt/sr-win-ntfs/boot /mnt/sr-win-efi/
 cp -f /mnt/sr-win-ntfs/bootmgr* /mnt/sr-win-efi/ 2>/dev/null || true

@@ -73,8 +73,15 @@ cp -a "${REPO_DIR}/StormRaven.Python/"* "${SR_ROOT}/python/" 2>/dev/null || true
 cp -a "${REPO_DIR}/distro/live-build/config/includes.chroot/opt/stormraven/webapp/"* "${SR_ROOT}/webapp/" 2>/dev/null || true
 cp -f "${REPO_DIR}/distro/wallpapers/"* "${SR_ROOT}/webapp/" 2>/dev/null || true
 cp -f "${REPO_DIR}/distro/windows11/Install-StormRaven-Win11.ps1" "${SR_ROOT}/Install-StormRaven-Win11.ps1"
+if [ -f "${REPO_DIR}/distro/windows11/Install-StormRaven-Win11.ps1.sha256" ]; then
+  cp -f "${REPO_DIR}/distro/windows11/Install-StormRaven-Win11.ps1.sha256" "${SR_ROOT}/Install-StormRaven-Win11.ps1.sha256"
+else
+  (cd "${SR_ROOT}" && sha256sum Install-StormRaven-Win11.ps1 > Install-StormRaven-Win11.ps1.sha256)
+fi
 cp -f "${REPO_DIR}/distro/windows11/Build-StormRaven-Win11-ISO.ps1" "${SR_ROOT}/Build-StormRaven-Win11-ISO.ps1" 2>/dev/null || true
-echo "SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3" > "${SR_ROOT}/Luci.key"
+if [ ! -s "${SR_ROOT}/Luci.key" ]; then
+  echo "sr-luci-v4-$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > "${SR_ROOT}/Luci.key"
+fi
 
 # Bundle official Windows x64 Embeddable Python 3.12 runtime so Odin Pantheon & Moov AI run offline out-of-the-box on Windows 11
 mkdir -p "${SR_ROOT}/python-win64"
@@ -155,11 +162,38 @@ EOF
 mkdir -p "${ISO_STAGE}/StormRaven"
 cp -a "${SR_ROOT}/"* "${ISO_STAGE}/StormRaven/"
 cp -f "${REPO_DIR}/distro/windows11/autounattend.xml" "${ISO_STAGE}/autounattend.xml"
+cp -f "${REPO_DIR}/distro/windows11/autounattend.xml" "${WIM_OVERLAY}/Windows/Panther/unattend.xml" 2>/dev/null || {
+  mkdir -p "${WIM_OVERLAY}/Windows/Panther"
+  cp -f "${REPO_DIR}/distro/windows11/autounattend.xml" "${WIM_OVERLAY}/Windows/Panther/unattend.xml"
+}
 
-# 5. Inject the overlay directly into sources/install.wim using wimlib-imagex
+# Build-time assertion (#97): fail loudly if autounattend.xml or the WindowsPE LabConfig TPM/SecureBoot bypass is missing
+if [ ! -s "${ISO_STAGE}/autounattend.xml" ]; then
+  echo "CRITICAL BUILD FAILURE (#97): ${ISO_STAGE}/autounattend.xml is missing or empty!" >&2
+  exit 1
+fi
+for required_key in "BypassTPMCheck" "BypassSecureBootCheck" "BypassRAMCheck" "BypassStorageCheck" "BypassCPUCheck"; do
+  if ! grep -q "${required_key}" "${ISO_STAGE}/autounattend.xml"; then
+    echo "CRITICAL BUILD FAILURE (#97): ${ISO_STAGE}/autounattend.xml is missing LabConfig ${required_key}!" >&2
+    exit 1
+  fi
+done
+echo "    ✓ Verified staged autounattend.xml contains all 5 WindowsPE LabConfig hardware bypasses (#97)"
+
+# 5. Inject the overlay directly into sources/install.wim AND sources/boot.wim (Index 2 = Windows Setup PE) using wimlib-imagex
 WIM_FILE="${ISO_STAGE}/sources/install.wim"
-echo "==> [5/6] Injecting StormRaven OS Core + Ymir UI + Pantheon into ${WIM_FILE}..."
+BOOT_WIM_FILE="${ISO_STAGE}/sources/boot.wim"
+echo "==> [5/6] Injecting StormRaven OS Core + Ymir UI + Pantheon + Unattend Bypass into ${WIM_FILE} and ${BOOT_WIM_FILE}..."
 wimlib-imagex update "${WIM_FILE}" 1 --command="add '${WIM_OVERLAY}' /"
+if [ -f "${BOOT_WIM_FILE}" ]; then
+  BOOT_PE_OVERLAY="${WORK_DIR}/boot_pe_overlay"
+  rm -rf "${BOOT_PE_OVERLAY}"
+  mkdir -p "${BOOT_PE_OVERLAY}"
+  cp -f "${REPO_DIR}/distro/windows11/autounattend.xml" "${BOOT_PE_OVERLAY}/autounattend.xml"
+  wimlib-imagex update "${BOOT_WIM_FILE}" 2 --command="add '${BOOT_PE_OVERLAY}' /" 2>/dev/null || \
+    wimlib-imagex update "${BOOT_WIM_FILE}" 1 --command="add '${BOOT_PE_OVERLAY}' /" 2>/dev/null || true
+  rm -rf "${BOOT_PE_OVERLAY}"
+fi
 
 # 6. Repack bootable UEFI + Legacy BIOS Custom Windows 11 ISO via xorriso
 echo "==> [6/6] Packing bootable UEFI + BIOS Custom Windows 11 ISO (${OUT_ISO})..."

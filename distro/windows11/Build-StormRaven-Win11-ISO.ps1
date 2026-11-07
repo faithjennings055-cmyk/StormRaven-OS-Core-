@@ -159,10 +159,11 @@ try {
         Copy-Item -Path "$PSScriptRoot\Install-StormRaven-Win11.ps1.sha256" -Destination "$OfflineSrRoot\Install-StormRaven-Win11.ps1.sha256" -Force
     }
 
-    # Load offline Default User + Software registry hives to pre-configure Ymir Dark Theme, Centered Taskbar,
-    # Wallpaper, and Automatic Windows Updates for every user profile created on the machine.
+    # Load offline Default User, Software, and System registry hives to pre-configure Ymir Dark Theme, Centered Taskbar,
+    # Wallpaper, Automatic Windows Updates, and LabConfig TPM/SecureBoot/RAM/CPU Hardware Bypasses (#97).
     $DefaultUserDat = Join-Path $WimMount "Users\Default\NTUSER.DAT"
     $SoftwareHive   = Join-Path $WimMount "Windows\System32\config\SOFTWARE"
+    $SystemHive     = Join-Path $WimMount "Windows\System32\config\SYSTEM"
 
     & reg.exe load "HKLM\SR_DEFAULT" "$DefaultUserDat" | Out-Null
     try {
@@ -182,9 +183,25 @@ try {
         & reg.exe add "HKLM\SR_SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v NoAutoUpdate /t REG_DWORD /d 0 /f | Out-Null
         & reg.exe add "HKLM\SR_SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v AUOptions /t REG_DWORD /d 4 /f | Out-Null
         & reg.exe add "HKLM\SR_SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v ScheduledInstallDay /t REG_DWORD /d 0 /f | Out-Null
+        # Enable OOBE local account creation bypass (BypassNRO)
+        & reg.exe add "HKLM\SR_SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v BypassNRO /t REG_DWORD /d 1 /f | Out-Null
     } finally {
         [gc]::Collect()
         & reg.exe unload "HKLM\SR_SOFTWARE" | Out-Null
+    }
+
+    & reg.exe load "HKLM\SR_SYSTEM" "$SystemHive" | Out-Null
+    try {
+        # Inject Windows 11 Setup LabConfig & MoSetup hardware check bypasses directly into the offline SYSTEM hive (#97)
+        & reg.exe add "HKLM\SR_SYSTEM\Setup\LabConfig" /v BypassTPMCheck /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "HKLM\SR_SYSTEM\Setup\LabConfig" /v BypassSecureBootCheck /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "HKLM\SR_SYSTEM\Setup\LabConfig" /v BypassRAMCheck /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "HKLM\SR_SYSTEM\Setup\LabConfig" /v BypassStorageCheck /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "HKLM\SR_SYSTEM\Setup\LabConfig" /v BypassCPUCheck /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "HKLM\SR_SYSTEM\Setup\MoSetup" /v AllowUpgradesWithUnsupportedTPMOrCPU /t REG_DWORD /d 1 /f | Out-Null
+    } finally {
+        [gc]::Collect()
+        & reg.exe unload "HKLM\SR_SYSTEM" | Out-Null
     }
 
     # Wire SetupComplete.cmd so Windows Setup finalizes the StormRaven service & Compendium Hardening Matrix (#89)
@@ -212,9 +229,18 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\ProgramData\StormRav
     throw
 }
 
-# Stage autounattend.xml at ISO root
-if (Test-Path "$PSScriptRoot\autounattend.xml") {
-    Copy-Item -Path "$PSScriptRoot\autounattend.xml" -Destination (Join-Path $IsoStage "autounattend.xml") -Force
+# Stage autounattend.xml at ISO root and fail loudly if missing or lacking LabConfig bypass (#97)
+$UnattendSrc = Join-Path $PSScriptRoot "autounattend.xml"
+$UnattendDst = Join-Path $IsoStage "autounattend.xml"
+if (-not (Test-Path $UnattendSrc)) {
+    throw "CRITICAL BUILD FAILURE (#97): autounattend.xml is missing at $UnattendSrc"
+}
+Copy-Item -Path $UnattendSrc -Destination $UnattendDst -Force
+$UnattendContent = Get-Content -Path $UnattendDst -Raw
+foreach ($ReqKey in @("BypassTPMCheck", "BypassSecureBootCheck", "BypassRAMCheck", "BypassStorageCheck", "BypassCPUCheck")) {
+    if ($UnattendContent -notmatch $ReqKey) {
+        throw "CRITICAL BUILD FAILURE (#97): Staged autounattend.xml is missing required LabConfig key: $ReqKey"
+    }
 }
 
 # 7. Pack bootable UEFI + Legacy BIOS ISO using Windows ADK oscdimg.exe
