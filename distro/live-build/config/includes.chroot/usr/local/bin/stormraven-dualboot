@@ -8,6 +8,7 @@
 #
 # Usage:
 #   sudo stormraven-dualboot list
+#   sudo stormraven-dualboot ventoy [/dev/sdX]   # Build Ventoy Dual-Edition USB (Ubuntu + Win11)
 #   sudo stormraven-dualboot usb /dev/sdX
 #   sudo stormraven-dualboot grub-add-win11 /dev/sdXY
 #   sudo stormraven-dualboot grub-verify    # scan grub configs for stale UUIDs
@@ -296,6 +297,20 @@ GRUB40
 }
 
 case "${1:-list}" in
+  ventoy)
+    shift || true
+    if [ -x /usr/local/bin/make-ventoy-usb.sh ]; then
+      exec sudo /usr/local/bin/make-ventoy-usb.sh "$@"
+    else
+      TMP_VTOY="$(mktemp /tmp/make-ventoy-usb.XXXXXX.sh)"
+      curl -fsSL "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh" -o "${TMP_VTOY}"
+      curl -fsSL "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256" -o "${TMP_VTOY}.sha256"
+      sed -i "s|make-ventoy-usb.sh|${TMP_VTOY}|g" "${TMP_VTOY}.sha256"
+      sha256sum -c "${TMP_VTOY}.sha256"
+      chmod +x "${TMP_VTOY}"
+      exec sudo "${TMP_VTOY}" "$@"
+    fi
+    ;;
   grub-verify|verify)
     grub_verify
     ;;
