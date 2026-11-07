@@ -180,6 +180,26 @@ xorriso -as mkisofs \
 ISO_SHA="$(sha256sum "${OUT_ISO}" | awk '{print $1}')"
 echo "${ISO_SHA}  $(basename "${OUT_ISO}")" > "${OUT_ISO}.sha256"
 
+# Durable Artifact Mirror & Provenance Update (Issue #95)
+MIRROR_DIR="${STORMRAVEN_ARTIFACT_MIRROR_DIR:-${HOME:-/home/user}/Documents}"
+if [ -d "${MIRROR_DIR}" ]; then
+  echo "==> [6.5/6] Mirroring ${OUT_ISO} and .sha256 sidecar to durable storage (${MIRROR_DIR})..."
+  cp -f "${OUT_ISO}" "${OUT_ISO}.sha256" "${MIRROR_DIR}/"
+fi
+if [ -f "${REPO_DIR}/distro/PROVENANCE.json" ]; then
+  python3 - "${REPO_DIR}/distro/PROVENANCE.json" "${ISO_SHA}" <<'PY' || true
+import json, sys, time
+prov_path, sha = sys.argv[1:3]
+with open(prov_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+data["updatedUtc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+data.setdefault("artifacts", {}).setdefault("windows11YmirIso", {})["sha256"] = sha
+with open(prov_path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+fi
+
 rm -rf "${ISO_STAGE}" "${WIM_OVERLAY}" "${WORK_DIR}/bundle_unpack"
 
 echo "======================================================================="

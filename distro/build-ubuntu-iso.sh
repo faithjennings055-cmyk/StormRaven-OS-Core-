@@ -748,7 +748,28 @@ cp -f "${ISO_STAGING}/boot/grub/grub.cfg" "${ISO_STAGING}/EFI/BOOT/grub.cfg"
 
 echo "==> [7/7] Building hybrid BIOS/UEFI bootable ISO: ${OUTPUT_ISO}..."
 grub-mkrescue -o "${OUTPUT_ISO}" "${ISO_STAGING}" -- -volid "STORMRAVEN_2404"
-sha256sum "${OUTPUT_ISO}" | sed "s|${REPO_ROOT}/||" > "${OUTPUT_ISO}.sha256"
+ISO_SHA="$(sha256sum "${OUTPUT_ISO}" | awk '{print $1}')"
+echo "${ISO_SHA}  $(basename "${OUTPUT_ISO}")" > "${OUTPUT_ISO}.sha256"
+
+# Durable Artifact Mirror & Provenance Update (Issue #95)
+MIRROR_DIR="${STORMRAVEN_ARTIFACT_MIRROR_DIR:-${HOME:-/home/user}/Documents}"
+if [ -d "${MIRROR_DIR}" ]; then
+  echo "==> [7.5/7] Mirroring ${OUTPUT_ISO} and .sha256 sidecar to durable storage (${MIRROR_DIR})..."
+  cp -f "${OUTPUT_ISO}" "${OUTPUT_ISO}.sha256" "${MIRROR_DIR}/"
+fi
+if [ -f "${REPO_ROOT}/distro/PROVENANCE.json" ]; then
+  python3 - "${REPO_ROOT}/distro/PROVENANCE.json" "${ISO_SHA}" <<'PY' || true
+import json, sys, time
+prov_path, sha = sys.argv[1:3]
+with open(prov_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+data["updatedUtc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+data.setdefault("artifacts", {}).setdefault("ubuntu2604Iso", {})["infinityProtocolIsoSha256"] = sha
+with open(prov_path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+fi
 
 echo "==> Build complete!"
 ls -lh "${OUTPUT_ISO}" "${OUTPUT_ISO}.sha256"

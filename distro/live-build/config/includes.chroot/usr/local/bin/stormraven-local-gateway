@@ -243,6 +243,14 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json"), "telemetry": tel}
     elif norm in ("layout_toggle", "layout_ubuntu", "layout_win11"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-theme-layout", norm.replace("layout_", "")), "telemetry": tel}
+    elif norm in ("wsu", "wsu_status", "odin_wsu", "odin_wsu_status"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "status"), "telemetry": tel}
+    elif norm in ("wsu_cell_status", "odin_wsu_cell_status"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "cell", "status"), "telemetry": tel}
+    elif norm in ("wsu_cell_heartbeat", "odin_wsu_cell_heartbeat"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "cell", "heartbeat"), "telemetry": tel}
+    elif norm in ("wsu_scan_shared", "odin_wsu_scan_shared"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "scan-shared"), "telemetry": tel}
     elif norm in ("moov", "moov_status", "odin_moov", "odin_moov_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-moov", "status"), "telemetry": tel}
     elif norm in ("moov_ach", "odin_moov_ach"):

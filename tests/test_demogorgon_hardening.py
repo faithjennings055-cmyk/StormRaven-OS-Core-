@@ -183,6 +183,66 @@ class DemogorgonAndHardeningContract(unittest.TestCase):
         self.assertIn("SOCIOPATH-LLC", audit_src)
         self.assertIn("LAB-ONLY (EXCLUDED FROM ISO)", audit_src)
 
+    def test_provenance_and_durable_mirror_contract(self):
+        prov_path = os.path.join(ROOT, "distro", "PROVENANCE.json")
+        self.assertTrue(os.path.isfile(prov_path), "distro/PROVENANCE.json must exist (#95)")
+        with open(prov_path, encoding="utf-8") as pf:
+            prov = json.load(pf)
+        self.assertIn("ubuntu2604Iso", prov.get("artifacts", {}))
+        self.assertIn("windows11YmirIso", prov.get("artifacts", {}))
+        for builder_rel in (("distro", "build-ubuntu-iso.sh"), ("distro", "build-win11-iso.sh")):
+            bpath = os.path.join(ROOT, *builder_rel)
+            with open(bpath, encoding="utf-8") as bf:
+                bsrc = bf.read()
+            self.assertIn("STORMRAVEN_ARTIFACT_MIRROR_DIR", bsrc)
+            self.assertIn("PROVENANCE.json", bsrc)
+
+    def test_wsu_sovereign_cell_per_install_key_and_rdp_cert_pinning(self):
+        import subprocess
+        wsu_path = os.path.join(
+            ROOT, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", "stormraven-wsu"
+        )
+        self.assertTrue(os.path.isfile(wsu_path))
+        with open(wsu_path, encoding="utf-8") as wf:
+            wsu_src = wf.read()
+        # Follow-up 1 & 2 (#96): no hardcoded public fallback key and no /cert:ignore
+        self.assertNotIn("SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3", wsu_src)
+        self.assertNotIn("/cert:ignore", wsu_src)
+        self.assertIn("/cert:fingerprint:sha256:", wsu_src)
+        self.assertIn("/cert:tofu", wsu_src)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            env = os.environ.copy()
+            env["STORMRAVEN_WSU_DIR"] = os.path.join(tmp, "wsu")
+            env["STORMRAVEN_VOID_DIR"] = os.path.join(tmp, "void")
+            env["DRY_RUN"] = "1"
+            # 1. Heartbeat auto-generates per-install Luci.key and passes verify-ipc
+            hb = subprocess.run(["/bin/bash", wsu_path, "cell", "heartbeat"], env=env, capture_output=True, text=True, check=True)
+            hb_json = json.loads(hb.stdout.strip())
+            self.assertTrue(hb_json["ok"])
+            self.assertEqual(hb_json["verdict"], "PASS")
+            self.assertTrue(os.path.isfile(os.path.join(tmp, "wsu", "Luci.key")))
+
+            # 2. Replay of the exact same nonce is blocked
+            with open(os.path.join(tmp, "wsu", "Luci.key"), encoding="utf-8") as kf:
+                key = kf.read().strip()
+            import hashlib
+            import hmac
+            replay_payload = json.dumps({"intent": "cell_heartbeat", "timestamp": int(time.time()), "nonce": hb_json["nonce"]})
+            replay_sig = hmac.new(key.encode("utf-8"), replay_payload.encode("utf-8"), hashlib.sha256).hexdigest()
+            rep = subprocess.run(["/bin/bash", wsu_path, "verify-ipc", replay_payload, replay_sig], env=env, capture_output=True, text=True)
+            self.assertNotEqual(rep.returncode, 0)
+            self.assertEqual(json.loads(rep.stdout.strip())["reason"], "replayed_nonce_detected")
+
+            # 3. RDP RemoteApp uses /cert:tofu by default and /cert:fingerprint:sha256:<pin> when pinned
+            app_default = json.loads(subprocess.run(["/bin/bash", wsu_path, "cell", "app", "||notepad"], env=env, capture_output=True, text=True, check=True).stdout)
+            self.assertEqual(app_default["certVerification"], "/cert:tofu")
+            pin_file = os.path.join(tmp, "wsu", "cell_rdp_sha256.pin")
+            with open(pin_file, "w", encoding="utf-8") as pf:
+                pf.write("AA:BB:CC:DD:EE:FF\n")
+            app_pinned = json.loads(subprocess.run(["/bin/bash", wsu_path, "cell", "app", "||notepad"], env=env, capture_output=True, text=True, check=True).stdout)
+            self.assertEqual(app_pinned["certVerification"], "/cert:fingerprint:sha256:AA:BB:CC:DD:EE:FF")
+
 
 if __name__ == "__main__":
     unittest.main()

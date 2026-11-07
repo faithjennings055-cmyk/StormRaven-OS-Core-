@@ -17,13 +17,36 @@ VOID_BASE="${STORMRAVEN_VOID_DIR:-/tmp/stormraven-void}"
 HELHEIM_DIR="${VOID_BASE}/helheim"
 NONCE_FILE="${VOID_BASE}/wsu_nonces.log"
 SHARED_DIR="${WSU_BASE}/shared"
+LUCI_KEY_FILE="${STORMRAVEN_LUCI_KEY_FILE:-${WSU_BASE}/Luci.key}"
+RDP_CERT_PIN_FILE="${STORMRAVEN_RDP_CERT_PIN_FILE:-${WSU_BASE}/cell_rdp_sha256.pin}"
 
 mkdir -p "${WSU_BASE}/prefix" "${WSU_BASE}/c_drive" "${SHARED_DIR}" "${HELHEIM_DIR}" 2>/dev/null || {
   WSU_BASE="/tmp/stormraven-void/wsu"
   SHARED_DIR="${WSU_BASE}/shared"
+  LUCI_KEY_FILE="${STORMRAVEN_LUCI_KEY_FILE:-${WSU_BASE}/Luci.key}"
+  RDP_CERT_PIN_FILE="${STORMRAVEN_RDP_CERT_PIN_FILE:-${WSU_BASE}/cell_rdp_sha256.pin}"
   mkdir -p "${WSU_BASE}/prefix" "${WSU_BASE}/c_drive" "${SHARED_DIR}" "${HELHEIM_DIR}"
 }
 touch "${NONCE_FILE}" 2>/dev/null || true
+
+ensure_luci_key() {
+  for kp in "${LUCI_KEY_FILE}" "/etc/stormraven/Luci.key" "${HOME:-/tmp}/.stormraven_luci.key"; do
+    if [ -s "${kp}" ]; then
+      echo "${kp}"
+      return 0
+    fi
+  done
+  mkdir -p "$(dirname "${LUCI_KEY_FILE}")" 2>/dev/null || true
+  python3 -c 'import secrets; print("sr-luci-v4-" + secrets.token_hex(32))' > "${LUCI_KEY_FILE}"
+  chmod 0600 "${LUCI_KEY_FILE}" 2>/dev/null || true
+  if [ "$(id -u)" -eq 0 ] && [ ! -s "/etc/stormraven/Luci.key" ]; then
+    mkdir -p /etc/stormraven 2>/dev/null || true
+    cp -f "${LUCI_KEY_FILE}" /etc/stormraven/Luci.key 2>/dev/null || true
+    chmod 0600 /etc/stormraven/Luci.key 2>/dev/null || true
+  fi
+  echo "${LUCI_KEY_FILE}"
+}
+ACTIVE_KEY_FILE="$(ensure_luci_key)"
 
 export WINEPREFIX="${WSU_BASE}/prefix"
 export WINEARCH="win64"
@@ -38,11 +61,11 @@ Usage: stormraven-wsu <command> [args]   (alias: wsu)
 
 Commands:
   status                              Show Windows Sovereign Cell & Wine/bwrap status (JSON)
-  init                                Initialize Wine64, Bubblewrap, FreeRDP & binfmt_misc
+  init                                Initialize Wine64, Bubblewrap, FreeRDP & per-install Luci.key
   verify-ipc <json-payload> <hmac>    Host-side Heimdall Gate: verify timestamp + nonce + allow-list
   scan-shared [dir]                   Scan shared host-guest folder & quarantine threats to Helheim
   run <app.exe|builtin> [args]        Verify SHA-256 against PROVENANCE.json & run in bwrap/Wine64
-  cell <start|stop|status|heartbeat>  Manage the RavenNest Windows 11 KVM Sovereign Cell
+  cell <start|stop|status|heartbeat|app>  Manage the RavenNest Windows 11 KVM Sovereign Cell
 EOF
 }
 
@@ -56,29 +79,35 @@ case "${cmd}" in
     freerdp_installed="false"
     command -v xfreerdp >/dev/null 2>&1 && freerdp_installed="true"
     cell_running="false"
-    pgrep -f "qemu-system-x86_64.*Win11" >/dev/null 2>&1 && cell_running="true"
+    pgrep -f "[q]emu-system-x86_64.*Win11" >/dev/null 2>&1 && cell_running="true"
     quarantined_count="$(find "${HELHEIM_DIR}" -maxdepth 1 -name '*.void' 2>/dev/null | wc -l | tr -d ' ')"
-    printf '{"subsystem":"Windows Subsystem for Ubuntu (WSU)","primaryArchitecture":"RavenNest Windows 11 Sovereign Cell (KVM/QEMU)","secondaryArchitecture":"Wine64 + Bubblewrap (bwrap)","heimdallGate":"HMAC-SHA256 + Timestamp (60s) + Nonce Anti-Replay","sharedFolderScanner":"Helheim Quarantine Vault (%s)","quarantinedItems":%s,"cellRunning":%s,"wineInstalled":%s,"bwrapInstalled":%s,"freerdpSeamlessBridge":%s}\n' \
+    printf '{"subsystem":"Windows Subsystem for Ubuntu (WSU)","primaryArchitecture":"RavenNest Windows 11 Sovereign Cell (KVM/QEMU)","secondaryArchitecture":"Wine64 + Bubblewrap (bwrap)","heimdallGate":"HMAC-SHA256 + Per-Install Luci.key + Timestamp (60s) + Nonce Anti-Replay","rdpBridgeSecurity":"TLS SHA-256 Certificate Pinning (/cert:tofu + /cert:fingerprint:sha256)","sharedFolderScanner":"Helheim Quarantine Vault (%s)","quarantinedItems":%s,"cellRunning":%s,"wineInstalled":%s,"bwrapInstalled":%s,"freerdpSeamlessBridge":%s}\n' \
       "${HELHEIM_DIR}" "${quarantined_count}" "${cell_running}" "${wine_installed}" "${bwrap_installed}" "${freerdp_installed}"
     ;;
 
   verify-ipc)
     payload="${2:?JSON payload required}"
     sig="${3:?HMAC-SHA256 signature required}"
-    python3 - "${payload}" "${sig}" "${NONCE_FILE}" <<'PY'
+    python3 - "${payload}" "${sig}" "${NONCE_FILE}" "${ACTIVE_KEY_FILE}" <<'PY'
 import hashlib, hmac, json, os, sys, time
 
-raw_payload, provided_sig, nonce_file = sys.argv[1:4]
+raw_payload, provided_sig, nonce_file, key_file = sys.argv[1:5]
 ALLOWLIST = {"cell_heartbeat", "launch_remoteapp", "sync_clipboard", "query_status", "raido_route", "isa_snapshot"}
 
-key = "SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3"
-for kp in ("/etc/stormraven/Luci.key", os.path.expanduser("~/.stormraven_luci.key")):
-    if os.path.isfile(kp):
-        try:
-            key = open(kp, "r", encoding="utf-8").read().strip()
-            break
-        except Exception:
-            pass
+key = os.environ.get("STORMRAVEN_LUCI_KEY", "").strip()
+if not key:
+    for kp in (key_file, "/etc/stormraven/Luci.key", os.path.expanduser("~/.stormraven_luci.key")):
+        if kp and os.path.isfile(kp):
+            try:
+                key = open(kp, "r", encoding="utf-8").read().strip()
+                if key:
+                    break
+            except Exception:
+                pass
+
+if not key:
+    print(json.dumps({"ok": False, "verdict": "BLOCKED", "reason": "missing_luci_key_fail_closed"}))
+    sys.exit(1)
 
 expected_sig = hmac.new(key.encode("utf-8"), raw_payload.encode("utf-8"), hashlib.sha256).hexdigest()
 if not hmac.compare_digest(expected_sig, provided_sig.strip()):
@@ -193,33 +222,61 @@ PY
         exec /usr/local/bin/vm-win11.sh
         ;;
       stop)
-        pkill -f "qemu-system-x86_64.*Win11" 2>/dev/null || true
+        pkill -f "[q]emu-system-x86_64.*Win11" 2>/dev/null || true
         echo '{"cell":"RavenNest Windows 11 Sovereign Cell","status":"stopped"}'
         ;;
+      app|remoteapp)
+        remote_app="${3:-||explorer}"
+        rdp_host="${STORMRAVEN_CELL_RDP_HOST:-127.0.0.1:3389}"
+        # Zero-Trust RDP Certificate Verification (#96 follow-up 1):
+        # Never pass unverified ignore flags; pin SHA-256 fingerprint or require strict TOFU on loopback.
+        if [ -s "${RDP_CERT_PIN_FILE}" ]; then
+          PINNED_FP="$(head -n 1 "${RDP_CERT_PIN_FILE}" | tr -d '[:space:]')"
+          CERT_ARG="/cert:fingerprint:sha256:${PINNED_FP}"
+        else
+          CERT_ARG="/cert:tofu"
+        fi
+        if [ "${DRY_RUN:-0}" = "1" ] || ! command -v xfreerdp >/dev/null 2>&1; then
+          printf '{"cell":"RavenNest Windows 11 Sovereign Cell","action":"remoteapp","app":"%s","host":"%s","certVerification":"%s","pinFile":"%s"}\n' \
+            "${remote_app}" "${rdp_host}" "${CERT_ARG}" "${RDP_CERT_PIN_FILE}"
+          exit 0
+        fi
+        exec xfreerdp "/v:${rdp_host}" "/app:${remote_app}" "${CERT_ARG}" /dynamic-resolution +clipboard
+        ;;
       heartbeat)
-        python3 - "${NONCE_FILE}" <<'PY'
+        python3 - "${NONCE_FILE}" "${ACTIVE_KEY_FILE}" "${BASH_SOURCE[0]}" <<'PY'
 import hashlib, hmac, json, os, subprocess, sys, time, uuid
-nonce_file = sys.argv[1]
-key = "SR-LUCI-INFINITY-SOVEREIGN-KEY-v3.3"
-for kp in ("/etc/stormraven/Luci.key", os.path.expanduser("~/.stormraven_luci.key")):
-    if os.path.isfile(kp):
-        try:
-            key = open(kp, "r", encoding="utf-8").read().strip()
-            break
-        except Exception:
-            pass
+nonce_file, key_file, self_script = sys.argv[1:4]
+key = os.environ.get("STORMRAVEN_LUCI_KEY", "").strip()
+if not key:
+    for kp in (key_file, "/etc/stormraven/Luci.key", os.path.expanduser("~/.stormraven_luci.key")):
+        if kp and os.path.isfile(kp):
+            try:
+                key = open(kp, "r", encoding="utf-8").read().strip()
+                if key:
+                    break
+            except Exception:
+                pass
+if not key:
+    print(json.dumps({"ok": False, "verdict": "BLOCKED", "reason": "missing_luci_key_fail_closed"}))
+    sys.exit(1)
 payload = json.dumps({"intent": "cell_heartbeat", "timestamp": int(time.time()), "nonce": uuid.uuid4().hex})
 sig = hmac.new(key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
-res = subprocess.run(["/bin/bash", "/usr/local/bin/stormraven-wsu", "verify-ipc", payload, sig], capture_output=True, text=True)
+res = subprocess.run(["/bin/bash", self_script, "verify-ipc", payload, sig], capture_output=True, text=True)
 print(res.stdout.strip())
 PY
         ;;
       status|*)
         running="false"
-        pgrep -f "qemu-system-x86_64.*Win11" >/dev/null 2>&1 && running="true"
-        printf '{"cell":"RavenNest Windows 11 Sovereign Cell","running":%s,"bridge":"FreeRDP + KVM/QEMU","gatekeeper":"Heimdall HMAC-SHA256 + Timestamp + Nonce"}\n' "${running}"
+        pgrep -f "[q]emu-system-x86_64.*Win11" >/dev/null 2>&1 && running="true"
+        printf '{"cell":"RavenNest Windows 11 Sovereign Cell","running":%s,"bridge":"FreeRDP + KVM/QEMU","rdpCertPolicy":"SHA-256 Pinning (/cert:tofu)","gatekeeper":"Heimdall HMAC-SHA256 + Per-Install Key + Timestamp + Nonce"}\n' "${running}"
         ;;
     esac
+    ;;
+
+  cell-app)
+    shift || true
+    exec "${BASH_SOURCE[0]}" cell app "${1:-||explorer}"
     ;;
 
   init)

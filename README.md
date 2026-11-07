@@ -27,4 +27,15 @@ StormRaven OS is a hybrid C# + Python operating environment and Ubuntu 24.04 LTS
    - `webapp/`: Installable Mobile PWA with Status, Tabs, Decisions, Odin Pantheon, and Console views.
    - `StormRaven.Mobile/`: Cross-platform `.NET 8 MAUI` app (`net8.0-ios;net8.0-android`) running `StormRaven.Kernel.Portable` on-device via `KernelHostedService` + remote Bifrost gateway sync.
    - `ios/StormRavenCompanion/`: Native SwiftUI iOS 17+ companion app supporting LAN HTTP and Cloud HTTPS Bifrost gateways.
-\n## Current Milestone: Bedrock Complete\n- Ymir Ring 0 Core: IMPLEMENTED\n- Buddy/SLAB Allocator: LIVE\n- Zero-Trust Gatekeeper: LIVE\n- Neural-Symbolic Scheduler: LIVE\n- Phase: Transitioning to Visuals & GUI Layer
+\n## Durable Build Artifact Mirror & Provenance Recovery (#95)
+
+All release artifacts and their `.sha256` sidecars follow a dual-layer durability and provenance standard:
+
+1. **Automatic Post-Build Mirror (`~/Documents/`):**
+   - Both `distro/build-ubuntu-iso.sh` and `distro/build-win11-iso.sh` automatically mirror the built ISO and its `.sha256` sidecar to persistent storage (`${STORMRAVEN_ARTIFACT_MIRROR_DIR:-~/Documents}`) immediately after packaging.
+   - On cold boot, the gateway (`webserver.sh`) hydrates `/tmp/iso/` asynchronously in the background and falls back directly to `~/Documents/<filename>` so downloads never block or 404.
+2. **In-Repo Cryptographic Provenance (`distro/PROVENANCE.json`):**
+   - `distro/PROVENANCE.json` records the authoritative SHA-256 digests and builder recipes for `StormRavenOS-ubuntu-24.04-amd64.iso` / `StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso`, `StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso`, `StormRavenOS-Win11-Full-v3.9.0-x64.zip`, `stormraven-os_3.9.0_amd64.deb`, and `stormraven-os_3.9.0_amd64.snap`.
+   - **Recovery Procedure:** Restore from the persistent `~/Documents/` mirror if present (`sha256sum -c <artifact>.sha256`); otherwise run `sudo bash distro/build-ubuntu-iso.sh` or `sudo bash distro/build-win11-iso.sh` and verify the resulting digest against `distro/PROVENANCE.json`.
+
+## Current Milestone: Bedrock Complete\n- Ymir Ring 0 Core: IMPLEMENTED\n- Buddy/SLAB Allocator: LIVE\n- Zero-Trust Gatekeeper: LIVE\n- Neural-Symbolic Scheduler: LIVE\n- Phase: Transitioning to Visuals & GUI Layer

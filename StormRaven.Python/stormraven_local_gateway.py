@@ -85,7 +85,7 @@ def read_telemetry():
         return {"cpu": 8.5, "ram": 32.0, "cores": os.cpu_count() or 1}
 
 
-def run_cli_json(script_name, *args, timeout=3):
+def run_cli_json(script_name, *args):
     candidates = [
         f"{SNAP_ROOT}/bin/{script_name}" if SNAP_ROOT else "",
         f"/usr/local/bin/{script_name}",
@@ -99,7 +99,7 @@ def run_cli_json(script_name, *args, timeout=3):
             ([ "python3", path, *args ] if "python" in open(path, "r", encoding="utf-8", errors="ignore").readline() else ["/bin/bash", path, *args]),
             capture_output=True,
             text=True,
-            timeout=timeout,
+            timeout=3,
             check=False,
         )
         out = (proc.stdout or "").strip()
@@ -238,11 +238,19 @@ def handle_command_dict(body_dict):
     elif norm in ("installer", "installer_status", "install_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-installer", "--status-json"), "telemetry": tel}
     elif norm in ("update_check", "odin_update_check", "check_updates"):
-        res = {"timeUtc": now_iso, **run_cli_json("stormraven-update", "--status-json", timeout=120), "telemetry": tel}
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-update", "--status-json"), "telemetry": tel}
     elif norm in ("raido", "odin_raido", "runic_raido", "system_update", "odin_system_update", "update_apply", "odin_update_apply", "update_install"):
-        res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json", timeout=1800), "telemetry": tel}
+        res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json"), "telemetry": tel}
     elif norm in ("layout_toggle", "layout_ubuntu", "layout_win11"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-theme-layout", norm.replace("layout_", "")), "telemetry": tel}
+    elif norm in ("wsu", "wsu_status", "odin_wsu", "odin_wsu_status"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "status"), "telemetry": tel}
+    elif norm in ("wsu_cell_status", "odin_wsu_cell_status"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "cell", "status"), "telemetry": tel}
+    elif norm in ("wsu_cell_heartbeat", "odin_wsu_cell_heartbeat"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "cell", "heartbeat"), "telemetry": tel}
+    elif norm in ("wsu_scan_shared", "odin_wsu_scan_shared"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "scan-shared"), "telemetry": tel}
     elif norm in ("moov", "moov_status", "odin_moov", "odin_moov_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-moov", "status"), "telemetry": tel}
     elif norm in ("moov_ach", "odin_moov_ach"):
