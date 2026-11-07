@@ -672,6 +672,14 @@ namespace StormRaven.Kernel.Ipc
                         status = "ONLINE",
                         telemetry = ReadLiveTelemetry()
                     }, Queued: false);
+                case "wsu_status":
+                case "odin_wsu_status":
+                    return new CommandResult("accepted", "Windows Subsystem for Ubuntu (WSU) status attached",
+                        ExecDistroCli("stormraven-wsu", "status"), Queued: false);
+                case "wsu_cell_status":
+                case "odin_wsu_cell_status":
+                    return new CommandResult("accepted", "RavenNest Windows 11 Sovereign Cell status attached",
+                        ExecDistroCli("stormraven-wsu", "cell", "status"), Queued: false);
                 case "get_state":
                     return new CommandResult("accepted", "state snapshot attached", StatePayload(), Queued: false);
                 case "get_tabs":
