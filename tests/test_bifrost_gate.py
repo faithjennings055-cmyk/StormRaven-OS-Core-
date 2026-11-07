@@ -76,6 +76,33 @@ class BifrostGateContract(unittest.TestCase):
         self.assertIn("CRITICAL BUILD FAILURE (#97)", sh_src)
         self.assertIn("CRITICAL BUILD FAILURE (#97)", ps1_src)
 
+    def test_all_repo_sha256_sidecars_match_their_artifacts(self):
+        import hashlib
+        checked = 0
+        for dirpath, _dirnames, filenames in os.walk(ROOT):
+            if ".git" in dirpath.split(os.sep):
+                continue
+            for fn in filenames:
+                if not fn.endswith(".sha256"):
+                    continue
+                sidecar_path = os.path.join(dirpath, fn)
+                with open(sidecar_path, encoding="utf-8") as sf:
+                    line = sf.read().strip()
+                parts = line.split()
+                self.assertGreaterEqual(len(parts), 2, f"Malformed .sha256 sidecar: {sidecar_path}")
+                expected_sha = parts[0].lower()
+                target_name = parts[-1].lstrip("*")
+                target_path = os.path.join(dirpath, target_name)
+                self.assertTrue(os.path.isfile(target_path), f"Missing artifact {target_path} for sidecar {sidecar_path}")
+                h = hashlib.sha256()
+                with open(target_path, "rb") as tf:
+                    for chunk in iter(lambda: tf.read(65536), b""):
+                        h.update(chunk)
+                self.assertEqual(h.hexdigest().lower(), expected_sha,
+                    f"Stale .sha256 sidecar {sidecar_path}: expected {expected_sha}, got {h.hexdigest().lower()}")
+                checked += 1
+        self.assertGreaterEqual(checked, 10, "Expected at least 10 .sha256 sidecars in repo")
+
     def test_void_theme_assets_present_in_chroot(self):
         chroot = os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot")
         for rel in (
