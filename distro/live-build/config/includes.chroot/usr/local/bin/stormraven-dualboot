@@ -16,9 +16,11 @@
 set -euo pipefail
 
 UBUNTU_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso"
-UBUNTU_ISO_SHA="acfe854c42e8e50c4ff50edbf69fd97bb875e1c0264f636da04f112b7c24496b"
+UBUNTU_ISO_SHA="$(curl -fsSL "${UBUNTU_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
+UBUNTU_ISO_SHA="${UBUNTU_ISO_SHA:-8336cafbcf15163ad9c6ade5d2283ebc65e7ac969ae6bb82d29b75a1ccf43ecf}"
 WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
-WIN11_ISO_SHA="4b3d34edd30948e858662a410ee7815f66e1ffdc4ee1d72cbed8f9c3a1ce509b"
+WIN11_ISO_SHA="$(curl -fsSL "${WIN11_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
+WIN11_ISO_SHA="${WIN11_ISO_SHA:-6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157}"
 
 CACHE_DIR="/var/tmp/stormraven-dualboot-cache"
 UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-ubuntu-24.04-amd64.iso"
