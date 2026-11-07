@@ -1,12 +1,10 @@
 title: StormRaven OS
-email: null
 description: >-
   StormRaven OS is a hybrid C# + Python operating environment and Ubuntu 24.04 LTS live distribution.
-baseurl: ""
-url: "https://faithjennings055-cmyk.github.io/StormRaven-OS-Core-/"
+url: "https://faithjennings055-cmyk.github.io"
+baseurl: "/StormRaven-OS-Core-"
 markdown: kramdown
-remote_theme: pages-themes/primer@v0.2.0
+theme: jekyll-theme-primer
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
-  - jekyll-remote-theme
