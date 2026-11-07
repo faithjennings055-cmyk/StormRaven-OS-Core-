@@ -145,9 +145,23 @@ build_dualboot_usb() {
   mount "${P_WIN}" "${MNT_BASE}/win11"
 
   echo "==> [4/5] Extracting StormRaven Ubuntu 26.04 & Custom Windows 11 25H2 onto ${TARGET_DEV}..."
-  7z x -y "${UBUNTU_ISO}" -o"${MNT_BASE}/ubuntu" >/dev/null
-  7z x -y "${WIN11_ISO}" -o"${MNT_BASE}/win11" >/dev/null
+  7z x -y -snl "${UBUNTU_ISO}" -o"${MNT_BASE}/ubuntu" >/dev/null || [ -f "${MNT_BASE}/ubuntu/casper/filesystem.squashfs" ]
+  mkdir -p "${MNT_BASE}/ubuntu/live"
+  ln -sf ../casper/filesystem.squashfs "${MNT_BASE}/ubuntu/live/filesystem.squashfs" 2>/dev/null || true
+  ln -sf ../casper/initrd "${MNT_BASE}/ubuntu/live/initrd" 2>/dev/null || true
+  ln -sf ../casper/vmlinuz "${MNT_BASE}/ubuntu/live/vmlinuz" 2>/dev/null || true
+  7z x -y "${WIN11_ISO}" -o"${MNT_BASE}/win11" >/dev/null || [ -f "${MNT_BASE}/win11/sources/install.wim" ] || [ -f "${MNT_BASE}/win11/efi/boot/bootx64.efi" ]
 
+  # Ensure case-consistent /efi/boot/bootx64.efi on the Win11 partition for GRUB chainloader
+  if [ ! -f "${MNT_BASE}/win11/efi/boot/bootx64.efi" ]; then
+    mkdir -p "${MNT_BASE}/win11/efi/boot"
+    for cand in "${MNT_BASE}/win11/EFI/BOOT/BOOTX64.EFI" "${MNT_BASE}/win11/efi/microsoft/boot/bootmgfw.efi" "${MNT_BASE}/win11/EFI/Microsoft/Boot/bootmgfw.efi"; do
+      if [ -f "$cand" ]; then
+        cp -f "$cand" "${MNT_BASE}/win11/efi/boot/bootx64.efi"
+        break
+      fi
+    done
+  fi
   # Copy UEFI bootloaders to the ESP and install unified Dual-Boot GRUB menu
   cp -a "${MNT_BASE}/win11/efi" "${MNT_BASE}/efi/" 2>/dev/null || true
   cp -a "${MNT_BASE}/win11/boot" "${MNT_BASE}/efi/" 2>/dev/null || true
@@ -232,7 +246,7 @@ stage_internal_dualboot() {
   mkfs.ntfs -Q -F -L "SR_WIN11_BOOT" "${TARGET_PART}"
   mkdir -p /mnt/sr-win11-part
   mount "${TARGET_PART}" /mnt/sr-win11-part
-  7z x -y "${WIN11_ISO}" -o/mnt/sr-win11-part >/dev/null
+  7z x -y "${WIN11_ISO}" -o/mnt/sr-win11-part >/dev/null || [ -d /mnt/sr-win11-part/efi ]
   sync
   umount /mnt/sr-win11-part
 
