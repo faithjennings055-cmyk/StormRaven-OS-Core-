@@ -473,15 +473,15 @@ export default function Page() {
                 </div>
               </div>
               <div className="p-3.5 rounded-lg bg-black/60 border border-border space-y-1.5">
-                <div className="text-xs font-mono text-primary">1-Command Android (Termux) / Ubuntu Mobile Setup</div>
+                <div className="text-xs font-mono text-primary">Checksum-Verified Android (Termux) / Ubuntu Mobile Setup</div>
                 <code className="text-[11px] font-mono text-foreground block break-all">
-                  curl -fsSL {DEFAULT_GATEWAY}/install-mobile.sh | bash
+                  curl -fsSLO {DEFAULT_GATEWAY}/install-mobile.sh &amp;&amp; curl -fsSLO {DEFAULT_GATEWAY}/install-mobile.sh.sha256 &amp;&amp; sha256sum -c install-mobile.sh.sha256 &amp;&amp; bash install-mobile.sh
                 </code>
               </div>
               <div className="p-3.5 rounded-lg bg-black/60 border border-border space-y-1.5">
-                <div className="text-xs font-mono text-primary">1-Command Windows 11 Edition Setup (PowerShell Admin)</div>
+                <div className="text-xs font-mono text-primary">Checksum-Verified Windows 11 Edition Setup (PowerShell Admin)</div>
                 <code className="text-[11px] font-mono text-foreground block break-all">
-                  irm {DEFAULT_GATEWAY}/install-win11.ps1 | iex
+                  Invoke-WebRequest -Uri {DEFAULT_GATEWAY}/install-win11.ps1 -OutFile install-win11.ps1; $exp=(Invoke-RestMethod {DEFAULT_GATEWAY}/install-win11.ps1.sha256).Split()[0]; if((Get-FileHash install-win11.ps1 -Algorithm SHA256).Hash -eq $exp){"{ .\\install-win11.ps1 }"}
                 </code>
               </div>
               <div className="p-3.5 rounded-lg bg-black/60 border border-border space-y-2">

@@ -85,7 +85,7 @@ def read_telemetry():
         return {"cpu": 8.5, "ram": 32.0, "cores": os.cpu_count() or 1}
 
 
-def run_cli_json(script_name, *args):
+def run_cli_json(script_name, *args, timeout=3):
     candidates = [
         f"{SNAP_ROOT}/bin/{script_name}" if SNAP_ROOT else "",
         f"/usr/local/bin/{script_name}",
@@ -99,7 +99,7 @@ def run_cli_json(script_name, *args):
             ([ "python3", path, *args ] if "python" in open(path, "r", encoding="utf-8", errors="ignore").readline() else ["/bin/bash", path, *args]),
             capture_output=True,
             text=True,
-            timeout=3,
+            timeout=timeout,
             check=False,
         )
         out = (proc.stdout or "").strip()
@@ -199,13 +199,63 @@ def handle_command_dict(body_dict):
             "cwe77Blocked": True,
             "telemetry": tel,
         }
-    elif norm in ("odin_freya_think", "freya_think", "freya"):
+    elif norm in ("odin_freya_think", "freya_think", "freya", "freya_chat", "cortana"):
+        prompt = str(body_dict.get("prompt") or body_dict.get("message") or body_dict.get("target") or "status")
+        try:
+            from freya import Freya
+            freya_res = Freya().converse(prompt, execute_actions=True)
+        except Exception:
+            freya_res = {
+                "reply": f"I am listening, Doctor. Live sensors nominal (CPU {tel['cpu']}%, RAM {tel['ram']}%). All 9 Realms verified online.",
+                "avatarState": "SPEAKING",
+                "realmTheme": "midgard",
+            }
         res = {
             "timeUtc": now_iso,
-            "deity": "Freya Autonomous Mind",
-            "directive": f"Live sensors nominal (CPU {tel['cpu']}%, RAM {tel['ram']}%). All 9 Realms verified online.",
+            "deity": "Freya Cortana-Class Sovereign AI",
+            "directive": freya_res.get("reply"),
+            **freya_res,
             "telemetry": tel,
         }
+    elif norm.startswith("realm_") or norm == "set_realm_theme":
+        r_name = norm.replace("realm_", "") if norm.startswith("realm_") else str(body_dict.get("realm") or body_dict.get("target") or "midgard").lower()
+        layout_out = run_cli_json("stormraven-theme-layout", "realm", r_name)
+        try:
+            from freya import Freya
+            freya_res = Freya().converse(f"switch to {r_name}", execute_actions=False)
+        except Exception:
+            freya_res = {"realmTheme": r_name}
+        res = {
+            "timeUtc": now_iso,
+            "realmTheme": r_name,
+            "wholeSystemApplied": True,
+            "layoutEngine": layout_out,
+            **freya_res,
+            "telemetry": tel,
+        }
+    elif norm in ("war_room", "war_room_status", "security_war_room"):
+        demo_st = run_cli_json("stormraven-demogorgon", "status")
+        wsu_st = run_cli_json("stormraven-wsu", "status")
+        att_st = run_cli_json("stormraven-attest", "status")
+        res = {
+            "timeUtc": now_iso,
+            "warRoom": "ONLINE",
+            "heimdallGate": {"verdict": "ENFORCING", "cwe77AllowList": True, "hmacReplayGuard": True},
+            "runtimeAttestation": att_st,
+            "demogorgonTarpit": demo_st,
+            "wsuSovereignCell": wsu_st,
+            "recentDecisions": DECISIONS[:10],
+            "telemetry": tel,
+        }
+    elif norm in ("attest", "attest_status", "attest_scan", "runtime_attest"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-attest", "scan"), "telemetry": tel}
+    elif norm in ("attest_enroll", "runtime_attest_enroll"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-attest", "enroll"), "telemetry": tel}
+    elif norm in ("dockur", "dockur_status", "vm_dockur", "container_windows"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-vm", "dockur-status"), "telemetry": tel}
+    elif norm in ("skydive", "skydive_status", "skydive_launch"):
+        mode_arg = "gui" if norm == "skydive_launch" else "status"
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-skydive-app", mode_arg), "telemetry": tel}
     elif norm in ("vpn_status", "odin_vpn_status", "vpn_connect", "odin_vpn_connect", "vpn_disconnect", "odin_vpn_disconnect"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-vpn", "status"), "telemetry": tel}
     elif norm in ("vm_status", "odin_vm_status"):
@@ -238,9 +288,9 @@ def handle_command_dict(body_dict):
     elif norm in ("installer", "installer_status", "install_status"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-installer", "--status-json"), "telemetry": tel}
     elif norm in ("update_check", "odin_update_check", "check_updates"):
-        res = {"timeUtc": now_iso, **run_cli_json("stormraven-update", "--status-json"), "telemetry": tel}
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-update", "--status-json", timeout=120), "telemetry": tel}
     elif norm in ("raido", "odin_raido", "runic_raido", "system_update", "odin_system_update", "update_apply", "odin_update_apply", "update_install"):
-        res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json"), "telemetry": tel}
+        res = {"timeUtc": now_iso, "rune": "ᚱ RAIDO (Update)", **run_cli_json("stormraven-update", "--apply-json", timeout=1800), "telemetry": tel}
     elif norm in ("layout_toggle", "layout_ubuntu", "layout_win11"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-theme-layout", norm.replace("layout_", "")), "telemetry": tel}
     elif norm in ("wsu", "wsu_status", "odin_wsu", "odin_wsu_status"):

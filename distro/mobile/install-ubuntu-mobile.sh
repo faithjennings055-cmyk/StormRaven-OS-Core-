@@ -45,7 +45,7 @@ if [ -n "${TERMUX_VERSION:-}" ] || [ -d "/data/data/com.termux/files/usr" ]; the
       proot-distro install ubuntu
     fi
     echo -e "${GREEN}[+] Entering Ubuntu 24.04 Noble container to complete StormRaven installation...${RESET}"
-    proot-distro login ubuntu -- bash -c "curl -fsSL ${CLOUD_GATEWAY}/install-mobile.sh | bash"
+    proot-distro login ubuntu -- bash -c "curl -fsSLO ${CLOUD_GATEWAY}/install-mobile.sh && curl -fsSLO ${CLOUD_GATEWAY}/install-mobile.sh.sha256 && sha256sum -c install-mobile.sh.sha256 && bash install-mobile.sh"
     
     # Create Termux shortcut launcher
     mkdir -p "$HOME/.shortcuts"
@@ -123,17 +123,24 @@ cat > "${INSTALL_ROOT}/python/bifrost.py" << 'EOF'
 import platform
 
 class Bifrost:
+    _ALLOWLIST = {
+        "check_ip": "ip a",
+        "distro_info": "uname -a",
+        "uptime": "uptime",
+        "df": "df -h /",
+    }
+
     def __init__(self):
         self.is_win = platform.system() == "Windows"
 
     def translate_command(self, intent, target=None):
-        intent_clean = (intent or "").strip()
-        if intent_clean == "check_ip":
-            cmd = "ipconfig" if self.is_win else "ip -brief address || ip a"
-            return {"valid": True, "cmd": cmd}
-        if intent_clean == "distro_info":
-            return {"valid": True, "cmd": "uname -a && cat /etc/stormraven/os-release 2>/dev/null || cat /etc/os-release"}
-        return {"valid": True, "cmd": f"echo {intent_clean}"}
+        intent_clean = (intent or "").strip().lower().replace(" ", "_")
+        if intent_clean == "check_ip" and self.is_win:
+            return {"valid": True, "cmd": "ipconfig"}
+        cmd = self._ALLOWLIST.get(intent_clean)
+        if cmd is None:
+            return {"valid": False, "cmd": "", "error": f"Rejected unknown intent '{intent}'"}
+        return {"valid": True, "cmd": cmd}
 EOF
 
 cat > "${INSTALL_ROOT}/python/heimdall.py" << 'EOF'
@@ -175,7 +182,8 @@ class Thor:
     def strike_system(self, cmd):
         try:
             print(f"[THOR] Executing: {cmd}")
-            proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            import shlex
+            proc = subprocess.run(shlex.split(cmd), shell=False, capture_output=True, text=True, timeout=10)
             output = (proc.stdout or "") + (proc.stderr or "")
             return {"success": proc.returncode == 0, "output": output.strip() or "Command executed."}
         except Exception as e:

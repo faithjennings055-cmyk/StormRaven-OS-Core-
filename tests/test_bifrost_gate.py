@@ -47,8 +47,33 @@ class BifrostGateContract(unittest.TestCase):
         self.assertNotIn('realm="stormraven-bifrost""', GATEWAY_SRC)
 
     def test_runic_and_ravennest_intents_allowlisted(self):
-        for intent in ("fehu", "algiz", "isa", "raido", "ravencore", "frostvault", "frostnode", "ymirvault", "echoshell", "demogorgon", "lynn"):
+        for intent in ("fehu", "algiz", "isa", "raido", "ravencore", "frostvault", "frostnode", "ymirvault", "echoshell", "demogorgon", "lynn", "war_room", "wsu_status", "wsu_cell_heartbeat", "wsu_scan_shared", "skydive"):
             self.assertIn(f'case "{intent}":', GATEWAY_SRC, f"BifrostGateway must allow-list '{intent}'")
+
+    def test_ymir_security_war_room_panel_and_chroot_python_hardened(self):
+        chroot_webapp = os.path.join(
+            ROOT, "distro", "live-build", "config", "includes.chroot", "opt", "stormraven", "webapp"
+        )
+        with open(os.path.join(chroot_webapp, "index.html"), encoding="utf-8") as hf:
+            html_src = hf.read()
+        with open(os.path.join(chroot_webapp, "app.js"), encoding="utf-8") as jf:
+            js_src = jf.read()
+        self.assertIn("Security War Room", html_src)
+        self.assertIn("view-freya", html_src)
+        self.assertIn("applyWholeSystemRealm", js_src)
+        self.assertNotIn("| bash", html_src)
+        self.assertNotIn("| bash", js_src)
+        self.assertNotIn("| iex", js_src)
+
+        chroot_py = os.path.join(
+            ROOT, "distro", "live-build", "config", "includes.chroot", "opt", "stormraven", "python"
+        )
+        with open(os.path.join(chroot_py, "bifrost.py"), encoding="utf-8") as bf:
+            b_src = bf.read()
+        with open(os.path.join(chroot_py, "thor.py"), encoding="utf-8") as tf:
+            t_src = tf.read()
+        self.assertNotIn("echo {intent}", b_src, "chroot bifrost.py must not have echo fallback")
+        self.assertIn("shell=False", t_src, "chroot thor.py must enforce shell=False")
 
     def test_win11_autounattend_scrubbed_and_checksum_verified(self):
         xml_path = os.path.join(ROOT, "distro", "windows11", "autounattend.xml")

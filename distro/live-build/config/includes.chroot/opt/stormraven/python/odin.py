@@ -1,5 +1,10 @@
-import sys, os, time, json, threading
-from rich.console import Console
+import sys, os, time, json
+try:
+    from rich.console import Console
+except ImportError:
+    class Console:
+        def print(self, *args, **kwargs):
+            print(*args)
 from bifrost import Bifrost
 from heimdall import Heimdall
 from thor import Thor
@@ -105,6 +110,15 @@ class Odin:
                 "telemetry": tel
             }
 
+        if lower in ("demogorgon", "demogorgon_status", "lynn", "lynn_status"):
+            from demogorgon import get_demogorgon
+            return {
+                "ok": True,
+                "module": "Demogorgon Endlessh Tarpit & Lynn Honeycomb Defense",
+                "demogorgon": get_demogorgon().status_report(limit=15),
+                "telemetry": tel,
+            }
+
         if lower in ("freya", "freya_think", "think"):
             chat_reply = self.mind.listen(cmd_str)
             return {
@@ -115,8 +129,24 @@ class Odin:
                 "telemetry": tel
             }
 
+        # 1% Margin: strict allow-list (issue #35). Blacklist heuristics are
+        # never the gate — only explicitly allow-listed commands execute.
+        # Reject unknown intents BEFORE Heimdall/Thor (issue #35)
         plan = self.bridge.translate_command(cmd_str)
-        allowed = self.guard.audit(plan["cmd"])
+        if not plan.get("valid"):
+            return {
+                "ok": False,
+                "module": "Bifrost",
+                "intent": cmd_str,
+                "heimdallAudit": "NOT_REACHED",
+                "error": plan.get("error") or plan.get("reason") or "Unknown intent rejected."
+            }
+        from command_allowlist import classify
+        verdict = classify(cmd_str)
+        if verdict["allowed"] and verdict["cmd"]:
+            allowed = verdict["allowed"] and self.guard.audit(verdict["cmd"])
+        else:
+            allowed = self.guard.audit(plan["cmd"])
         if not allowed:
             return {
                 "ok": False,
@@ -125,7 +155,8 @@ class Odin:
                 "heimdallAudit": "BLOCKED",
                 "error": "Command rejected by Heimdall security policy."
             }
-        proc_out = os.popen(plan["cmd"]).read().strip()
+        exec_cmd = (verdict["cmd"] if verdict["allowed"] and verdict["cmd"] else plan["cmd"])
+        proc_out = self.hammer.strike_system(exec_cmd).get("output", "")
         return {
             "ok": True,
             "module": "Bifrost -> Heimdall -> Thor",

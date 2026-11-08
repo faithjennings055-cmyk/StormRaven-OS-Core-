@@ -60,7 +60,13 @@ if [ "${FORCE_LOCAL_BUILD:-0}" != "1" ]; then
     echo "    ${OUTPUT_ISO}"
     echo ""
     echo "==> Checking for a connected USB drive to flash directly from terminal (bypassing Startup Disk Creator)..."
-    ISO_PATH="${OUTPUT_ISO}" curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh | bash || true
+    tmp_flash="$(mktemp -d /tmp/sr-flash.XXXXXX)"
+    if curl -fsSL -o "${tmp_flash}/flash-usb.sh" "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh" && \
+       curl -fsSL -o "${tmp_flash}/flash-usb.sh.sha256" "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256" && \
+       (cd "${tmp_flash}" && sha256sum -c flash-usb.sh.sha256); then
+      ISO_PATH="${OUTPUT_ISO}" bash "${tmp_flash}/flash-usb.sh" || true
+    fi
+    rm -rf "${tmp_flash}"
     exit 0
   fi
   echo "==> Prebuilt download unavailable, falling back to full local Genesis build..."

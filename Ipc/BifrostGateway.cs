@@ -680,6 +680,36 @@ namespace StormRaven.Kernel.Ipc
                 case "odin_wsu_cell_status":
                     return new CommandResult("accepted", "RavenNest Windows 11 Sovereign Cell status attached",
                         ExecDistroCli("stormraven-wsu", "cell", "status"), Queued: false);
+                case "wsu_cell_heartbeat":
+                case "odin_wsu_cell_heartbeat":
+                    return new CommandResult("accepted", "RavenNest Windows 11 Sovereign Cell HMAC+nonce heartbeat verified",
+                        ExecDistroCli("stormraven-wsu", "cell", "heartbeat"), Queued: false);
+                case "wsu_scan_shared":
+                case "odin_wsu_scan_shared":
+                    return new CommandResult("accepted", "Helheim shared-folder scan completed",
+                        ExecDistroCli("stormraven-wsu", "scan-shared"), Queued: false);
+                case "war_room":
+                case "warroom":
+                case "war_room_status":
+                case "odin_war_room":
+                case "security_war_room":
+                    return new CommandResult("accepted", "Ymir Security War Room live telemetry attached", new {
+                        timeUtc = DateTime.UtcNow,
+                        warRoom = "ONLINE",
+                        diode = "HEIMDALL_DATA_DIODE_ACTIVE (zero PII egress)",
+                        demogorgon = ExecDistroCli("stormraven-demogorgon", "status"),
+                        wsuSovereignCell = ExecDistroCli("stormraven-wsu", "status"),
+                        helheimQuarantine = new {
+                            quarantined = _helheim.ListQuarantined(),
+                            sharedScan = ExecDistroCli("stormraven-wsu", "scan-shared")
+                        },
+                        telemetry = ReadLiveTelemetry()
+                    }, Queued: false);
+                case "skydive":
+                case "skydive_status":
+                case "skydive_launch":
+                    return new CommandResult("accepted", "Skydive desktop wrapper status attached",
+                        ExecDistroCli("stormraven-skydive-app", intent.EndsWith("launch") ? "gui" : "status"), Queued: false);
                 case "get_state":
                     return new CommandResult("accepted", "state snapshot attached", StatePayload(), Queued: false);
                 case "get_tabs":

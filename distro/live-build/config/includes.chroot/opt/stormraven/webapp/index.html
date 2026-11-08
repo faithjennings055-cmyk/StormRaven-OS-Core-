@@ -653,7 +653,7 @@
         <h2>Install Ubuntu 24.04 Mobile On-Device</h2>
         <p class="muted" style="margin-bottom:8px"><strong>Android (Termux / Linux Mobile):</strong> Run this 1-liner in Termux to bootstrap Ubuntu 24.04 LTS (Noble) + Odin Pantheon + <code>stormraven</code> CLI:</p>
         <div class="copy-row">
-          <code id="installCmdText" class="install-cmd">curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh | bash</code>
+          <code id="installCmdText" class="install-cmd">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh.sha256 &amp;&amp; sha256sum -c install-mobile.sh.sha256 &amp;&amp; bash install-mobile.sh</code>
           <button id="copyInstallBtn" class="btn small">Copy</button>
         </div>
         <p class="muted" style="margin-top:10px"><strong>iOS / iPhone:</strong> Tap Safari <strong>Share → Add to Home Screen</strong> to install StormRaven OS Mobile as a full-screen native app, or link the native SwiftUI <code>StormRavenCompanion</code> app to this HTTPS gateway.</p>

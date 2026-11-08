@@ -739,7 +739,7 @@
   refreshYmirHud();
 
   if ($('installCmdText')) {
-    $('installCmdText').textContent = 'curl -fsSL ' + baseUrl() + '/install-mobile.sh | bash';
+    $('installCmdText').textContent = 'curl -fsSLO ' + baseUrl() + '/install-mobile.sh && curl -fsSLO ' + baseUrl() + '/install-mobile.sh.sha256 && sha256sum -c install-mobile.sh.sha256 && bash install-mobile.sh';
   }
   if ($('copyInstallBtn')) {
     $('copyInstallBtn').addEventListener('click', function () {

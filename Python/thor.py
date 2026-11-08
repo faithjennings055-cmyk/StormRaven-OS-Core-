@@ -1,12 +1,22 @@
-import psutil
 import subprocess
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 class Thor:
     def get_telemetry(self):
+        if psutil is None:
+            return {"cpu": 0.0, "ram": 0.0, "connections": 0}
+        try:
+            conns = len(psutil.net_connections())
+        except Exception:
+            conns = 0
         return {
             "cpu": psutil.cpu_percent(interval=0.1),
             "ram": psutil.virtual_memory().percent,
-            "connections": len(psutil.net_connections())
+            "connections": conns
         }
     
     def strike_system(self, cmd):

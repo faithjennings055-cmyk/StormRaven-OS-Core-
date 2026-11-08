@@ -1,5 +1,10 @@
 import sys, os, time, json
-from rich.console import Console
+try:
+    from rich.console import Console
+except ImportError:
+    class Console:
+        def print(self, *args, **kwargs):
+            print(*args)
 from bifrost import Bifrost
 from heimdall import Heimdall
 from thor import Thor

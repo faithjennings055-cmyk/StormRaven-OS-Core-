@@ -1,6 +1,18 @@
 import json, os
-from rich.console import Console
-from rich.table import Table
+try:
+    from rich.console import Console
+    from rich.table import Table
+except ImportError:
+    class Console:
+        def print(self, *args, **kwargs):
+            print(*args)
+    class Table:
+        def __init__(self, *args, **kwargs):
+            self.rows = []
+        def add_column(self, *args, **kwargs):
+            pass
+        def add_row(self, *args, **kwargs):
+            self.rows.append(args)
 from constants import LOG_DIR
 
 console = Console()
