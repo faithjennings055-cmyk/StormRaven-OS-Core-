@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""
+StormRaven OS — Continuous Runtime Binary Attestation Engine (#101)
+Measures running process images (/proc/<pid>/exe & script targets) and Sovereign
+binaries (/usr/local/bin/stormraven*, /opt/stormraven/python/*.py) against an
+HMAC-SHA256 sealed baseline manifest.
+"""
+import glob
+import hashlib
+import hmac
+import json
+import os
+import secrets
+import sys
+import time
+from datetime import datetime, timezone
+
+
+def _state_dir() -> str:
+    env_dir = os.environ.get("STORMRAVEN_ATTEST_DIR") or os.environ.get("STORMRAVEN_VOID_DIR")
+    if env_dir:
+        d = os.path.join(env_dir, "attest")
+    else:
+        cand = "/var/lib/stormraven/attest"
+        try:
+            os.makedirs(cand, exist_ok=True)
+            if os.access(cand, os.W_OK):
+                d = cand
+            else:
+                d = "/tmp/stormraven-void/attest"
+        except Exception:
+            d = "/tmp/stormraven-void/attest"
+    os.makedirs(d, exist_ok=True)
+    try:
+        os.chmod(d, 0o777)
+    except Exception:
+        pass
+    return d
+
+
+def _load_or_create_luci_key() -> str:
+    candidates = [
+        os.environ.get("STORMRAVEN_LUCI_KEY_FILE", ""),
+        "/etc/stormraven/Luci.key",
+        os.path.expanduser("~/.local/share/stormraven-wsu/Luci.key"),
+        os.path.join(_state_dir(), "Luci.key"),
+    ]
+    for p in candidates:
+        if p and os.path.isfile(p) and os.path.getsize(p) > 0:
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    k = f.read().strip()
+                if k:
+                    return k
+            except Exception:
+                pass
+    key_path = os.path.join(_state_dir(), "Luci.key")
+    key_val = f"sr-luci-v4-{secrets.token_hex(32)}"
+    with open(key_path, "w", encoding="utf-8") as f:
+        f.write(key_val + "\n")
+    try:
+        os.chmod(key_path, 0o600)
+    except Exception:
+        pass
+    return key_val
+
+
+def sha256_file(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(65536)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def discover_monitored_files() -> list:
+    roots = []
+    env_root = os.environ.get("STORMRAVEN_ATTEST_ROOT")
+    if env_root and os.path.isdir(env_root):
+        roots.append(env_root)
+    else:
+        for pattern in (
+            "/usr/local/bin/stormraven*",
+            "/usr/local/bin/freya",
+            "/usr/local/bin/wsu",
+            "/opt/stormraven/python/*.py",
+            "/home/user/.self/webserver/bin/stormraven*",
+            "/home/user/.self/webserver/bin/freya*",
+        ):
+            roots.extend(glob.glob(pattern))
+    seen = set()
+    files = []
+    for item in sorted(roots):
+        if os.path.isdir(item):
+            for dp, _, fns in os.walk(item):
+                for fn in sorted(fns):
+                    fp = os.path.join(dp, fn)
+                    if os.path.isfile(fp) and not os.path.islink(fp):
+                        rp = os.path.realpath(fp)
+                        if rp not in seen:
+                            seen.add(rp)
+                            files.append(fp)
+        elif os.path.isfile(item) and not os.path.islink(item):
+            rp = os.path.realpath(item)
+            if rp not in seen:
+                seen.add(rp)
+                files.append(item)
+    return files
+
+
+def sign_manifest(hashes: dict, key: str) -> str:
+    canonical = json.dumps(hashes, sort_keys=True, separators=(",", ":"))
+    return hmac.new(key.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def enroll_baseline() -> dict:
+    sdir = _state_dir()
+    manifest_path = os.path.join(sdir, "runtime_baseline.json")
+    key = _load_or_create_luci_key()
+    hashes = {}
+    for fp in discover_monitored_files():
+        try:
+            hashes[fp] = sha256_file(fp)
+        except Exception:
+            pass
+    sig = sign_manifest(hashes, key)
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    doc = {
+        "schema": "sr.attest.runtime.v1",
+        "enrolledUtc": now_iso,
+        "binaryCount": len(hashes),
+        "hashes": hashes,
+        "hmacSha256": sig,
+    }
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(doc, f, indent=2)
+        f.write("\n")
+    try:
+        os.chmod(manifest_path, 0o666)
+    except Exception:
+        pass
+    return doc
+
+
+def scan_running_processes() -> dict:
+    checked = 0
+    suspicious = []
+    if not os.path.isdir("/proc"):
+        return {"checkedProcesses": 0, "suspiciousProcesses": []}
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        pid = int(entry)
+        try:
+            cmdline_raw = open(f"/proc/{pid}/cmdline", "rb").read()
+            if not cmdline_raw:
+                continue
+            parts = [p.decode("utf-8", errors="replace") for p in cmdline_raw.split(b"\x00") if p]
+            cmd_joined = " ".join(parts)
+            if not any(k in cmd_joined for k in ("stormraven", "freya", "odin.py", "webserver")):
+                continue
+            checked += 1
+            exe_target = os.readlink(f"/proc/{pid}/exe")
+            if "(deleted)" in exe_target or exe_target.startswith(("/tmp/", "/dev/shm/", "/memfd:")):
+                suspicious.append({"pid": pid, "exe": exe_target, "reason": "unlinked_or_ephemeral_exe"})
+        except Exception:
+            continue
+    return {"checkedProcesses": checked, "suspiciousProcesses": suspicious}
+
+
+def run_scan() -> dict:
+    t0 = time.monotonic()
+    sdir = _state_dir()
+    manifest_path = os.path.join(sdir, "runtime_baseline.json")
+    if not os.path.isfile(manifest_path):
+        baseline = enroll_baseline()
+    else:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            baseline = json.load(f)
+
+    key = _load_or_create_luci_key()
+    expected_hashes = baseline.get("hashes", {})
+    expected_sig = baseline.get("hmacSha256", "")
+    computed_sig = sign_manifest(expected_hashes, key)
+    manifest_valid = hmac.compare_digest(str(expected_sig), str(computed_sig))
+
+    drifted = []
+    missing = []
+    verified = 0
+    for fp, exp_sha in expected_hashes.items():
+        if not os.path.isfile(fp):
+            missing.append(fp)
+            continue
+        try:
+            cur_sha = sha256_file(fp)
+            if cur_sha != exp_sha:
+                drifted.append({"path": fp, "expectedSha256": exp_sha, "actualSha256": cur_sha})
+            else:
+                verified += 1
+        except Exception as e:
+            drifted.append({"path": fp, "error": str(e)})
+
+    proc_res = scan_running_processes()
+    ima_supported = os.path.isfile("/sys/kernel/security/ima/ascii_runtime_measurements")
+    elapsed_ms = round((time.monotonic() - t0) * 1000.0, 2)
+    enforce_mode = os.environ.get("STORMRAVEN_ATTEST_ENFORCE", "audit").lower()
+    verdict = "CLEAN" if (manifest_valid and not drifted and not missing and not proc_res["suspiciousProcesses"]) else "TAMPER_DETECTED"
+
+    return {
+        "schema": "sr.attest.runtime.v1",
+        "issue": "#101",
+        "timeUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "mode": enforce_mode,
+        "verdict": verdict,
+        "manifestHmacValid": manifest_valid,
+        "verifiedBinaries": verified,
+        "driftedBinaries": drifted,
+        "missingBinaries": missing,
+        "processAttestation": proc_res,
+        "kernelImaActive": ima_supported,
+        "scanDurationMs": elapsed_ms,
+    }
+
+
+def main():
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
+    if cmd in ("enroll", "--enroll"):
+        doc = enroll_baseline()
+        print(json.dumps({"ok": True, "action": "enrolled", "binaryCount": doc["binaryCount"], "hmacSha256": doc["hmacSha256"]}))
+    elif cmd in ("scan", "status", "verify", "--status-json"):
+        print(json.dumps(run_scan()))
+    else:
+        print(json.dumps(run_scan()))
+
+
+if __name__ == "__main__":
+    main()

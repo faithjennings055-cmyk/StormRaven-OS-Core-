@@ -243,6 +243,76 @@ class DemogorgonAndHardeningContract(unittest.TestCase):
             app_pinned = json.loads(subprocess.run(["/bin/bash", wsu_path, "cell", "app", "||notepad"], env=env, capture_output=True, text=True, check=True).stdout)
             self.assertEqual(app_pinned["certVerification"], "/cert:fingerprint:sha256:AA:BB:CC:DD:EE:FF")
 
+    def test_container_native_windows_dockur_spec_and_cli(self):
+        import subprocess
+        spec_path = os.path.join(ROOT, "distro", "CONTAINER_WINDOWS_V4_SPEC.md")
+        compose_path = os.path.join(ROOT, "distro", "containers", "dockur-windows", "docker-compose.yml")
+        oem_bat_path = os.path.join(ROOT, "distro", "containers", "dockur-windows", "oem", "install.bat")
+        vm_cli = os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", "stormraven-vm")
+        for p in (spec_path, compose_path, oem_bat_path, vm_cli):
+            self.assertTrue(os.path.isfile(p), f"Missing #98 artifact: {p}")
+        with open(oem_bat_path, encoding="utf-8") as bf:
+            bat_src = bf.read()
+        self.assertIn("Get-FileHash", bat_src)
+        self.assertIn("SHA256", bat_src)
+        out = subprocess.run(["/bin/bash", vm_cli, "dockur-status"], capture_output=True, text=True, check=True)
+        status_json = json.loads(out.stdout.strip())
+        self.assertEqual(status_json["issue"], "#98")
+        self.assertTrue(status_json["checksumVerifiedIsoRequired"])
+
+    def test_incremental_iso_repack_builder_contract(self):
+        import subprocess
+        repack_sh = os.path.join(ROOT, "distro", "repack-ubuntu-iso.sh")
+        self.assertTrue(os.path.isfile(repack_sh), "distro/repack-ubuntu-iso.sh must exist (#100)")
+        with open(repack_sh, encoding="utf-8") as rf:
+            rsrc = rf.read()
+        self.assertIn("chmod 04755", rsrc)
+        self.assertIn("NOPASSWD: ALL", rsrc)
+        self.assertIn("PROVENANCE.json", rsrc)
+        out = subprocess.run(["/bin/bash", repack_sh, "--dry-run"], capture_output=True, text=True, check=True)
+        dry_json = json.loads(out.stdout.strip())
+        self.assertEqual(dry_json["mode"], "incremental-layered-squashfs")
+        self.assertIn("includesChrootSha256", dry_json["layers"])
+
+    def test_continuous_runtime_attestation_engine_and_tamper_detection(self):
+        import subprocess
+        spec_path = os.path.join(ROOT, "docs", "RUNTIME_ATTESTATION_SPEC.md")
+        attest_bin = os.path.join(
+            ROOT, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", "stormraven-attest"
+        )
+        self.assertTrue(os.path.isfile(spec_path))
+        self.assertTrue(os.path.isfile(attest_bin))
+        with tempfile.TemporaryDirectory() as tmp:
+            bin_dir = os.path.join(tmp, "bin")
+            os.makedirs(bin_dir, exist_ok=True)
+            sample_bin = os.path.join(bin_dir, "stormraven-sample")
+            with open(sample_bin, "w", encoding="utf-8") as sf:
+                sf.write("#!/bin/sh\necho clean\n")
+            env = os.environ.copy()
+            env["STORMRAVEN_ATTEST_DIR"] = os.path.join(tmp, "state")
+            env["STORMRAVEN_ATTEST_ROOT"] = bin_dir
+            enroll_res = json.loads(
+                subprocess.run(["python3", attest_bin, "enroll"], env=env, capture_output=True, text=True, check=True).stdout
+            )
+            self.assertTrue(enroll_res["ok"])
+            self.assertEqual(enroll_res["binaryCount"], 1)
+
+            scan_clean = json.loads(
+                subprocess.run(["python3", attest_bin, "scan"], env=env, capture_output=True, text=True, check=True).stdout
+            )
+            self.assertEqual(scan_clean["verdict"], "CLEAN")
+            self.assertTrue(scan_clean["manifestHmacValid"])
+            self.assertEqual(scan_clean["verifiedBinaries"], 1)
+
+            # Tamper with sample binary mid-session and confirm TAMPER_DETECTED
+            with open(sample_bin, "w", encoding="utf-8") as sf:
+                sf.write("#!/bin/sh\necho tampered\n")
+            scan_tampered = json.loads(
+                subprocess.run(["python3", attest_bin, "scan"], env=env, capture_output=True, text=True, check=True).stdout
+            )
+            self.assertEqual(scan_tampered["verdict"], "TAMPER_DETECTED")
+            self.assertEqual(len(scan_tampered["driftedBinaries"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

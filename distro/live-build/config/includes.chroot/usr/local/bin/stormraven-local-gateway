@@ -236,15 +236,23 @@ def handle_command_dict(body_dict):
     elif norm in ("war_room", "war_room_status", "security_war_room"):
         demo_st = run_cli_json("stormraven-demogorgon", "status")
         wsu_st = run_cli_json("stormraven-wsu", "status")
+        att_st = run_cli_json("stormraven-attest", "status")
         res = {
             "timeUtc": now_iso,
             "warRoom": "ONLINE",
             "heimdallGate": {"verdict": "ENFORCING", "cwe77AllowList": True, "hmacReplayGuard": True},
+            "runtimeAttestation": att_st,
             "demogorgonTarpit": demo_st,
             "wsuSovereignCell": wsu_st,
             "recentDecisions": DECISIONS[:10],
             "telemetry": tel,
         }
+    elif norm in ("attest", "attest_status", "attest_scan", "runtime_attest"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-attest", "scan"), "telemetry": tel}
+    elif norm in ("attest_enroll", "runtime_attest_enroll"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-attest", "enroll"), "telemetry": tel}
+    elif norm in ("dockur", "dockur_status", "vm_dockur", "container_windows"):
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-vm", "dockur-status"), "telemetry": tel}
     elif norm in ("skydive", "skydive_status", "skydive_launch"):
         mode_arg = "gui" if norm == "skydive_launch" else "status"
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-skydive-app", mode_arg), "telemetry": tel}

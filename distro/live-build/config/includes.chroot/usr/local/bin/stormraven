@@ -313,6 +313,27 @@ SSHD
       fi
     done
     ;;
+  attest|attestation)
+    shift || true
+    for att in "${SCRIPT_BIN_DIR}/stormraven-attest" "${SNAP:-}/bin/stormraven-attest" "/usr/local/bin/stormraven-attest"; do
+      if [ -f "$att" ]; then
+        exec python3 "$att" "$@"
+      fi
+    done
+    ;;
+  vm|dockur)
+    if [ "${1:-}" = "dockur" ]; then
+      shift || true
+      set -- "dockur-status" "$@"
+    else
+      shift || true
+    fi
+    for vm_bin in "${SCRIPT_BIN_DIR}/stormraven-vm" "${SNAP:-}/bin/stormraven-vm" "/usr/local/bin/stormraven-vm"; do
+      if [ -f "$vm_bin" ]; then
+        exec bash "$vm_bin" "$@"
+      fi
+    done
+    ;;
   update|upgrade)
     shift || true
     for upd in "${SCRIPT_BIN_DIR}/stormraven-update" "${SNAP:-}/bin/stormraven-update" "/usr/local/bin/stormraven-update"; do

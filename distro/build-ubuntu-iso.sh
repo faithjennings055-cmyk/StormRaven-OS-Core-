@@ -63,6 +63,14 @@ cleanup_mounts() {
 trap cleanup_mounts EXIT
 
 cleanup_mounts
+# Incremental / Layered Fast-Path (#100): when INCREMENTAL_BAKE=1 (or --incremental),
+# delegate to distro/repack-ubuntu-iso.sh if a verified base ISO exists.
+if [ "${INCREMENTAL_BAKE:-0}" = "1" ] || [ "${1:-}" = "--incremental" ]; then
+  if [ -x "${SCRIPT_DIR}/repack-ubuntu-iso.sh" ]; then
+    echo "==> [Fast-Path #100] Running incremental layered ISO bake via distro/repack-ubuntu-iso.sh..."
+    exec "${SCRIPT_DIR}/repack-ubuntu-iso.sh" --output-iso "${OUTPUT_ISO}"
+  fi
+fi
 # Free any leftover /tmp RAM-disk build directories from earlier runs
 $SUDO rm -rf /tmp/stormraven-ubuntu-build /tmp/stormraven-genesis-src 2>/dev/null || true
 if [ "${CLEAN_BUILD}" = "1" ] || [ ! -x "${CHROOT_DIR}/bin/bash" ]; then
