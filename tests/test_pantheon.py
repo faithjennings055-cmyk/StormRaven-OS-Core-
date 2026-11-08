@@ -35,6 +35,17 @@ class TestStormRavenPantheon(unittest.TestCase):
         self.assertIsNotNone(high_cpu)
         self.assertEqual(high_cpu["intent"], "kill_bloatware")
 
+    def test_freya_sovereign_memory_and_realm_orchestration(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            mind = Freya(memory_path=os.path.join(tmp, "freya_memory.json"))
+            learn = mind.converse("remember I prefer Niflheim frost theme")
+            self.assertEqual(learn["intent"], "learn_memory")
+            self.assertGreaterEqual(learn["memory"]["learnedFactsCount"], 3)
+            switch = mind.converse("switch to muspelheim")
+            self.assertEqual(switch["realmTheme"], "muspelheim")
+            self.assertEqual(switch["memory"]["activeRealm"], "muspelheim")
+
     def test_odin_execute_telemetry_and_heimdall(self):
         odin = Odin(quiet=True)
         telemetry_res = odin.execute_command("telemetry")

@@ -31,11 +31,12 @@
 
   <nav class="tabbar">
     <button class="tab active" data-view="ymir">❄ Ymir Edition</button>
+    <button class="tab" data-view="freya">✨ Freya AI</button>
+    <button class="tab" data-view="realms">🌌 9 Realms UI</button>
     <button class="tab" data-view="desktop">App Grid</button>
     <button class="tab" data-view="status">Status</button>
     <button class="tab" data-view="tabs">Tabs</button>
     <button class="tab" data-view="fafnir">Fafnir</button>
-    <button class="tab" data-view="realms">Realms</button>
     <button class="tab" data-view="decisions">Decisions</button>
     <button class="tab" data-view="odin">Odin</button>
     <button class="tab" data-view="console">Console</button>
@@ -216,6 +217,126 @@
             <button type="button" id="copyYmirUpgradeBtn" class="btn small">Copy</button>
           </div>
         </div>
+
+        <!-- SECURITY WAR ROOM (#99) + WHOLE-SYSTEM 9 REALMS BAR (#102) -->
+        <div class="ymir-glass-win" style="margin-top:12px">
+          <div class="ymir-win-bar">
+            <div class="ymir-win-brand"><span class="ymir-r-badge">🛡</span> <span>Security War Room (#99) · Whole-System Nine Realms Theme Switcher (#102) · Skydive Wrapper (#103)</span></div>
+            <div class="ymir-win-dots"><span id="activeRealmBadge" class="ymir-pill">REALM: MIDGARD</span></div>
+          </div>
+          <div class="ymir-win-content" style="padding:12px">
+            <div class="chip-grid" id="ymirRealmThemeBar" style="margin-bottom:10px">
+              <button class="chip-btn" data-set-realm="asgard" style="border-color:#facc15;color:#facc15">👑 Asgard Gold</button>
+              <button class="chip-btn" data-set-realm="muspelheim" style="border-color:#f43f5e;color:#f43f5e">🔥 Muspelheim Fire</button>
+              <button class="chip-btn" data-set-realm="niflheim" style="border-color:#38bdf8;color:#38bdf8">❄️ Niflheim Frost</button>
+              <button class="chip-btn" data-set-realm="helheim" style="border-color:#94a3b8;color:#cbd5e1">⛓️ Helheim Iron</button>
+              <button class="chip-btn" data-set-realm="jotunheim" style="border-color:#60a5fa;color:#60a5fa">🗿 Jotunheim Stone</button>
+              <button class="chip-btn" data-set-realm="svartalfheim" style="border-color:#c084fc;color:#c084fc">⚒️ Svartalfheim Forge</button>
+              <button class="chip-btn" data-set-realm="vanaheim" style="border-color:#34d399;color:#34d399">🌿 Vanaheim Canopy</button>
+              <button class="chip-btn" data-set-realm="alfheim" style="border-color:#e879f9;color:#e879f9">✨ Alfheim Prism</button>
+              <button class="chip-btn" data-set-realm="midgard" style="border-color:#06b6d4;color:#06b6d4">🌈 Midgard Bifrost</button>
+            </div>
+            <div class="grid2" style="gap:8px;margin-bottom:8px">
+              <div class="card stat" style="padding:8px"><div class="stat-label">Heimdall CWE-77 Gate</div><div id="wrHeimdall" class="stat-val" style="font-size:13px;color:var(--ok)">ENFORCING · 0 BYPASS</div></div>
+              <div class="card stat" style="padding:8px"><div class="stat-label">Demogorgon Tarpit (:2222)</div><div id="wrTarpit" class="stat-val" style="font-size:13px;color:#38bdf8">616 CELLS ARMED</div></div>
+              <div class="card stat" style="padding:8px"><div class="stat-label">WSU Sovereign Cell (#96)</div><div id="wrWsu" class="stat-val" style="font-size:13px;color:#c084fc">HMAC + NONCE LOCKED</div></div>
+              <div class="card stat" style="padding:8px"><div class="stat-label">Freya Sovereign AI (#102)</div><div id="wrFreya" class="stat-val" style="font-size:13px;color:#facc15">VALKYRIE HOLOGRAM ONLINE</div></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" id="openFreyaHudBtn" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;border:0">✨ Talk to Freya AI (Cortana Hologram)</button>
+              <button type="button" id="launchSkydiveWrapperBtn" class="btn small accent-outline">🪂 Launch Skydive App Wrapper (Ubuntu &amp; Win11)</button>
+              <button type="button" id="warRoomRefreshBtn" class="btn small">🛡 Refresh Security War Room</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FREYA SOVEREIGN AI (CORTANA-CLASS ANIMATED HOLOGRAPHIC BODY + ADAPTIVE MEMORY CORE, #102) -->
+    <section id="view-freya" class="view">
+      <div class="card" style="background:radial-gradient(circle at 50% 18%, rgba(6,182,212,0.18), rgba(168,85,247,0.12) 45%, rgba(7,3,10,0.96));border:1px solid var(--accent)">
+        <div class="row-between" style="flex-wrap:wrap;gap:8px">
+          <div>
+            <h2 id="freyaTitleHeader" style="color:var(--accent)">✦ FREYA · CORTANA-CLASS SOVEREIGN AI COMPANION</h2>
+            <div id="freyaRankSub" class="muted" style="font-size:11.5px">Animated Neural-Valkyrie Body · Whole-System Orchestrator · Local Sovereign Memory Core</div>
+          </div>
+          <span id="freyaStateBadge" class="badge ok">● HOLOGRAM ONLINE</span>
+        </div>
+
+        <!-- Animated Holographic Valkyrie Avatar Stage -->
+        <div class="freya-holo-stage" id="freyaHoloStage">
+          <svg class="freya-holo-svg" viewBox="0 0 360 220" width="100%" height="210" aria-label="Freya Animated Holographic AI Body">
+            <defs>
+              <radialGradient id="freyaCoreGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                <stop offset="45%" stop-color="#06b6d4" stop-opacity="0.75"/>
+                <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="freyaWingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#a855f7" stop-opacity="0.20"/>
+              </linearGradient>
+            </defs>
+            <!-- Outer Rotating Elder Futhark Rune Halo -->
+            <g class="freya-halo-outer" transform="translate(180,102)">
+              <circle r="86" fill="none" stroke="rgba(6,182,212,0.38)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <circle r="74" fill="none" stroke="rgba(168,85,247,0.32)" stroke-width="1" stroke-dasharray="3 6"/>
+              <text x="0" y="-78" text-anchor="middle" fill="#67e8f9" font-size="9" font-family="monospace">ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ</text>
+              <text x="0" y="84" text-anchor="middle" fill="#e879f9" font-size="9" font-family="monospace">ᚺ ᚾ ᛁ ᛃ ᛇ ᛈ ᛉ ᛊ</text>
+            </g>
+            <!-- Holographic Valkyrie Wings (Animated Flap) -->
+            <g class="freya-wings">
+              <polygon points="162,92 48,44 68,112 152,126" fill="url(#freyaWingGrad)" stroke="#06b6d4" stroke-width="1.4"/>
+              <polygon points="156,112 76,122 96,156 160,140" fill="url(#freyaWingGrad)" stroke="#a855f7" stroke-width="1.1"/>
+              <polygon points="198,92 312,44 292,112 208,126" fill="url(#freyaWingGrad)" stroke="#06b6d4" stroke-width="1.4"/>
+              <polygon points="204,112 284,122 264,156 200,140" fill="url(#freyaWingGrad)" stroke="#a855f7" stroke-width="1.1"/>
+            </g>
+            <!-- Valkyrie Crown, Head & Cyber-Torso Silhouette -->
+            <g class="freya-body-core">
+              <polygon points="180,32 192,50 180,44 168,50" fill="#facc15" opacity="0.9"/>
+              <circle cx="180" cy="64" r="16" fill="rgba(6,182,212,0.28)" stroke="#67e8f9" stroke-width="1.8"/>
+              <circle cx="174" cy="62" r="2.3" fill="#ffffff"/>
+              <circle cx="186" cy="62" r="2.3" fill="#ffffff"/>
+              <!-- Shoulders & Neural Torso Lattice -->
+              <polygon points="150,86 210,86 198,154 162,154" fill="rgba(14,22,42,0.72)" stroke="#06b6d4" stroke-width="1.6"/>
+              <line x1="180" y1="86" x2="180" y2="154" stroke="rgba(103,232,249,0.5)" stroke-width="1"/>
+              <line x1="156" y1="108" x2="204" y2="108" stroke="rgba(168,85,247,0.5)" stroke-width="1"/>
+              <!-- Breathing Heart Chakra Core -->
+              <circle class="freya-heart-orb" cx="180" cy="112" r="14" fill="url(#freyaCoreGlow)"/>
+            </g>
+          </svg>
+          <!-- Animated Voice Waveform -->
+          <div id="freyaVoiceWave" class="freya-voice-wave">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <!-- Adaptive Memory Core Stats -->
+        <div class="grid2" style="margin-top:10px;gap:8px">
+          <div class="card stat" style="padding:8px"><div class="stat-label">Synaptic Rank</div><div id="freyaMemRank" class="stat-val" style="font-size:13px;color:#67e8f9">Valkyrie Sentinel · Tier I</div></div>
+          <div class="card stat" style="padding:8px"><div class="stat-label">Adaptation Score</div><div id="freyaMemScore" class="stat-val" style="font-size:13px;color:#34d399">100</div></div>
+          <div class="card stat" style="padding:8px"><div class="stat-label">Preferred Realm Affinity</div><div id="freyaMemRealm" class="stat-val" style="font-size:13px;color:#facc15">MIDGARD</div></div>
+          <div class="card stat" style="padding:8px"><div class="stat-label">Sovereign Memories Locked</div><div id="freyaMemCount" class="stat-val" style="font-size:13px;color:#e879f9">2</div></div>
+        </div>
+
+        <!-- Conversational Log & Input -->
+        <div id="freyaChatLog" class="console-out" style="height:175px;margin-top:10px"></div>
+        <form id="freyaChatForm" class="console-form" style="margin-top:8px">
+          <span class="prompt">Freya ❯</span>
+          <input id="freyaChatInput" type="text" autocomplete="off" placeholder="Talk to Freya: 'switch to muspelheim', 'remember I prefer Niflheim', 'war room', 'status'…">
+          <button class="btn" type="submit">Speak</button>
+        </form>
+
+        <div class="chip-grid" style="margin-top:10px">
+          <button type="button" class="chip-btn" data-freya-ask="status">⚡ System Status</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to asgard">👑 Manifest Asgard</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to muspelheim">🔥 Manifest Muspelheim</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to niflheim">❄️ Manifest Niflheim</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to helheim">⛓️ Manifest Helheim</button>
+          <button type="button" class="chip-btn" data-freya-ask="war room">🛡 Security War Room</button>
+          <button type="button" class="chip-btn" data-freya-ask="memory">🧠 Inspect Memory Core</button>
+        </div>
       </div>
     </section>
 
@@ -241,6 +362,8 @@
           <!-- Left Vertical Dock (Ubuntu Mode) / Bottom Centered Taskbar (Win11 Mode) -->
           <aside id="srDock" class="sr-left-dock">
             <button class="sr-dock-item" data-app="installos" title="Install StormRaven OS v3.9.0">💿</button>
+            <button class="sr-dock-item" data-app="freyaai" title="Freya Sovereign AI (Cortana Hologram)">✨</button>
+            <button class="sr-dock-item" data-app="skydive" title="Skydive App &amp; Agent Portal Wrapper">🪂</button>
             <button class="sr-dock-item" data-app="systemupdate" title="Check &amp; Install System Updates">🔄</button>
             <button class="sr-dock-item" data-app="gparted" title="GParted Partition Editor">🖴</button>
             <button class="sr-dock-item" data-app="files" title="Files (Fafnir)">📁</button>
@@ -409,10 +532,15 @@
           <div class="pulse-ring"></div>
         </div>
         <div class="realms-content">
-          <h2 class="realms-title">Sovereign Nine Realms</h2>
+          <h2 class="realms-title">Sovereign Nine Realms · Whole-System Lore UI</h2>
           <div id="pulseStatus" class="pulse-status">Sampling Yggdrasil Live Telemetry…</div>
-          <p id="pulseSub" class="muted text-center text-xs mt-2">Connected to Bifrost Kernel (:8787) · Tap any realm to inspect</p>
+          <p id="pulseSub" class="muted text-center text-xs mt-2">Tap any Realm below to re-theme the ENTIRE OS (GTK + Openbox + Dock + Terminal + HUD) to its Norse lore palette</p>
         </div>
+      </div>
+      <div class="card" id="realmLoreBanner" style="border-left:4px solid var(--accent);margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent)" id="realmLoreTitle">MIDGARD · Icy Bifrost Perimeter &amp; Tactical Mesh</div>
+        <div class="muted" style="font-size:11.5px;margin-top:3px" id="realmLoreDesc">The mortal perimeter where network packets, WireGuard tunnels, and browser tabs meet Heimdall's gate.</div>
+        <div style="font-size:11px;font-style:italic;color:#cbd5e1;margin-top:4px" id="realmLoreQuote">"Every port is a drawbridge. Heimdall sleeps on none of them."</div>
       </div>
       <div id="realmsGrid" class="grid2">
         <div class="card realm-stat" data-realm="asgard">

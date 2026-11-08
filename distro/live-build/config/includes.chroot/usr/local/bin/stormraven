@@ -162,14 +162,29 @@ SSHD
     sudo systemctl reload ssh 2>/dev/null || sudo systemctl restart ssh 2>/dev/null || true
     echo "[*] SSH remote access locked exclusively to owner public key (password SSH disabled)."
     ;;
-  ai|freya)
+  ai|freya|cortana|chat)
     shift || true
+    if [ "${1:-}" = "--companion" ] || [ "${1:-}" = "--avatar" ] || [ "${1:-}" = "gui" ]; then
+      exec /usr/local/bin/stormraven-freya-avatar
+    fi
+    if [ -f "${SR_OPT_DIR}/python/freya.py" ]; then
+      exec python3 "${SR_OPT_DIR}/python/freya.py" "$@"
+    fi
     PROMPT="${*:-status}"
     echo "=== [Freya] StormRaven Onboard AI (Local Pantheon Mind — No API Key Required) ==="
     gw_curl -X POST "${GATEWAY_URL}/commands" \
       -H "Content-Type: application/json" \
       -d "{\"command\":\"odin freya_think\",\"prompt\":\"${PROMPT}\"}"
     echo ""
+    ;;
+  realm|theme)
+    shift || true
+    REALM_TARGET="${1:-midgard}"
+    exec /usr/local/bin/stormraven-theme-layout realm "${REALM_TARGET}"
+    ;;
+  skydive)
+    shift || true
+    exec /usr/local/bin/stormraven-skydive-app "$@"
     ;;
   icloud|email|mail)
     echo "=== [Luci & Bifrost] iCloud & Custom Email Sovereign Bridge ==="

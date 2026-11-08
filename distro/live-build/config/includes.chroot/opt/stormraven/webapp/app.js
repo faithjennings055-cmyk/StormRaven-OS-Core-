@@ -533,10 +533,91 @@
       body: JSON.stringify({ command: 'demogorgon_probe', srcIp: '198.51.100.' + Math.floor(10 + Math.random() * 200) })
     }).then(function () { refreshRealms(); });
   });
+  var REALM_LORE_MAP = {
+    asgard: { label: 'ASGARD · Celestial Gold & Valkyrie Command', desc: 'High seat of the Pantheon where Odin arbitrates authority tokens and binds every daemon to the Sovereign will.', quote: '"One eye on the kernel, one eye on the void. Nothing executes unseen."' },
+    muspelheim: { label: 'MUSPELHEIM · Volcanic Obsidian & Molten Ember', desc: 'Crucible of controlled entropy where Surtr and Loki hurl fault probes against the defensive wall.', quote: '"If your service cannot survive the fire we set, it will never survive the fire waiting outside."' },
+    niflheim: { label: 'NIFLHEIM · Primordial Glacier Rime & Cryo-Glass', desc: 'Realm of primordial rime where memory and filesystem states are flash-frozen into cryptographic snapshots.', quote: '"Freeze the state before the fault spreads; thaw only what is proven pure."' },
+    helheim: { label: 'HELHEIM · Iron Shadow Vault & Endlessh Tarpit', desc: 'Behind Hel\'s iron gates, suspect processes and tarpit probes on port 2222 are stripped of egress.', quote: '"Dead processes tell no tales - unless you lock them in Helheim and read their syscalls."' },
+    jotunheim: { label: 'JOTUNHEIM · Monolithic Basalt & Forensic Stone', desc: 'Ancient stone vaults where Saga carves every syscall, audit trail, and SHA-256 chain-of-custody manifest.', quote: '"Memory lies when convenient. A signed SHA-256 manifest does not."' },
+    svartalfheim: { label: 'SVARTALFHEIM · Dark Dwarven Forge & Hex Circuitry', desc: 'Subterranean forge where Ymir\'s Rust buddy/SLAB allocators and ELF binaries are hammered from source.', quote: '"Trust no binary you did not forge from source and measure in the dark."' },
+    vanaheim: { label: 'VANAHEIM · Bioluminescent Emerald Canopy', desc: 'Living canopy where Freya and Idunn measure every microsecond of CPU saturation, RAM pressure, and bus latency.', quote: '"A healthy kernel breathes in microseconds; a dying one gasps in swap."' },
+    alfheim: { label: 'ALFHEIM · Luminous Prism Glass & Ethereal Void', desc: 'Luminous prism glass stretched across the Ethereal Void (#07030a) for surgical telemetry density.', quote: '"Light in the void is not decoration; it is telemetry made visible."' },
+    midgard: { label: 'MIDGARD · Icy Bifrost Perimeter & Tactical Mesh', desc: 'Mortal perimeter where network packets, WireGuard tunnels, and browser tabs meet Heimdall\'s gate.', quote: '"Every port is a drawbridge. Heimdall sleeps on none of them."' }
+  };
+
+  function applyWholeSystemRealm(realmId) {
+    var r = (realmId || 'midgard').toLowerCase();
+    if (!REALM_LORE_MAP[r]) r = 'midgard';
+    document.documentElement.setAttribute('data-realm-theme', r);
+    try { localStorage.setItem('sr.realmTheme', r); } catch (e) {}
+    var meta = REALM_LORE_MAP[r];
+    if ($('realmLoreTitle')) $('realmLoreTitle').textContent = meta.label;
+    if ($('realmLoreDesc')) $('realmLoreDesc').textContent = meta.desc;
+    if ($('realmLoreQuote')) $('realmLoreQuote').textContent = meta.quote;
+    if ($('activeRealmBadge')) $('activeRealmBadge').textContent = 'REALM: ' + r.toUpperCase();
+    api('/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: 'realm_' + r, realm: r, source: 'whole-system-ui' })
+    }).then(function (res) {
+      var p = res.result || (res.data && res.data.result) || {};
+      if (p.memory) updateFreyaMemoryUi(p.memory);
+    }).catch(function () {});
+  }
+
+  function updateFreyaMemoryUi(mem) {
+    if (!mem) return;
+    if ($('freyaMemRank') && mem.synapticRank) $('freyaMemRank').textContent = mem.synapticRank;
+    if ($('freyaMemScore') && mem.adaptationScore != null) $('freyaMemScore').textContent = String(mem.adaptationScore);
+    if ($('freyaMemRealm') && mem.preferredRealm) $('freyaMemRealm').textContent = String(mem.preferredRealm).toUpperCase();
+    if ($('freyaMemCount') && mem.learnedFactsCount != null) $('freyaMemCount').textContent = String(mem.learnedFactsCount);
+  }
+
+  function appendFreyaChat(speaker, text) {
+    var box = $('freyaChatLog');
+    if (!box) return;
+    var row = document.createElement('div');
+    row.className = 'line ' + (speaker === 'Doctor' ? 'cmd' : 'out');
+    row.textContent = '[' + speaker + '] ' + text;
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sendFreyaMessage(promptText) {
+    var q = (promptText || '').trim();
+    if (!q) return;
+    appendFreyaChat('Doctor', q);
+    var stage = $('freyaHoloStage');
+    if (stage) stage.classList.add('speaking');
+    api('/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: 'freya_chat', prompt: q, source: 'freya-holo-ui' })
+    }).then(function (res) {
+      var p = res.result || (res.data && res.data.result) || {};
+      var reply = p.reply || p.directive || 'I am listening, Doctor. My neural matrix and Sovereign Memory Core are synced.';
+      appendFreyaChat('Freya', reply);
+      if (p.realmTheme) applyWholeSystemRealm(p.realmTheme);
+      if (p.memory) updateFreyaMemoryUi(p.memory);
+      setTimeout(function () { if (stage) stage.classList.remove('speaking'); }, 2200);
+    }).catch(function () {
+      var lower = q.toLowerCase();
+      var matchedRealm = Object.keys(REALM_LORE_MAP).find(function (k) { return lower.indexOf(k) !== -1; });
+      if (matchedRealm) {
+        applyWholeSystemRealm(matchedRealm);
+        appendFreyaChat('Freya', 'Manifesting ' + REALM_LORE_MAP[matchedRealm].label + ' across the whole system, Doctor.');
+      } else {
+        appendFreyaChat('Freya', 'I am listening, Doctor. Your directive has been recorded in my local Sovereign Memory Core.');
+      }
+      setTimeout(function () { if (stage) stage.classList.remove('speaking'); }, 1800);
+    });
+  }
+
   document.querySelectorAll('#realmsGrid .realm-stat').forEach(function (card) {
     card.style.cursor = 'pointer';
     card.addEventListener('click', function () {
       var realm = card.getAttribute('data-realm');
+      applyWholeSystemRealm(realm);
       var cmdMap = {
         asgard: 'odin freya_think',
         vanaheim: 'odin telemetry',
@@ -549,12 +630,51 @@
         svartalfheim: 'odin heimdall_scan'
       };
       var cmd = cmdMap[realm] || 'odin telemetry';
-      if ($('realmsLiveBox')) $('realmsLiveBox').textContent = 'Querying ' + realm.toUpperCase() + ' (' + cmd + ')…';
+      if ($('realmsLiveBox')) $('realmsLiveBox').textContent = 'Manifesting ' + realm.toUpperCase() + ' theme across OS & querying (' + cmd + ')…';
       runCommand(cmd, false).then(function (r) {
         if ($('realmsLiveBox')) $('realmsLiveBox').textContent = JSON.stringify(r, null, 2);
       });
     });
   });
+
+  document.querySelectorAll('[data-set-realm]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      applyWholeSystemRealm(btn.getAttribute('data-set-realm'));
+    });
+  });
+  if ($('openFreyaHudBtn')) {
+    $('openFreyaHudBtn').addEventListener('click', function () { switchView('freya'); });
+  }
+  if ($('launchSkydiveWrapperBtn')) {
+    $('launchSkydiveWrapperBtn').addEventListener('click', function () {
+      switchView('desktop');
+      openDesktopApp('skydive', 'Skydive App & Agent Portal Wrapper');
+    });
+  }
+  if ($('warRoomRefreshBtn')) {
+    $('warRoomRefreshBtn').addEventListener('click', function () {
+      runCommand('war_room_status', false).then(function (r) {
+        if ($('ymirRunicLog')) $('ymirRunicLog').textContent = JSON.stringify(r, null, 2);
+      });
+    });
+  }
+  if ($('freyaChatForm')) {
+    $('freyaChatForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = $('freyaChatInput').value.trim();
+      if (v) { sendFreyaMessage(v); $('freyaChatInput').value = ''; }
+    });
+  }
+  document.querySelectorAll('[data-freya-ask]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      sendFreyaMessage(btn.getAttribute('data-freya-ask'));
+    });
+  });
+  appendFreyaChat('Freya', 'I am listening, Doctor. My animated Valkyrie hologram and local Sovereign Memory Core are online. Select any of the Nine Realms to re-theme the entire OS, or speak a directive below.');
+  try {
+    var savedRealm = localStorage.getItem('sr.realmTheme');
+    if (savedRealm && REALM_LORE_MAP[savedRealm]) applyWholeSystemRealm(savedRealm);
+  } catch (e) {}
 
   if ($('fafnirDensityBtn')) {
     $('fafnirDensityBtn').addEventListener('click', function () {
@@ -643,6 +763,8 @@
 
   /* ---------- StormRaven Desktop App Grid (29 Apps + Ubuntu/Win11 Mode) ---------- */
   var desktopApps = [
+    { id: 'freyaai', label: 'Freya Sovereign AI', icon: '✨', bg: 'linear-gradient(135deg,#06b6d4,#a855f7)' },
+    { id: 'skydive', label: 'Skydive App Wrapper', icon: '🪂', bg: 'linear-gradient(135deg,#ec4899,#8b5cf6)' },
     { id: 'systemupdate', label: 'System Updates', icon: '🔄', bg: 'linear-gradient(135deg,#10b981,#0284c7)' },
     { id: 'moov', label: 'Moov AI Banking', icon: '🏦', bg: 'linear-gradient(135deg,#10b981,#0284c7)' },
     { id: 'installos', label: 'Install StormRaven', icon: '💿', bg: 'linear-gradient(135deg,#06b6d4,#a855f7)' },
@@ -876,12 +998,34 @@
         '• Boot & Recovery:    efibootmgr, grub-install (UEFI+BIOS), os-prober, mokutil, testdisk, photorec, gddrescue, partclone, smartmontools, nvme-cli, timeshift, chntpw\n' +
         '• Diagnostics:        inxi -Fxz, lshw, lspci, lsusb, dmidecode, htop, iotop, ncdu, nmap, mtr\n' +
         '</pre>';
+    } else if (appId === 'freyaai') {
+      win.classList.add('hidden');
+      switchView('freya');
+      return;
+    } else if (appId === 'skydive') {
+      body.innerHTML =
+        '<h3>🪂 Skydive Desktop &amp; CLI Portal Wrapper (#103 — Ubuntu &amp; Windows 11)</h3>' +
+        '<p class="muted" style="margin:6px 0 10px">Runs the full Skydive Workspace window (<code>--app=https://skydive.com</code>) plus the native Linux/Windows <code>skydive chat</code> CLI Portal so your agents work on your PC without needing macOS:</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+          '<a href="https://skydive.com" target="_blank" rel="noopener" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;text-decoration:none">🪂 Open Skydive Workspace</a>' +
+          '<button id="srRunSkydiveBtn" class="btn small accent-outline">Launch Native Skydive Window</button>' +
+        '</div>' +
+        '<pre id="srSkydiveStatusBox" class="code-box">' +
+        'Ubuntu / Linux Command:     stormraven skydive gui   (or: stormraven skydive cli)\n' +
+        'Windows 11 Wrapper:         powershell -ExecutionPolicy Bypass -File distro\\windows11\\stormraven-skydive.ps1\n' +
+        'Embedded Portal CLI:        skydive chat\n' +
+        '</pre>';
+      if ($('srRunSkydiveBtn')) $('srRunSkydiveBtn').addEventListener('click', function () {
+        runCommand('skydive_launch', false).then(function (r) {
+          if ($('srSkydiveStatusBox')) $('srSkydiveStatusBox').textContent = JSON.stringify(r, null, 2);
+        });
+      });
     } else if (appId === 'virtmanager' || appId === 'boxes') {
       body.innerHTML =
         '<h3>KVM / QEMU Hypervisor &amp; Virtual Machine Manager</h3>' +
         '<pre id="srVmBox" class="code-box">Loading hypervisor status…</pre>' +
-        '<p class="muted" style="margin-top:8px">Windows 11 Edition 1-Command Installer (PowerShell Admin):</p>' +
-        '<code class="install-cmd">irm ' + baseUrl() + '/install-win11.ps1 | iex</code>';
+        '<p class="muted" style="margin-top:8px">Windows 11 Edition SHA-256 Verified Installer (PowerShell Admin):</p>' +
+        '<code class="install-cmd">Invoke-WebRequest ' + baseUrl() + '/install-win11.ps1 -OutFile install-win11.ps1; Invoke-WebRequest ' + baseUrl() + '/install-win11.ps1.sha256 -OutFile install-win11.ps1.sha256; if ((Get-FileHash .\\install-win11.ps1 -Algorithm SHA256).Hash.ToLower() -eq (Get-Content .\\install-win11.ps1.sha256).Split(" ")[0].Trim().ToLower()) { .\\install-win11.ps1 }</code>';
       runCommand('odin vm_status', false).then(function (r) {
         if ($('srVmBox')) $('srVmBox').textContent = JSON.stringify(r, null, 2);
       });

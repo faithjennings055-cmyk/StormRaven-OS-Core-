@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Skydive App & Agent Portal
+Comment=Run Skydive Web Workspace & Local CLI Portal on StormRaven OS (Ubuntu & Windows 11)
+Exec=/usr/local/bin/stormraven-skydive-app gui
+Icon=applications-internet
+Terminal=false
+Categories=Network;Development;System;

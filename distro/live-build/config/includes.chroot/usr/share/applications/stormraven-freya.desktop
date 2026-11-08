@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Freya Sovereign AI (Cortana-Class Companion)
+Comment=Animated Holographic Valkyrie AI Companion, Sovereign Memory Core & 9 Realms Orchestrator
+Exec=/usr/local/bin/stormraven-freya-avatar
+Icon=utilities-terminal
+Terminal=false
+Categories=System;Utility;ArtificialIntelligence;
