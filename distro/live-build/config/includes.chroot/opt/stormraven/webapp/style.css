@@ -725,3 +725,27 @@ html[data-realm-theme] .ymir-glass-win {
   0%, 100% { height: 6px; }
   50% { height: 22px; }
 }
+
+/* Hardened iOS 27 & Mobile Dark Enforcement — Zero White Bleed */
+html, body {
+  background-color: #07030a !important;
+  color: #eef2ff !important;
+  color-scheme: dark !important;
+}
+button, input, select, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #0d1324;
+  color: #eef2ff;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  font-family: inherit;
+}
+.ymir-run-btn, .ymir-dock-btn, .ymir-realm-pill, .ymir-quick-pill, .freya-chip, .freya-send-btn {
+  background: rgba(14, 22, 40, 0.92) !important;
+  color: #5eead4 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+.topbar {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+}
