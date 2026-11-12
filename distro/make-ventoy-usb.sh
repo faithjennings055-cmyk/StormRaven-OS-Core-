@@ -20,10 +20,10 @@
 #        StormRaven OS Windows 11 Edition + Moov AI offline from the USB drive!
 #
 # One-command usage on HP Pro 3500:
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh | sudo bash
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh
 #
 # Or pass your USB device explicitly:
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh | sudo bash -s -- /dev/sdX
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh /dev/sdX
 # =============================================================================
 set -euo pipefail
 
@@ -44,7 +44,7 @@ WIN11_ZIP_SHA_URL="${WIN11_ZIP_URL}.sha256"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "ERROR: Please run with sudo:"
-  echo "  curl -fsSL ${CLOUD_URL}/make-ventoy-usb.sh | sudo bash"
+  echo "  curl -fsSLO ${CLOUD_URL}/make-ventoy-usb.sh && curl -fsSLO ${CLOUD_URL}/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh"
   exit 1
 fi
 
@@ -299,7 +299,7 @@ if [ -z "${TARGET_DEV}" ]; then
     echo ""
     echo "ERROR: No removable USB flash drive was auto-detected."
     echo "Plug in your USB stick and re-run, or pass the device explicitly:"
-    echo "  curl -fsSL ${CLOUD_URL}/make-ventoy-usb.sh | sudo bash -s -- /dev/sdX"
+    echo "  curl -fsSLO ${CLOUD_URL}/make-ventoy-usb.sh && curl -fsSLO ${CLOUD_URL}/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh /dev/sdX"
     exit 1
   elif [ "${#USB_CANDIDATES[@]}" -eq 1 ]; then
     TARGET_DEV="${USB_CANDIDATES[0]}"

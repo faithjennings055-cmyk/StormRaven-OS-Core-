@@ -11,10 +11,10 @@ This addon package upgrades any StormRaven OS or Ubuntu 24.04/26.04 or Windows 1
 
 ## 1-Command Install (Ubuntu / StormRaven OS)
 ```bash
-curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh | sudo bash
+curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh.sha256 && sha256sum -c install-win11.sh.sha256 && sudo bash install-win11.sh
 ```
 
 ## 1-Command Install (Native Microsoft Windows 11 PowerShell)
 ```powershell
-irm https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 | iex
+Invoke-WebRequest -Uri https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 -OutFile install-win11.ps1; $exp=(Invoke-RestMethod https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1.sha256).Split()[0]; if((Get-FileHash install-win11.ps1 -Algorithm SHA256).Hash -eq $exp){ .\install-win11.ps1 }
 ```

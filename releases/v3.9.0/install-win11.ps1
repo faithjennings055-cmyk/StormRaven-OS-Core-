@@ -1,10 +1,10 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     StormRaven OS: Infinity Protocol v3.9.0 — Full Decked-Out Windows 11 Edition Installer
 .DESCRIPTION
     One-command PowerShell installer for Windows 11:
-      irm https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 | iex
+      Invoke-WebRequest -Uri https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 -OutFile install-win11.ps1; $exp=(Invoke-RestMethod https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1.sha256).Split()[0]; if((Get-FileHash install-win11.ps1 -Algorithm SHA256).Hash -eq $exp){ .\install-win11.ps1 }
     Installs:
       1. Self-contained StormRaven.Kernel.exe (65MB .NET 8 native Windows x64 binary, zero dependencies!)
       2. Bifrost HTTP/WS Gateway (:8787) + Local UI Server (:3887) + Windows Scheduled Task auto-start

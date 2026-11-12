@@ -102,6 +102,7 @@ class BifrostGateContract(unittest.TestCase):
         self.assertIn("CRITICAL BUILD FAILURE (#97)", ps1_src)
 
     def test_all_repo_sha256_sidecars_match_their_artifacts(self):
+        import glob
         import hashlib
         checked = 0
         for dirpath, _dirnames, filenames in os.walk(ROOT):
@@ -118,15 +119,40 @@ class BifrostGateContract(unittest.TestCase):
                 expected_sha = parts[0].lower()
                 target_name = parts[-1].lstrip("*")
                 target_path = os.path.join(dirpath, target_name)
-                self.assertTrue(os.path.isfile(target_path), f"Missing artifact {target_path} for sidecar {sidecar_path}")
+                part_paths = sorted(glob.glob(target_path + ".part*"))
+                self.assertTrue(
+                    os.path.isfile(target_path) or len(part_paths) > 0,
+                    f"Missing artifact {target_path} (or .part* chunks) for sidecar {sidecar_path}",
+                )
                 h = hashlib.sha256()
-                with open(target_path, "rb") as tf:
-                    for chunk in iter(lambda: tf.read(65536), b""):
-                        h.update(chunk)
+                sources = [target_path] if os.path.isfile(target_path) else part_paths
+                for src_path in sources:
+                    with open(src_path, "rb") as tf:
+                        for chunk in iter(lambda: tf.read(65536), b""):
+                            h.update(chunk)
                 self.assertEqual(h.hexdigest().lower(), expected_sha,
                     f"Stale .sha256 sidecar {sidecar_path}: expected {expected_sha}, got {h.hexdigest().lower()}")
                 checked += 1
         self.assertGreaterEqual(checked, 10, "Expected at least 10 .sha256 sidecars in repo")
+
+    def test_win11_ps1_scripts_with_non_ascii_have_utf8_bom_and_no_blind_iex(self):
+        ps1_paths = [
+            os.path.join(ROOT, "distro", "windows11", "Install-StormRaven-Win11.ps1"),
+            os.path.join(ROOT, "distro", "windows11", "Build-StormRaven-Win11-ISO.ps1"),
+            os.path.join(ROOT, "distro", "windows11", "stormraven-skydive.ps1"),
+            os.path.join(ROOT, "addons", "stormraven-win11-moov-addon", "install-win11.ps1"),
+            os.path.join(ROOT, "releases", "v3.9.0", "install-win11.ps1"),
+        ]
+        for p in ps1_paths:
+            self.assertTrue(os.path.isfile(p), f"Missing PowerShell script: {p}")
+            with open(p, "rb") as f:
+                raw = f.read()
+            self.assertTrue(
+                raw.startswith(b"\xef\xbb\xbf"),
+                f"PowerShell script {p} must start with UTF-8 BOM (EF BB BF) for Windows PowerShell 5.1 (#105)",
+            )
+            text = raw[3:].decode("utf-8")
+            self.assertNotIn("| iex", text, f"PowerShell script {p} must not contain blind '| iex' pipes (#105)")
 
     def test_void_theme_assets_present_in_chroot(self):
         chroot = os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot")

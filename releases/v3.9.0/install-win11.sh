@@ -18,7 +18,7 @@
 #      Web Portal (`http://127.0.0.1:3887/moov`) right on your screen!
 #
 # One-command usage on HP Pro 3500:
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh | sudo bash
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh.sha256 && sha256sum -c install-win11.sh.sha256 && sudo bash install-win11.sh
 # =============================================================================
 set -euo pipefail
 
@@ -30,7 +30,7 @@ SHA_URL="${ZIP_URL}.sha256"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "ERROR: Please run with sudo:"
-  echo "  curl -fsSL ${CLOUD_URL}/install-win11.sh | sudo bash"
+  echo "  curl -fsSLO ${CLOUD_URL}/install-win11.sh && curl -fsSLO ${CLOUD_URL}/install-win11.sh.sha256 && sha256sum -c install-win11.sh.sha256 && sudo bash install-win11.sh"
   exit 1
 fi
 

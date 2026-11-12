@@ -3,7 +3,7 @@
 # StormRaven OS: Ymir Edition — Live Desktop Overhaul & Mobile Remote Bridge
 # =============================================================================
 # Usage (run in root@stormraven or ubuntu@stormraven terminal):
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh | sudo bash
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh.sha256 && sha256sum -c upgrade-void.sh.sha256 && sudo bash upgrade-void.sh
 # =============================================================================
 set -euo pipefail
 

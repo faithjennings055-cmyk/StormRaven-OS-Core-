@@ -19,7 +19,7 @@
 #   4. Launches `gnome-boxes` as your desktop user directly on the bootable ISO!
 #
 # One-command usage on HP Pro 3500:
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/vm-win11.sh | sudo bash
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/vm-win11.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/vm-win11.sh.sha256 && sha256sum -c vm-win11.sh.sha256 && sudo bash vm-win11.sh
 # =============================================================================
 set -euo pipefail
 
@@ -32,7 +32,7 @@ SR_ISO_URL="${CLOUD_URL}/iso/${SR_ISO_NAME}"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "ERROR: Please run with sudo:"
-  echo "  curl -fsSL ${CLOUD_URL}/vm-win11.sh | sudo bash"
+  echo "  curl -fsSLO ${CLOUD_URL}/vm-win11.sh && curl -fsSLO ${CLOUD_URL}/vm-win11.sh.sha256 && sha256sum -c vm-win11.sh.sha256 && sudo bash vm-win11.sh"
   exit 1
 fi
 

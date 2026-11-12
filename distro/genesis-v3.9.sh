@@ -3,7 +3,7 @@
 # StormRaven OS: Infinity Protocol v3.9.0 — Automated Genesis ISO & Package Suite
 # =============================================================================
 # Usage (run on Ubuntu Desktop):
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/genesis-v3.9.sh | sudo bash
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/genesis-v3.9.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/genesis-v3.9.sh.sha256 && sha256sum -c genesis-v3.9.sh.sha256 && sudo bash genesis-v3.9.sh
 #
 # Or install as a Debian package (.deb) or Ubuntu Snap (.snap):
 #   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/iso/stormraven-os_3.9.0_amd64.deb

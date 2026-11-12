@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # StormRaven OS (Windows 11 Ymir Edition) — Skydive Desktop & CLI Wrapper (#103)
 # Launches Skydive in a native chromeless Edge WebView2/App window or starts
 # the local Skydive CLI Portal on Windows 11.

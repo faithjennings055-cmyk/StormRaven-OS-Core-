@@ -9,7 +9,7 @@
 # 3. Flashes the raw hybrid ISO byte-for-byte to your USB stick via dd + sync.
 #
 # One-command usage in your Ubuntu Terminal:
-#   curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh | sudo bash
+#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256 && sha256sum -c flash-usb.sh.sha256 && sudo bash flash-usb.sh
 # =============================================================================
 set -euo pipefail
 
@@ -20,7 +20,7 @@ PREBUILT_SHA_URL="${PREBUILT_URL}.sha256"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "ERROR: Please run with sudo:"
-  echo "  curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh | sudo bash"
+  echo "  curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256 && sha256sum -c flash-usb.sh.sha256 && sudo bash flash-usb.sh"
   exit 1
 fi
 
@@ -114,7 +114,7 @@ if [ -z "${TARGET_DEV}" ]; then
     echo ""
     echo "ERROR: No removable USB drive was auto-detected."
     echo "Plug in your USB drive and run again, or pass the device explicitly:"
-    echo "  curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh | sudo bash -s -- /dev/sdX"
+    echo "  curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256 && sha256sum -c flash-usb.sh.sha256 && sudo bash flash-usb.sh /dev/sdX"
     exit 1
   elif [ "${#USB_CANDIDATES[@]}" -eq 1 ]; then
     TARGET_DEV="${USB_CANDIDATES[0]}"
