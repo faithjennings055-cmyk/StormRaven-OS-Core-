@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=LibreOffice Draw
+Comment=Vector Graphics & Diagrams
+Exec=/usr/local/bin/stormraven-app-exec lodraw
+Icon=applications-graphics
+Terminal=false
+Categories=Office;Graphics;
+StartupNotify=false

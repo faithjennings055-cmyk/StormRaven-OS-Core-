@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StormRaven OS: Ymir Edition v3.9.0 — Dual-OS Sovereign Operating System</title>
+  <meta name="description" content="StormRaven OS: Ymir Edition v3.9.0 — Dual-OS Sovereign Operating System with Ubuntu 26.04 LTS Resolute (1.7 GB) and Custom Windows 11 25H2 (6.8 GB), Ymir Ring-0 Rust Core, .NET 10 Bifrost Kernel, Heimdall One-Way Data Diode, and Moov AI Banking Engine." />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <style>
+    :root {
+      --bg-deep: #040814;
+      --bg-card: rgba(11, 18, 34, 0.72);
+      --bg-card-hover: rgba(15, 25, 48, 0.88);
+      --border-cyan: rgba(56, 189, 248, 0.32);
+      --border-glow: rgba(56, 189, 248, 0.68);
+      --cyan: #38bdf8;
+      --cyan-bright: #7dd3fc;
+      --purple: #a855f7;
+      --green: #4ade80;
+      --amber: #f59e0b;
+      --text-main: #f0f9ff;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg-deep);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 82% 18%, rgba(168, 85, 247, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 50% 85%, rgba(2, 132, 199, 0.10) 0%, transparent 50%);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--cyan); text-decoration: none; }
+    code, pre { font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    /* Sticky Top Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(22px) saturate(165%);
+      background: rgba(4, 8, 20, 0.86);
+      border-bottom: 1px solid var(--border-cyan);
+      padding: 14px 24px;
+    }
+    .nav-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      color: #fff;
+    }
+    .brand-orb {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #7c3aed);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .nav-links a { color: var(--text-muted); transition: color 0.18s; }
+    .nav-links a:hover { color: #fff; }
+    .nav-pill {
+      background: linear-gradient(135deg, #0284c7, #7c3aed);
+      color: #fff !important;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Worldwide 1,000-Slot Beta Ribbon */
+    .beta-ribbon {
+      margin-top: 24px;
+      background: linear-gradient(135deg, rgba(11, 22, 44, 0.92), rgba(24, 12, 48, 0.92));
+      border: 1px solid rgba(56, 189, 248, 0.48);
+      border-radius: 16px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.52);
+    }
+    .beta-ribbon-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .beta-pill-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .beta-chip {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      color: var(--cyan-bright);
+    }
+    .beta-chip.diode {
+      background: rgba(74, 222, 128, 0.12);
+      border-color: rgba(74, 222, 128, 0.42);
+      color: var(--green);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 48px 0 40px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 36px;
+      align-items: center;
+    }
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: 1fr; padding: 32px 0 24px; }
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+    }
+    .hero h1 {
+      font-size: 40px;
+      line-height: 1.12;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+    }
+    .grad-text {
+      background: linear-gradient(95deg, #38bdf8 0%, #c084fc 55%, #4ade80 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 640px;
+      margin-bottom: 24px;
+    }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #7c3aed);
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(2, 132, 199, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(15, 31, 58, 0.85);
+      border-color: var(--border-cyan);
+      color: var(--cyan-bright);
+    }
+    .btn-secondary:hover { border-color: var(--cyan); }
+
+    /* Live Telemetry Card in Hero */
+    .telemetry-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-cyan);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 22px 50px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(22px) saturate(165%);
+    }
+    .tel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+    }
+    .tel-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .metric-box {
+      background: rgba(4, 10, 22, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .metric-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .metric-val { font-size: 20px; font-weight: 800; color: #fff; margin-top: 2px; }
+    .metric-val.green { color: var(--green); }
+    .metric-val.cyan { color: var(--cyan); }
+
+    /* Sections & Grids */
+    .section { padding: 40px 0; }
+    .section-hdr { margin-bottom: 24px; }
+    .eyebrow {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+    .section-title {
+      font-size: 32px;
+      font-weight: 800;
+    }
+
+    /* Dual-OS Comparison Hero Cards */
+    .dual-os-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 20px;
+    }
+    @media (max-width: 640px) {
+      .dual-os-grid { grid-template-columns: 1fr; }
+    }
+    .os-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-cyan);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      backdrop-filter: blur(22px) saturate(165%);
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.55);
+    }
+    .os-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .os-card h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .os-size-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      color: var(--cyan-bright);
+    }
+    .os-spec-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14px;
+      color: #dbeafe;
+    }
+    .os-spec-list li::before {
+      content: "✦ ";
+      color: var(--cyan);
+      font-weight: 700;
+    }
+    .sha-box {
+      background: #02050c;
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #a5f3fc;
+      word-break: break-all;
+    }
+
+    /* Command Switcher */
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 18px;
+    }
+    .cmd-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-cyan);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .cmd-card h3 { font-size: 16px; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .cmd-card p { font-size: 14px; color: var(--text-muted); }
+    .code-strip {
+      background: #02050c;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+      padding: 11px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      overflow-x: auto;
+    }
+    .code-strip code {
+      font-size: 12px;
+      color: #a5f3fc;
+      white-space: nowrap;
+    }
+    .copy-btn {
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid var(--cyan);
+      color: var(--cyan-bright);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: var(--cyan); color: #020617; }
+
+    /* Screenshots Showcase */
+    .shots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+      gap: 22px;
+    }
+    @media (max-width: 600px) {
+      .shots-grid { grid-template-columns: 1fr; }
+    }
+    .shot-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-cyan);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+    }
+    .shot-card img {
+      width: 100%;
+      height: 290px;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      border-bottom: 1px solid var(--border-cyan);
+    }
+    .shot-meta { padding: 16px 18px; }
+    .shot-meta h3 { font-size: 16px; margin-bottom: 4px; color: #fff; }
+    .shot-meta p { font-size: 14px; color: var(--text-muted); }
+
+    /* Architecture Pillars */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 18px;
+    }
+    .pillar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-cyan);
+      border-radius: 16px;
+      padding: 20px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .pillar-card:hover {
+      border-color: var(--border-glow);
+      background: var(--bg-card-hover);
+    }
+    .pillar-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .pillar-card h3 { font-size: 16px; margin-bottom: 8px; color: #fff; }
+    .pillar-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 12px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: var(--cyan-bright);
+      font-weight: 600;
+    }
+
+    /* Interactive Moov AI Live Demo Section */
+    .moov-showcase {
+      background: linear-gradient(145deg, rgba(8, 25, 52, 0.88), rgba(19, 10, 42, 0.88));
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    }
+    .moov-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    @media (max-width: 1024px) {
+      .moov-grid { grid-template-columns: 1fr; }
+    }
+    .form-box {
+      background: rgba(3, 8, 20, 0.82);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .form-box h4 {
+      font-size: 14px;
+      color: var(--cyan-bright);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .field-lbl { display: block; font-size: 12px; color: var(--text-muted); margin: 7px 0 3px; }
+    .field-in {
+      width: 100%;
+      background: #020611;
+      border: 1px solid #0284c7;
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .moov-out {
+      background: #02050c;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12px;
+      color: #a5f3fc;
+      height: 270px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 56px;
+      border-top: 1px solid var(--border-cyan);
+      padding: 32px 0 48px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="brand-orb">✦</div>
+        <span>STORMRAVEN OS <span style="color:var(--cyan);font-weight:600;font-size:14px">YMIR EDITION v3.9.0</span></span>
+      </div>
+      <div class="nav-links">
+        <a href="#dual-os">Dual-OS Flagships</a>
+        <a href="#install">Verified Installers</a>
+        <a href="#moov">Moov AI Banking</a>
+        <a href="#architecture">Zero-Trust Core</a>
+        <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta" target="_blank">1,000-Slot Beta</a>
+        <a href="/?os=win11" class="nav-pill">🪟 Launch Ymir HUD</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Worldwide 1,000-Slot Beta Campaign Ribbon -->
+    <div class="beta-ribbon">
+      <div class="beta-ribbon-left">
+        <div class="beta-pill-row">
+          <span class="beta-chip" id="betaSlotsBadge">WORLDWIDE BETA · 999 OF 1,000 SLOTS OPEN</span>
+          <span class="beta-chip diode" id="betaDiodeBadge">HEIMDALL DATA DIODE ACTIVE · ZERO PII EGRESS</span>
+          <span class="beta-chip" id="betaDaysBadge">CAMPAIGN OPEN THRU JAN 1, 2027 (57 DAYS)</span>
+        </div>
+        <div style="font-size:14px;color:#e2e8f0">
+          Claim your cryptographically signed <code>SR-BETA-*</code> tester token to unlock both SHA-256 verified flagships and in-OS <code>stormraven feedback</code> telemetry.
+        </div>
+      </div>
+      <div>
+        <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta" class="btn btn-primary">🛡 Claim Your Beta Slot (#2–#1000)</a>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div>
+        <div class="status-badge">
+          <span class="dot"></span>
+          <span>Ymir Edition v3.9.0 · Ubuntu 26.04 LTS &amp; Windows 11 25H2 Flagships Verified</span>
+        </div>
+        <h1>
+          Zero-Trust by Architecture.<br />
+          <span class="grad-text">Ubuntu 26.04 + Windows 11 Ymir.</span>
+        </h1>
+        <p class="hero-sub">
+          Founded August 21, 2011 by <strong>Dr. Justin Jennings (Mr. Stormraven)</strong> and dedicated to <strong>Christina Faith Page/Jennings</strong>.
+          Full subsystem parity across both sovereign desktop flagships: <strong>Ymir Ring-0 Rust Core</strong>, <strong>.NET 10 Bifrost Kernel</strong>,
+          <strong>Odin Python Pantheon</strong>, <strong>Heimdall One-Way Data Diode</strong>, and built-in
+          <strong>Moov AI NACHA Same-Day ACH &amp; X9.37 Check 21 Mobile Check Deposit</strong>.
+        </p>
+        <div class="cta-row">
+          <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta" class="btn btn-primary">⚡ Join 1,000-Slot Worldwide Beta</a>
+          <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso" class="btn btn-secondary">💿 Ubuntu 26.04 Ymir ISO (1.7 GB)</a>
+          <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso" class="btn btn-secondary">🪟 Windows 11 25H2 Ymir ISO (6.8 GB)</a>
+          <a href="/?os=win11" class="btn btn-secondary">✦ Open 3-Panel Ymir Glass HUD</a>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">
+          36/36 Zero-Trust Contract Tests Passing · Checksum-Verified Installers · Zero Plaintext Credentials
+        </div>
+      </div>
+
+      <!-- Live Telemetry Panel -->
+      <div class="telemetry-panel">
+        <div class="tel-header">
+          <span class="tel-title">⚡ Live Bifrost Kernel, Beta Diode &amp; Moov Telemetry</span>
+          <span style="font-size:12px;color:var(--green);font-weight:700" id="liveBadge">● HEIMDALL DIODE SEALED</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <div class="metric-label">Moov AI Treasury Wallet</div>
+            <div class="metric-val green" id="heroWallet">$12,450.00</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Beta Cohort Slots Open</div>
+            <div class="metric-val cyan" id="heroBetaSlots">999 / 1,000</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Host CPU Load</div>
+            <div class="metric-val" id="heroCpu">8.4%</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Memory Allocation</div>
+            <div class="metric-val" id="heroRam">34.2%</div>
+          </div>
+        </div>
+        <div style="background:#020611;border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:12px;font-size:12px;color:#cbd5e1">
+          <div style="color:var(--cyan-bright);font-weight:700;margin-bottom:4px">✦ Zero-Trust Checksum-Verified Ymir Upgrade (`sha256sum -c` Gated):</div>
+          <div class="code-strip" style="margin-top:6px">
+            <code id="heroCmd">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh.sha256 &amp;&amp; sha256sum -c upgrade-void.sh.sha256 &amp;&amp; sudo bash upgrade-void.sh</code>
+            <button class="copy-btn" onclick="copyText('heroCmd', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dual-OS Ymir Edition Comparison Cards -->
+    <section class="section" id="dual-os">
+      <div class="section-hdr">
+        <div class="eyebrow">Dual-OS Flagship Release</div>
+        <h2 class="section-title">One Sovereign Ymir Skin. Two Checksum-Verified Operating Systems.</h2>
+      </div>
+      <div class="dual-os-grid">
+        <!-- Ubuntu 26.04 LTS Card -->
+        <div class="os-card">
+          <div>
+            <div class="os-card-head">
+              <h3>🐧 StormRaven OS — Ubuntu 26.04 LTS (Resolute) Ymir Edition</h3>
+              <span class="os-size-badge">1.7 GB HYBRID ISO</span>
+            </div>
+            <p style="font-size:14px;color:var(--text-muted);margin:10px 0 14px">
+              Bootable live and bare-metal installer running Linux 7.0 HWE, GNOME + Openbox Ymir Cryo-Glass HUD, and instant layout switching between Ubuntu Left-Dock and Windows 11 Centered-Taskbar modes.
+            </p>
+            <ul class="os-spec-list">
+              <li>Linux 7.0.0-42-generic HWE + <code>sudo-rs</code> &amp; <code>rust-coreutils</code> + TPM-FDE ready</li>
+              <li>3-Panel Ymir Glass HUD: Kernel Forge Status, Runic Command Console (<code>fehu</code>/<code>algiz</code>/<code>isa</code>/<code>raido</code>), and RavenNest Virtual Server</li>
+              <li>One-click <code>stormraven-theme-layout</code> switcher + 🔄 Check &amp; Install Updates across HUD, Desktop &amp; Mobile</li>
+              <li>37 native apps, WireGuard UFW kill-switch, KVM/QEMU, Jotunheim/Heketa forensics, and in-OS <code>stormraven feedback</code> CLI</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Verified Sidecar SHA-256 Checksum:</div>
+            <div class="sha-box">acfe854c42e8e50c4ff50edbf69fd97bb875e1c0264f636da04f112b7c24496b</div>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+              <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso" class="btn btn-primary">⬇ Download Ubuntu 26.04 Ymir ISO (1.7 GB)</a>
+              <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso.sha256" class="btn btn-secondary">📄 .sha256 Sidecar</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Windows 11 25H2 Card -->
+        <div class="os-card">
+          <div>
+            <div class="os-card-head">
+              <h3>🪟 StormRaven OS — Custom Windows 11 (25H2) Ymir Edition</h3>
+              <span class="os-size-badge">6.8 GB CUSTOM WIM ISO</span>
+            </div>
+            <p style="font-size:14px;color:var(--text-muted);margin:10px 0 14px">
+              Custom Windows 11 25H2 image with StormRaven Ymir Edition baked directly into <code>sources/install.wim</code> via <code>wimlib-imagex</code> and Windows ADK/DISM with zero plaintext credentials.
+            </p>
+            <ul class="os-spec-list">
+              <li>Self-contained <code>StormRaven.Kernel.exe</code> (:8787 Bifrost HTTP/WebSocket + Named Pipe IPC)</li>
+              <li>Bundled offline Windows x64 Python 3.12 runtime for the 19-deity Odin Pantheon &amp; Moov AI Banking Engine</li>
+              <li>Native <code>C:\Windows\System32\stormraven-*.cmd</code> shims: UsoClient + Winget Update Engine, Hyper-V/WHPX, Firewall Kill-Switch &amp; SHA-256 Forensics</li>
+              <li>Ymir Cryo-Glass dark theme, aurora/frost-giant backdrop &amp; winged raven-skull crest baked into default WIM profile</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Verified Sidecar SHA-256 Checksum:</div>
+            <div class="sha-box">4b3d34edd30948e858662a410ee7815f66e1ffdc4ee1d72cbed8f9c3a1ce509b</div>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+              <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso" class="btn btn-primary">⬇ Download Windows 11 Ymir ISO (6.8 GB)</a>
+              <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso.sha256" class="btn btn-secondary">📄 .sha256 Sidecar</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Checksum-Verified Installers & Downloads (Zero Blind Pipes) -->
+    <section class="section" id="install">
+      <div class="section-hdr">
+        <div class="eyebrow">Zero-Trust Deployment Standard</div>
+        <h2 class="section-title">Checksum-Verified Installers (Download → Verify SHA-256 → Execute)</h2>
+      </div>
+      <div class="cmd-grid">
+        <div class="cmd-card">
+          <div>
+            <h3>🪟 Ubuntu Host → Ymir Edition + Win11 Layout + Moov AI</h3>
+            <p style="margin-top:6px">Downloads the installer and its <code>.sha256</code> sidecar, verifies cryptographic integrity via <code>sha256sum -c</code>, and deploys the Ymir Cryo-Glass HUD and Moov AI engine.</p>
+          </div>
+          <div class="code-strip">
+            <code id="cmdWin11Sh">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh.sha256 &amp;&amp; sha256sum -c install-win11.sh.sha256 &amp;&amp; sudo bash install-win11.sh</code>
+            <button class="copy-btn" onclick="copyText('cmdWin11Sh', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="cmd-card">
+          <div>
+            <h3>💿 Verified Live USB Stick Flasher (Try or Install ISO)</h3>
+            <p style="margin-top:6px">Downloads <code>flash-usb.sh</code>, verifies its SHA-256 sidecar before execution, validates the 1.7 GB ISO hash, and writes your bootable USB stick.</p>
+          </div>
+          <div class="code-strip">
+            <code id="cmdFlashUsb">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256 &amp;&amp; sha256sum -c flash-usb.sh.sha256 &amp;&amp; sudo bash flash-usb.sh</code>
+            <button class="copy-btn" onclick="copyText('cmdFlashUsb', this)">Copy</button>
+          </div>
+        </div>
+
+        <div class="cmd-card">
+          <div>
+            <h3>⚡ Native Microsoft Windows 11 PowerShell Verification Flow</h3>
+            <p style="margin-top:6px">Downloads <code>install-win11.ps1</code> and its expected SHA-256 hash, enforces <code>Get-FileHash -Algorithm SHA256</code> verification, and deploys <code>StormRaven.Kernel.exe</code> only on match.</p>
+          </div>
+          <div class="code-strip">
+            <code id="cmdWin11Ps1">Invoke-WebRequest -Uri https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1 -OutFile install-win11.ps1; $exp=(Invoke-RestMethod https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.ps1.sha256).Split()[0]; if((Get-FileHash install-win11.ps1 -Algorithm SHA256).Hash -eq $exp){ .\install-win11.ps1 }</code>
+            <button class="copy-btn" onclick="copyText('cmdWin11Ps1', this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px">
+        <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta" class="btn btn-primary">🛡 Worldwide 1,000-Slot Beta Portal</a>
+        <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso" class="btn btn-secondary">⬇ Ubuntu 26.04 Ymir ISO (1.7 GB)</a>
+        <a href="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso" class="btn btn-secondary">⬇ Windows 11 25H2 Ymir ISO (6.8 GB)</a>
+        <a href="/iso/stormraven-os_3.9.0_amd64.deb" class="btn btn-secondary">⬇ Debian/Ubuntu Package (.deb)</a>
+        <a href="/iso/stormraven-os_3.9.0_amd64.snap" class="btn btn-secondary">⬇ Ubuntu Snap Package (.snap)</a>
+        <a href="/StormRaven_OS_Federal_Technical_Dossier.pdf" target="_blank" class="btn btn-secondary">📄 Federal &amp; Institutional Dossier (PDF)</a>
+      </div>
+    </section>
+
+    <!-- Interactive Moov AI Banking & Mobile Check Deposit Showcase -->
+    <section class="section" id="moov">
+      <div class="moov-showcase">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+          <div>
+            <div class="eyebrow">Built-In Sovereign Financial Engine</div>
+            <h2 class="section-title">🏦 Moov AI — Same-Day ACH &amp; Mobile Check Deposit (mRDC)</h2>
+            <p style="color:var(--text-muted);font-size:14px;margin-top:4px">
+              Test live ACH transfers (generates spec-compliant 94-character NACHA <code>.ach</code> files with ABA Mod-10 verification) and Check 21 Mobile Check Deposits (<code>.x937</code> Image Cash Letters) right from this page.
+            </p>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase">Live Treasury Balance</div>
+            <div style="font-size:28px;font-weight:900;color:var(--green)" id="moovBalanceDisp">$12,450.00 USD</div>
+          </div>
+        </div>
+
+        <div class="moov-grid">
+          <!-- ACH Form -->
+          <div class="form-box">
+            <h4>⚡ Originate Same-Day ACH (.ach NACHA)</h4>
+            <label class="field-lbl">Direction</label>
+            <select id="wAchDir" class="field-in">
+              <option value="debit">ACH Debit / Pull (Deposit into Wallet)</option>
+              <option value="credit">ACH Credit / Push (Send Payout)</option>
+            </select>
+            <label class="field-lbl">Amount (USD $)</label>
+            <input id="wAchAmt" type="number" step="0.01" value="250.00" class="field-in" />
+            <label class="field-lbl">9-Digit ABA Routing Number (Mod-10 Verified)</label>
+            <input id="wAchRt" value="021000021" class="field-in" />
+            <label class="field-lbl">Account Number</label>
+            <input id="wAchAcct" value="4829104921" class="field-in" />
+            <label class="field-lbl">Memo / SEC Description</label>
+            <input id="wAchMemo" value="StormRaven Same-Day ACH Transfer" class="field-in" />
+            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px" onclick="runWebAch()">
+              ⚡ Execute ACH Transfer
+            </button>
+          </div>
+
+          <!-- Check Deposit Form -->
+          <div class="form-box">
+            <h4>📸 Mobile Check Deposit (.x937 Check 21)</h4>
+            <label class="field-lbl">Check Amount (USD $)</label>
+            <input id="wChkAmt" type="number" step="0.01" value="500.00" class="field-in" />
+            <label class="field-lbl">Payor / Maker Name</label>
+            <input id="wChkPayer" value="Sovereign Treasury Client" class="field-in" />
+            <label class="field-lbl">MICR 9-Digit Routing</label>
+            <input id="wChkRt" value="021000021" class="field-in" />
+            <label class="field-lbl">MICR Account Number</label>
+            <input id="wChkAcct" value="981240112" class="field-in" />
+            <label class="field-lbl">Check Number</label>
+            <input id="wChkNum" value="1042" class="field-in" />
+            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:12px" onclick="runWebCheck()">
+              📸 Scan MICR &amp; Deposit Check
+            </button>
+          </div>
+
+          <!-- Live Output -->
+          <div class="form-box">
+            <h4>📜 Live NACHA / X9.37 &amp; SQLite Ledger Receipt</h4>
+            <pre class="moov-out" id="moovOutBox">Loading live Moov AI SQLite ledger...</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Screenshots -->
+    <section class="section" id="screenshots">
+      <div class="section-hdr">
+        <div class="eyebrow">Verified Desktop Environments</div>
+        <h2 class="section-title">Captured Live from Booted StormRaven OS v3.9.0</h2>
+      </div>
+      <div class="shots-grid">
+        <div class="shot-card">
+          <img src="/stormraven-win11-vm-live.png" alt="StormRaven OS v3.9.0 Windows 11 Ymir Edition + Moov AI Desktop" />
+          <div class="shot-meta">
+            <h3>🪟 StormRaven OS v3.9.0 — Custom Windows 11 (25H2) Ymir Edition</h3>
+            <p>Native Command Center + 3-Panel Ymir Cryo-Glass HUD running Moov AI Same-Day ACH, X9.37 Mobile Check Deposit, Odin Pantheon Shell, and the Windows 11 Kernel suite.</p>
+          </div>
+        </div>
+        <div class="shot-card">
+          <img src="/stormraven-v3.9-live-desktop.png" alt="StormRaven OS v3.9.0 Ubuntu 26.04 LTS Ymir Edition Desktop" />
+          <div class="shot-meta">
+            <h3>🐧 StormRaven OS v3.9.0 — Ubuntu 26.04 LTS (Resolute) Ymir Edition</h3>
+            <p>Booted on Linux 7.0.0-42-generic HWE with 37 native apps, one-click Ubuntu/Win11 layout switcher, GParted, TestDisk/PhotoRec, LVM2/LUKS, and live Bifrost telemetry on port 8787.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Architecture Pillars -->
+    <section class="section" id="architecture">
+      <div class="section-hdr">
+        <div class="eyebrow">System Architecture</div>
+        <h2 class="section-title">Six Sovereign Layers, Zero Compromise</h2>
+      </div>
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon">🦀</div>
+          <h3>Ymir Ring-0 Rust Core</h3>
+          <p>Deterministic bitmap Buddy &amp; SLAB physical allocator (<code>alloc.rs</code>), strict priority scheduler, and 7-step Heimdall syscall gatekeeper.</p>
+          <div class="tag-row">
+            <span class="tag">Rust Ring-0</span>
+            <span class="tag">Buddy/SLAB</span>
+            <span class="tag">Zero-Trust</span>
+          </div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">🌉</div>
+          <h3>.NET 10 Bifrost Kernel (:8787)</h3>
+          <p>Cross-platform self-contained C# kernel daemon (Ubuntu 26.04 &amp; Windows 11 <code>StormRaven.Kernel.exe</code>) with constant-time token validation and HMAC-SHA256 Luci bridge.</p>
+          <div class="tag-row">
+            <span class="tag">.NET 10 Native</span>
+            <span class="tag">SQLite WAL</span>
+            <span class="tag">HMAC-SHA256</span>
+          </div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">🛡</div>
+          <h3>Heimdall One-Way Data Diode</h3>
+          <p>Inbound-only beta and telemetry vault with SHA-256 blind-hashed emails/tokens, zero public PII egress, and 36/36 automated zero-trust contract tests.</p>
+          <div class="tag-row">
+            <span class="tag">36/36 Contract Tests</span>
+            <span class="tag">Data Diode</span>
+            <span class="tag">Zero PII Egress</span>
+          </div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">🏦</div>
+          <h3>Moov AI Financial Engine</h3>
+          <p>Built-in Same-Day ACH (<code>.ach</code> 94-char NACHA generator), ABA Mod-10 checksum verification, and X9.37 Check 21 Mobile Check Deposit (<code>.x937</code> ICL).</p>
+          <div class="tag-row">
+            <span class="tag">NACHA .ach</span>
+            <span class="tag">Check 21 .x937</span>
+            <span class="tag">Moov.io API</span>
+          </div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">⚡</div>
+          <h3>RunicSys &amp; RavenNest Control</h3>
+          <p>Allow-listed Runic intents (<code>fehu</code>, <code>algiz</code>, <code>isa</code>, <code>raido</code>) and RavenNest virtual server nodes (<code>ravencore</code>, <code>frostvault</code>, <code>frostnode</code>, <code>ymirvault</code>, <code>echoshell</code>).</p>
+          <div class="tag-row">
+            <span class="tag">WireGuard VPN</span>
+            <span class="tag">RavenNest</span>
+            <span class="tag">RunicSys</span>
+          </div>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">🖥</div>
+          <h3>2011–2026 Hardware &amp; Display Stack</h3>
+          <p>Linux 7.0.0-42-generic HWE kernel with Intel/AMD microcode, Mesa Vulkan/VA-API, and custom EDID profiles for HP w2558hc (1920x1200) &amp; HP W2072a (1600x900).</p>
+          <div class="tag-row">
+            <span class="tag">Linux 7.0 HWE</span>
+            <span class="tag">HP Pro 3500 Ready</span>
+            <span class="tag">37 Native Apps</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div>
+        <strong>StormRaven OS: Ymir Edition v3.9.0</strong> · Founded August 21, 2011 by Dr. Justin Jennings (Mr. Stormraven) &amp; dedicated to Christina Faith Page/Jennings.
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta">1,000-Slot Beta Portal</a>
+        <a href="/?os=win11">Web OS HUD</a>
+        <a href="/moov">Moov AI Portal</a>
+        <a href="/StormRaven_OS_Federal_Technical_Dossier.pdf" target="_blank">Federal Dossier</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function copyText(id, btn) {
+      const txt = document.getElementById(id).textContent.trim();
+      navigator.clipboard.writeText(txt);
+      const old = btn.textContent;
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => { btn.textContent = old; }, 1600);
+    }
+
+    async function refreshTelemetry() {
+      try {
+        const b = await fetch('https://echo-at-faith-s-workspace-2.skydive.app/api/beta/status').then(r => r.json());
+        if (b && b.remainingSlots != null) {
+          document.getElementById('heroBetaSlots').textContent = b.remainingSlots + ' / ' + b.maxSlots;
+          document.getElementById('betaSlotsBadge').textContent = 'WORLDWIDE BETA · ' + b.remainingSlots + ' OF ' + b.maxSlots + ' SLOTS OPEN';
+          if (b.daysRemaining != null) {
+            document.getElementById('betaDaysBadge').textContent = 'CAMPAIGN OPEN THRU JAN 1, 2027 (' + b.daysRemaining + ' DAYS)';
+          }
+        }
+      } catch (e) {}
+      try {
+        const h = await fetch('/health').then(r => r.json());
+        const d = h.data || h;
+        if (d.telemetry) {
+          document.getElementById('heroCpu').textContent = d.telemetry.cpu + '%';
+          document.getElementById('heroRam').textContent = d.telemetry.ram + '%';
+        }
+      } catch (e) {}
+      try {
+        const m = await fetch('/api/moov').then(r => r.json());
+        if (m.availableBalance != null) {
+          const fmt = '$' + Number(m.availableBalance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          document.getElementById('heroWallet').textContent = fmt;
+          document.getElementById('moovBalanceDisp').textContent = fmt + ' USD';
+        }
+        document.getElementById('moovOutBox').textContent = JSON.stringify(m, null, 2);
+      } catch (e) {}
+    }
+
+    async function runWebAch() {
+      const body = {
+        direction: document.getElementById('wAchDir').value,
+        amount: Number(document.getElementById('wAchAmt').value),
+        routing: document.getElementById('wAchRt').value,
+        account: document.getElementById('wAchAcct').value,
+        memo: document.getElementById('wAchMemo').value,
+      };
+      const res = await fetch('/api/moov/ach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).then(r => r.json());
+      document.getElementById('moovOutBox').textContent = JSON.stringify(res, null, 2);
+      if (res.walletBalance != null) {
+        const fmt = '$' + Number(res.walletBalance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('heroWallet').textContent = fmt;
+        document.getElementById('moovBalanceDisp').textContent = fmt + ' USD';
+      }
+    }
+
+    async function runWebCheck() {
+      const body = {
+        amount: Number(document.getElementById('wChkAmt').value),
+        payer: document.getElementById('wChkPayer').value,
+        routing: document.getElementById('wChkRt').value,
+        account: document.getElementById('wChkAcct').value,
+        checkNumber: document.getElementById('wChkNum').value,
+      };
+      const res = await fetch('/api/moov/deposit-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).then(r => r.json());
+      document.getElementById('moovOutBox').textContent = JSON.stringify(res, null, 2);
+      if (res.walletBalance != null) {
+        const fmt = '$' + Number(res.walletBalance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        document.getElementById('heroWallet').textContent = fmt;
+        document.getElementById('moovBalanceDisp').textContent = fmt + ' USD';
+      }
+    }
+
+    refreshTelemetry();
+    setInterval(refreshTelemetry, 10000);
+  </script>
+</body>
+</html>

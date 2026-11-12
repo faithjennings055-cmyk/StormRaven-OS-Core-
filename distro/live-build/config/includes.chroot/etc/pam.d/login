@@ -1,0 +1,9 @@
+auth       sufficient   pam_permit.so
+account    sufficient   pam_permit.so
+session    optional     pam_loginuid.so
+session    optional     pam_env.so readenv=1
+session    optional     pam_env.so readenv=1 envfile=/etc/default/locale
+@include common-auth
+@include common-account
+@include common-session
+@include common-password

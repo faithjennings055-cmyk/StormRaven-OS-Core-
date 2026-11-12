@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install Google Chrome
+Comment=Download and install Google Chrome Web Browser
+Exec=lxterminal --title='Installing Google Chrome' -e '/usr/local/bin/install chrome; read -p "Press Enter..."'
+Icon=applications-internet
+Terminal=false
+Categories=Network;WebBrowser;
+StartupNotify=false

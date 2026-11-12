@@ -1,0 +1,107 @@
+# StormRaven OS Ethereal Void Taskbar & Dock (tint2)
+rounded = 10
+border_width = 1
+border_sides = TBLR
+background_color = #0a0e1a 92
+border_color = #9d50bb 70
+background_color_hover = #1a2240 95
+border_color_hover = #06b6d4 90
+background_color_pressed = #232c4d 95
+border_color_pressed = #06b6d4 100
+
+rounded = 8
+border_width = 1
+border_sides = TBLR
+background_color = #131a2e 90
+border_color = #232c4d 80
+background_color_hover = #1a2240 95
+border_color_hover = #9d50bb 90
+background_color_pressed = #9d50bb 60
+border_color_pressed = #06b6d4 100
+
+rounded = 8
+border_width = 2
+border_sides = B
+background_color = #1a2240 95
+border_color = #06b6d4 100
+background_color_hover = #232c4d 95
+border_color_hover = #06b6d4 100
+
+panel_items = LTSC
+panel_size = 98% 42
+panel_margin = 6 6
+panel_padding = 8 4 8
+panel_background_id = 1
+wm_menu = 1
+panel_dock = 0
+panel_position = bottom center horizontal
+panel_layer = top
+panel_monitor = all
+panel_shrink = 0
+autohide = 0
+strut_policy = follow_size
+panel_window_name = StormRavenDock
+
+launcher_padding = 6 4 8
+launcher_background_id = 2
+launcher_icon_Background_id = 0
+launcher_icon_size = 26
+launcher_icon_asb = 100 0 0
+launcher_icon_theme = Papirus-Dark
+launcher_icon_theme_override = 1
+startup_notifications = 1
+launcher_tooltip = 1
+launcher_item_app = /usr/share/applications/stormraven-command-center.desktop
+launcher_item_app = /usr/share/applications/stormraven-installer.desktop
+launcher_item_app = /usr/share/applications/stormraven-odin-terminal.desktop
+launcher_item_app = /usr/share/applications/stormraven-files.desktop
+launcher_item_app = /usr/share/applications/stormraven-rescue.desktop
+
+taskbar_mode = single_desktop
+taskbar_hide_if_empty = 0
+taskbar_padding = 4 2 6
+taskbar_background_id = 0
+taskbar_active_background_id = 3
+taskbar_name = 1
+taskbar_hide_inactive_tasks = 0
+taskbar_hide_different_monitor = 0
+taskbar_Name_padding = 8 2
+taskbar_name_background_id = 2
+taskbar_name_active_background_id = 3
+taskbar_name_font = Monospace Bold 10
+taskbar_name_font_color = #06b6d4 100
+taskbar_name_active_font_color = #e8ecf8 100
+taskbar_distribute_size = 0
+taskbar_sort_order = none
+task_align = left
+
+task_text = 1
+task_icon = 1
+task_centered = 0
+urgent_nb_of_blink = 8
+task_maximum_size = 200 34
+task_padding = 8 4 6
+task_font = Sans 9.5
+task_tooltip = 1
+task_font_color = #8b96b8 100
+task_active_font_color = #ffffff 100
+task_background_id = 2
+task_active_background_id = 3
+mouse_left = toggle_iconify
+mouse_middle = close
+mouse_right = shade
+
+systray_padding = 6 2 6
+systray_background_id = 2
+systray_sort = ascending
+systray_icon_size = 20
+systray_icon_asb = 100 0 0
+
+time1_format = ✦ StormRaven v3.9  |  %H:%M:%S
+time2_format = %a %b %d, %Y
+time1_font = Monospace Bold 9.5
+time2_font = Sans 8
+clock_font_color = #e8ecf8 100
+clock_padding = 10 2
+clock_background_id = 2
+clock_lclick_command = xterm -T "StormRaven Status" -e "/bin/bash -c 'stormraven status; read -p \"Press Enter...\"'"

@@ -1,0 +1,13 @@
+window.active.title.bg: flat solid
+window.active.title.bg.color: #06182e
+window.active.label.text.color: #38bdf8
+window.active.button.unpressed.image.color: #38bdf8
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: #040b18
+window.inactive.label.text.color: #64748b
+window.Inactive.button.unpressed.image.color: #64748b
+window.active.border.color: #38bdf8
+window.inactive.border.color: #0c2d54
+border.width: 2
+padding.width: 6
+padding.height: 4

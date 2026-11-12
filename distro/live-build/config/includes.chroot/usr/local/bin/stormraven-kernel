@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Friendly wrapper so running `stormraven-kernel` at the shell checks or starts the service
+set -euo pipefail
+cmd="${1:-status}"
+case "${cmd}" in
+  status|start|stop|restart)
+    systemctl "${cmd}" stormraven-kernel.service --no-pager
+    ;;
+  run|foreground)
+    exec /opt/stormraven/StormRaven.Kernel
+    ;;
+  *)
+    systemctl status stormraven-kernel.service --no-pager
+    ;;
+esac

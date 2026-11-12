@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Ymir Edition — GNOME / Openbox Theme & Layout Engine
+# =============================================================================
+# Applies Faith's Ymir Edition theme (ice/aurora Raven-Skull wallpaper, cryo-blue
+# Yaru-blue-dark/Adwaita-dark accent, dark GTK3/GTK4) and switches the native
+# GNOME desktop layout between:
+#   - ubuntu : Left dock (panel mode) + Ymir Edition theme
+#   - win11  : Centered bottom taskbar (Windows 11 style) + Ymir Edition theme
+#   - toggle : Toggles between Ubuntu and Windows 11 layout while keeping Ymir theme
+# =============================================================================
+set +e
+
+MODE="${1:-apply}"
+WALLPAPER="/usr/share/backgrounds/stormraven/ymir-bg.jpg"
+if [ ! -s "${WALLPAPER}" ] && [ -s "/opt/stormraven/webapp/ymir-bg.jpg" ]; then
+  mkdir -p /usr/share/backgrounds/stormraven 2>/dev/null || true
+  cp -f /opt/stormraven/webapp/ymir-bg.jpg "${WALLPAPER}" 2>/dev/null || WALLPAPER="/opt/stormraven/webapp/ymir-bg.jpg"
+fi
+if [ ! -s "${WALLPAPER}" ] && [ -s "/usr/share/backgrounds/stormraven/ethereal-void-desktop.png" ]; then
+  WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
+fi
+
+STATE_FILE="${HOME:-/tmp}/.config/stormraven-layout-mode"
+
+run_gsettings() {
+  if command -v gsettings >/dev/null 2>&1; then
+    gsettings "$@" 2>/dev/null || true
+  fi
+  # If invoked via sudo, also apply inside the active desktop user's D-Bus session
+  if [ "$(id -u)" -eq 0 ]; then
+    for u in stormraven ubuntu; do
+      if id -u "$u" >/dev/null 2>&1; then
+        local uid
+        uid="$(id -u "$u")"
+        if [ -S "/run/user/${uid}/bus" ]; then
+          sudo -u "$u" DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${uid}/bus" gsettings "$@" 2>/dev/null || true
+        fi
+      fi
+    done
+  fi
+}
+
+apply_ymir_theme() {
+  local uri="file://${WALLPAPER}"
+  run_gsettings set org.gnome.desktop.background picture-uri "${uri}"
+  run_gsettings set org.gnome.desktop.background picture-uri-dark "${uri}"
+  run_gsettings set org.gnome.desktop.background picture-options 'zoom'
+  run_gsettings set org.gnome.desktop.screensaver picture-uri "${uri}"
+  run_gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  run_gsettings set org.gnome.desktop.interface gtk-theme 'Yaru-blue-dark'
+  run_gsettings set org.gnome.desktop.interface icon-theme 'Yaru-blue-dark'
+  run_gsettings set org.gnome.desktop.interface cursor-theme 'Yaru'
+
+  # Also refresh Openbox/feh if running X11 fallback
+  if command -v feh >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
+  fi
+}
+
+apply_ubuntu_layout() {
+  apply_ymir_theme
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'LEFT'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock extend-height true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode 'FIXED'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-opacity 0.35
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock custom-background-color true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-color '#06182e'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top false
+  mkdir -p "$(dirname "${STATE_FILE}")" 2>/dev/null || true
+  echo "ubuntu" > "${STATE_FILE}" 2>/dev/null || true
+  echo "[StormRaven Ymir UI] Applied Ubuntu Layout (Left Dock + Ymir Cryo-Glass Theme)."
+}
+
+apply_win11_layout() {
+  apply_ymir_theme
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-position 'BOTTOM'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock dock-fixed true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock always-center-icons true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock transparency-mode 'FIXED'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-opacity 0.55
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock custom-background-color true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-color '#06182e'
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock show-apps-at-top true
+  mkdir -p "$(dirname "${STATE_FILE}")" 2>/dev/null || true
+  echo "win11" > "${STATE_FILE}" 2>/dev/null || true
+  echo "[StormRaven Ymir UI] Applied Windows 11 Layout (Centered Bottom Taskbar + Ymir Cryo-Glass Theme)."
+}
+
+apply_realm_theme() {
+  local realm="${1:-midgard}"
+  realm="$(echo "$realm" | tr '[:upper:]' '[:lower:]')"
+  local primary="#06b6d4" accent="#38bdf8" bg="#040d14" surface="#091826" gtk_theme="Yaru-blue-dark" label="Midgard"
+  case "$realm" in
+    asgard)       primary="#facc15"; accent="#38bdf8"; bg="#0c0904"; surface="#191308"; gtk_theme="Yaru-yellow-dark"; label="Asgard (Celestial Gold)" ;;
+    muspelheim)   primary="#f43f5e"; accent="#f97316"; bg="#120406"; surface="#24080d"; gtk_theme="Yaru-red-dark"; label="Muspelheim (Volcanic Ember)" ;;
+    niflheim)     primary="#38bdf8"; accent="#818cf8"; bg="#030b14"; surface="#07182b"; gtk_theme="Yaru-blue-dark"; label="Niflheim (Primordial Rime)" ;;
+    helheim)      primary="#94a3b8"; accent="#a855f7"; bg="#06070b"; surface="#10131c"; gtk_theme="Yaru-purple-dark"; label="Helheim (Iron Shadow Vault)" ;;
+    jotunheim)    primary="#60a5fa"; accent="#34d399"; bg="#050a12"; surface="#0c1726"; gtk_theme="Yaru-blue-dark"; label="Jotunheim (Monolithic Stone)" ;;
+    svartalfheim) primary="#c084fc"; accent="#06b6d4"; bg="#090412"; surface="#150a26"; gtk_theme="Yaru-purple-dark"; label="Svartalfheim (Dark Forge)" ;;
+    vanaheim)     primary="#34d399"; accent="#06b6d4"; bg="#03100b"; surface="#072117"; gtk_theme="Yaru-sage-dark"; label="Vanaheim (Emerald Canopy)" ;;
+    alfheim)      primary="#e879f9"; accent="#06b6d4"; bg="#07030a"; surface="#14081e"; gtk_theme="Yaru-magenta-dark"; label="Alfheim (Luminous Prism)" ;;
+    *)            realm="midgard"; primary="#06b6d4"; accent="#38bdf8"; bg="#040d14"; surface="#091826"; gtk_theme="Yaru-blue-dark"; label="Midgard (Bifrost Perimeter)" ;;
+  esac
+
+  run_gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  run_gsettings set org.gnome.desktop.interface gtk-theme "${gtk_theme}"
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock custom-background-color true
+  run_gsettings set org.gnome.shell.extensions.dash-to-dock background-color "${surface}"
+
+  # Update GTK3/GTK4 CSS system-wide and per-user
+  for gtk_dir in /etc/gtk-3.0 "${HOME:-/tmp}/.config/gtk-3.0" "${HOME:-/tmp}/.config/gtk-4.0"; do
+    mkdir -p "$gtk_dir" 2>/dev/null || true
+    cat > "${gtk_dir}/gtk.css" <<GTKCSS 2>/dev/null || true
+/* StormRaven OS Whole-System Realm Theme: ${label} */
+@define-color theme_bg_color ${bg};
+@define-color theme_fg_color #e2e8f0;
+@define-color theme_base_color ${surface};
+@define-color theme_selected_bg_color ${primary};
+@define-color theme_selected_fg_color #050508;
+window, dialog, .background { background-color: ${bg}; color: #e2e8f0; }
+headerbar, .titlebar, toolbar { background-image: linear-gradient(to right, ${surface}, ${bg}); color: ${primary}; border-bottom: 1px solid ${primary}; }
+treeview, iconview, .view, textview, textview text { background-color: ${surface}; color: #e2e8f0; }
+entry, button { background-image: none; background-color: ${surface}; color: #f8fafc; border: 1px solid ${primary}; border-radius: 6px; }
+button:hover { border-color: ${accent}; color: ${primary}; }
+GTKCSS
+  done
+
+  # Update Openbox window borders & titlebars
+  for ob_dir in /usr/share/themes/StormRaven-Ymir/openbox-3 /usr/share/themes/StormRaven-Void/openbox-3; do
+    if [ -d "$ob_dir" ] && [ -w "$ob_dir" ]; then
+      cat > "${ob_dir}/themerc" <<OBRC 2>/dev/null || true
+border.width: 2
+padding.width: 6
+padding.height: 4
+window.active.border.color: ${primary}
+window.active.title.bg: flat solid
+window.active.title.bg.color: ${surface}
+window.active.label.bg: parentrelative
+window.active.label.text.color: ${primary}
+window.inactive.border.color: ${bg}
+window.inactive.title.bg: flat solid
+window.inactive.title.bg.color: ${bg}
+window.inactive.label.bg: parentrelative
+window.inactive.label.text.color: #64748b
+menu.border.width: 1
+menu.border.color: ${primary}
+menu.title.bg: flat solid
+menu.title.bg.color: ${surface}
+menu.title.text.color: ${primary}
+menu.items.bg: flat solid
+menu.items.bg.color: ${bg}
+menu.items.text.color: #e2e8f0
+menu.items.active.bg: flat solid
+menu.items.active.bg.color: ${surface}
+menu.items.active.text.color: ${primary}
+OBRC
+    fi
+  done
+  command -v openbox >/dev/null 2>&1 && openbox --reconfigure 2>/dev/null || true
+
+  # Update LXTerminal palette
+  for lxt_dir in /etc/xdg/lxterminal "${HOME:-/tmp}/.config/lxterminal"; do
+    mkdir -p "$lxt_dir" 2>/dev/null || true
+    if [ -w "$lxt_dir" ]; then
+      sed -i "s/^bgcolor=.*/bgcolor=${bg}/;s/^fgcolor=.*/fgcolor=${primary}/" "${lxt_dir}/lxterminal.conf" 2>/dev/null || true
+    fi
+  done
+
+  command -v xsetroot >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ] && xsetroot -solid "${bg}" 2>/dev/null || true
+  mkdir -p "$(dirname "${STATE_FILE}")" 2>/dev/null || true
+  echo "${realm}" > "${STATE_FILE}.realm" 2>/dev/null || true
+  echo "[StormRaven Nine Realms Engine] Whole-system UI themed to ${label} (primary=${primary}, accent=${accent}, bg=${bg})."
+}
+
+case "${MODE}" in
+  realm)
+    apply_realm_theme "${2:-midgard}"
+    ;;
+  ubuntu)
+    apply_ubuntu_layout
+    ;;
+  win11|windows11)
+    apply_win11_layout
+    ;;
+  toggle)
+    CUR="$(cat "${STATE_FILE}" 2>/dev/null || echo ubuntu)"
+    if [ "${CUR}" = "win11" ]; then
+      apply_ubuntu_layout
+    else
+      apply_win11_layout
+    fi
+    ;;
+  *)
+    apply_ymir_theme
+    CUR="$(cat "${STATE_FILE}" 2>/dev/null || echo ubuntu)"
+    if [ "${CUR}" = "win11" ]; then
+      apply_win11_layout
+    else
+      apply_ubuntu_layout
+    fi
+    ;;
+esac

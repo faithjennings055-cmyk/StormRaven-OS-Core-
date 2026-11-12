@@ -1,0 +1,33 @@
+{
+  "release": "StormRaven OS: Ymir Edition v3.9.0",
+  "updatedUtc": "2026-11-06T20:25:00Z",
+  "artifacts": {
+    "ubuntu2604Iso": {
+      "filename": "StormRavenOS-ubuntu-24.04-amd64.iso",
+      "sha256": "4c4be85b75df8713b3300264ff505b2c9cb757d891552fa0f133b8c700c54465",
+      "infinityProtocolIsoSha256": "dbb85e091c028d32a056d6f237b1637af9db5adbf506adfb4c3e3ee666dd34d9",
+      "builder": "distro/build-ubuntu-iso.sh"
+    },
+    "windows11YmirIso": {
+      "filename": "StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso",
+      "sha256": "6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157",
+      "builder": "distro/build-win11-iso.sh"
+    },
+    "debianPackage": {
+      "filename": "stormraven-os_3.9.0_amd64.deb",
+      "sha256": "dc41de636fb75d6ee4e30f188c33172642f63b6134b65351e71ecc0c587f44ca"
+    },
+    "snapPackage": {
+      "filename": "stormraven-os_3.9.0_amd64.snap",
+      "sha256": "c3e2fdfd2e597b449eaa8b22504dcf2c1e6a72d367dfe7118880824ddbb8b66d"
+    },
+    "windows11FullZip": {
+      "filename": "StormRavenOS-Win11-Full-v3.9.0-x64.zip",
+      "sha256": "9ce752f8919cdc9388ea6931fed1530eef3bd9f67638874970899d85e6adebd6"
+    },
+    "windows11MoovAddonZip": {
+      "filename": "StormRavenOS-Win11-MoovAI-Addon-v3.9.0.zip",
+      "sha256": "e243258d25026c29b7bc6395ec143c1689cddaef2508629a749b9695a383a218"
+    }
+  }
+}

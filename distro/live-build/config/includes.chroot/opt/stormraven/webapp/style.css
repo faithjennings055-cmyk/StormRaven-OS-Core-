@@ -13,73 +13,86 @@ body{
   -webkit-font-smoothing:antialiased;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
-#app{max-width:640px;margin:0 auto;padding:0 14px 24px}
+#app{max-width:640px;margin:0 auto;padding:0 14px 28px}
 
 /* topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 10px}
 .brand{display:flex;gap:10px;align-items:center}
 .sigil{color:var(--accent);font-size:26px;text-shadow:0 0 14px rgba(157,80,187,.8)}
-.topbar h1{font-size:17px;letter-spacing:.12em;font-weight:700}
+.topbar h1{font-size:16px;letter-spacing:.11em;font-weight:700}
 .os{color:var(--accent)}
 .conn-state{font-size:11px;color:var(--muted);margin-top:2px}
 .conn-state.ok{color:var(--ok)} .conn-state.bad{color:var(--bad)}
-.icon-btn{background:var(--card);border:1px solid var(--line);color:var(--text);width:38px;height:38px;border-radius:12px;font-size:18px}
+.icon-btn{background:var(--card);border:1px solid var(--line);color:var(--text);width:38px;height:38px;border-radius:12px;font-size:18px;cursor:pointer}
 
 /* tabbar */
-.tabbar{display:flex;gap:6px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:5px;margin-bottom:14px}
-.tab{flex:1;background:transparent;border:0;color:var(--muted);padding:10px 0;border-radius:10px;font-size:14px;font-weight:600}
+.tabbar{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:5px;margin-bottom:14px;overflow-x:auto}
+.tab{flex:1;background:transparent;border:0;color:var(--muted);padding:9px 6px;border-radius:10px;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer}
 .tab.active{background:var(--card2);color:var(--text);box-shadow:0 0 0 1px var(--line) inset}
 
 /* views */
 .view{display:none}
-.view.active{display:block;animation:fade .25s ease}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.view.active{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
 /* cards */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:12px}
+.card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
 .hero{background:linear-gradient(135deg,var(--card) 0%,var(--card2) 100%)}
 .hero-row{display:flex;align-items:center;gap:12px}
-.hero-row>div:last-of-type{flex:1}
-.kernel-name{font-size:18px;font-weight:700}
-.muted{color:var(--muted);font-size:13px}
-.pulse-dot{width:14px;height:14px;border-radius:50%;background:var(--bad);box-shadow:0 0 10px currentColor;animation:pulse 2s infinite}
+.hero-row>div:nth-of-type(2){flex:1}
+.kernel-name{font-size:16px;font-weight:700}
+.muted{color:var(--muted);font-size:12.5px;line-height:1.45}
+.pulse-dot{width:13px;height:13px;border-radius:50%;background:var(--bad);box-shadow:0 0 10px currentColor;animation:pulse 2s infinite;flex-shrink:0}
 .pulse-dot.ok{background:var(--ok)} .pulse-dot.warn{background:var(--warn)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;border-radius:99px;background:rgba(139,150,184,.15);color:var(--muted)}
+@keyframes sovereign-pulse{0%{transform:scale(1);opacity:0.8;box-shadow:0 0 20px var(--accent)}100%{transform:scale(1.8);opacity:0;box-shadow:0 0 40px var(--accent)}}
+@keyframes ring-pulse{0%{transform:scale(0.5);opacity:0.6}100%{transform:scale(2.5);opacity:0}}
+.badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;border-radius:99px;background:rgba(139,150,184,.15);color:var(--muted);flex-shrink:0}
 .badge.ok{background:rgba(46,204,113,.15);color:var(--ok)}
 .badge.bad{background:rgba(231,76,60,.15);color:var(--bad)}
 .badge.warn{background:rgba(241,196,15,.15);color:var(--warn)}
 
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.stat{padding:12px 14px}
-.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
-.stat-val{font-size:16px;font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:2px}
+.stat{padding:12px 13px}
+.stat-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.stat-val{font-size:15px;font-weight:700}
 
 .health-list{display:flex;flex-direction:column;gap:8px}
-.health-item{display:flex;justify-content:space-between;align-items:center;font-size:14px}
-.h-ok{color:var(--ok)} .h-warn{color:var(--warn)} .h-bad{color:var(--bad)}
+.health-item{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:4px 0;border-bottom:1px solid rgba(35,44,77,.5)}
+.health-item:last-child{border-bottom:0}
+.h-ok{color:var(--ok);font-weight:600} .h-warn{color:var(--warn);font-weight:600} .h-bad{color:var(--bad);font-weight:600}
 
 .feed{display:flex;flex-direction:column;gap:8px}
-.feed-item{border-left:3px solid var(--accent);padding:8px 12px;background:var(--bg2);border-radius:0 10px 10px 0;font-size:13px}
-.feed-item .sev-info{color:var(--accent2)} .feed-item .sev-warn{color:var(--warn)} .feed-item .sev-critical{color:var(--bad)}
-.feed-item time{color:var(--muted);font-size:11px;display:block;margin-top:2px}
+.feed-item{border-left:3px solid var(--accent);padding:9px 12px;background:var(--bg2);border-radius:0 10px 10px 0;font-size:13px}
+.feed-item .sev-info{color:var(--ok);font-weight:700} .feed-item .sev-warn{color:var(--warn);font-weight:700} .feed-item .sev-critical{color:var(--bad);font-weight:700}
+.feed-item time{color:var(--muted);font-size:11px;display:block;margin-top:3px}
 
 /* tabs list */
 .tab-list{display:flex;flex-direction:column;gap:8px}
-.tab-item{display:flex;gap:10px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+.tab-item{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
 .tab-item.current{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.tab-main{display:flex;gap:10px;align-items:center;min-width:0;flex:1}
 .tab-item .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.tab-item.current .dot{background:var(--ok)}
+.tab-item.current .dot{background:var(--ok);box-shadow:0 0 6px var(--ok)}
 .tab-item .url{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.tab-badge{font-size:10px;padding:3px 7px;border-radius:6px;background:rgba(157,80,187,.2);color:#d79df0;font-weight:600;flex-shrink:0}
+
+/* Odin Pantheon chips & output */
+.chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.chip-btn{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:8px 11px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s ease}
+.chip-btn:active,.chip-btn:hover{border-color:var(--accent);background:var(--card2)}
+.code-box{background:#070b16;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#b8c4e6;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.45}
+.copy-row{display:flex;gap:8px;align-items:center;background:#070b16;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.install-cmd{flex:1;font-size:11px;color:var(--ok);overflow-x:auto;white-space:nowrap}
 
 /* console */
 .console-card{display:flex;flex-direction:column}
-.console-out{background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.console-out{background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;height:290px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .console-out .line{white-space:pre-wrap;word-break:break-word}
-.console-out .out{color:var(--muted)}
+.console-out .out{color:#c5d1f0}
 .console-out .err{color:var(--bad)}
-.console-out .cmd{color:var(--accent2)}
+.console-out .cmd{color:var(--accent)}
 .console-out .sys{color:var(--ok)}
 .console-form{display:flex;gap:8px;margin-top:12px;align-items:center}
 .prompt{color:var(--accent);font-family:ui-monospace,monospace}
@@ -87,19 +100,652 @@ body{
 .console-form input:focus{outline:none;border-color:var(--accent2)}
 
 /* buttons */
-.btn{background:var(--accent);border:0;color:#fff;padding:10px 18px;border-radius:10px;font-weight:600;font-size:14px}
-.btn.small{padding:6px 12px;font-size:12px;background:var(--card2);border:1px solid var(--line);color:var(--text)}
+.btn{background:var(--accent);border:0;color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer}
+.btn.small{padding:6px 11px;font-size:11.5px;background:var(--card2);border:1px solid var(--line);color:var(--text)}
+.btn.accent-outline{border-color:var(--accent);color:#e2b2f7}
 .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
 
+/* Realms View & Sovereign Pulse */
+.realms-card{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;background:radial-gradient(circle at center, var(--card2) 0%, var(--card) 100%);border:1px solid var(--accent);box-shadow:0 0 20px rgba(157,80,187,0.15)}
+.pulse-container{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+.sovereign-pulse{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--accent);box-shadow:0 0 20px var(--accent);z-index:2;animation:pulse 2s infinite ease-in-out}
+.pulse-ring{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--accent);opacity:0;animation:ring-pulse 3s infinite ease-out;z-index:1}
+.realms-title{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:.05em}
+.pulse-status{font-size:13px;color:var(--accent);font-weight:600;font-family:ui-monospace,monospace;text-shadow:0 0 10px rgba(157,80,187,0.5)}
+.text-center{text-align:center}
+.mt-2{margin-top:8px}
+.row-actions{display:flex;gap:6px;align-items:center}
+
 /* settings modal */
-.modal{position:fixed;inset:0;background:rgba(4,6,14,.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{position:fixed;inset:0;background:rgba(4,6,14,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .modal.hidden{display:none}
 .modal-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;width:100%;max-width:420px}
 .field-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:6px}
-.modal-card input{width:100%;background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--text);font-size:15px;margin-bottom:10px}
+.modal-card input{width:100%;background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--text);font-size:14px;margin-bottom:10px}
 .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px}
-.hint code{color:var(--accent2)}
+.hint code{color:var(--accent)}
 .row-end{display:flex;justify-content:flex-end;gap:8px}
-.row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
 .row-between h2{margin-bottom:0}
 code{font-family:ui-monospace,monospace;font-size:.9em}
+
+.realm-stat{text-align:center; border-color:var(--line); transition:all .2s ease}
+.realm-stat:active{border-color:var(--accent); background:var(--card2)}
+.realm-stat[data-realm='alfheim'] .stat-val{color:var(--ok)}
+.realm-stat[data-realm='midgard'] .stat-val{color:var(--warn)}
+.realm-stat[data-realm='niflheim'] .stat-val{color:var(--accent)}
+.realm-stat[data-realm='helheim'] .stat-val{color:var(--muted)}
+
+/* Fafnir Clinical Grid */
+.fafnir-table-wrap{overflow-x:auto;border:1px solid #00ffff44;border-radius:8px;background:#070b16}
+.fafnir-table{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;text-align:left}
+.fafnir-table th{background:rgba(0,255,255,0.08);color:#00ffff;text-transform:uppercase;font-size:9.5px;letter-spacing:.06em;padding:4px 6px;border-bottom:1px solid #00ffff44}
+.fafnir-table td{padding:3px 6px;border-bottom:1px solid rgba(35,44,77,.6);color:var(--text);white-space:nowrap}
+.fafnir-table.standard td,.fafnir-table.standard th{padding:8px 10px}
+.fafnir-table tr.selected td{background:rgba(0,255,255,0.14);color:#00ffff;font-weight:600}
+.fafnir-table tr:hover td{background:rgba(157,80,187,0.12);cursor:pointer}
+.fafnir-sub{font-size:9px;color:var(--muted);display:block}
+.chip-btn.active{border-color:#00ffff;color:#00ffff;background:rgba(0,255,255,0.1)}
+
+/* StormRaven Desktop Shell (Ubuntu Dock + 8x4 App Grid + Win11 Mode) */
+.sr-desktop-shell{background:radial-gradient(circle at 50% 25%, #161026 0%, #07030a 75%);border:1px solid rgba(6,182,212,0.28);border-radius:14px;min-height:560px;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,0.65)}
+.sr-top-panel{height:32px;background:rgba(7,3,10,0.92);border-bottom:1px solid rgba(6,182,212,0.22);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;color:#e2e8f0}
+.sr-top-left,.sr-top-right{display:flex;align-items:center;gap:10px}
+.sr-activities-pill{background:rgba(6,182,212,0.18);color:#06b6d4;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
+.sr-top-brand{font-weight:600;color:#cbd5e1;font-size:11px}
+.sr-top-clock{font-weight:600;font-size:12px;color:#f8fafc}
+.sr-desktop-body{flex:1;display:flex;position:relative;min-height:520px}
+.sr-left-dock{width:54px;background:rgba(12,8,20,0.78);border-right:1px solid rgba(6,182,212,0.2);display:flex;flex-direction:column;align-items:center;padding:8px 4px;gap:6px;z-index:10}
+.sr-dock-item{width:38px;height:38px;border-radius:10px;border:1px solid transparent;background:rgba(255,255,255,0.05);color:#f8fafc;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease}
+.sr-dock-item:hover,.sr-dock-item.active{background:rgba(6,182,212,0.2);border-color:#06b6d4;transform:scale(1.06)}
+.sr-dock-sep{width:28px;height:1px;background:rgba(148,163,184,0.25);margin:2px 0}
+.sr-apps-btn{margin-top:auto;background:rgba(168,85,247,0.22);border-color:rgba(168,85,247,0.45)}
+.sr-grid-canvas{flex:1;display:flex;flex-direction:column;align-items:center;padding:18px 20px;position:relative;overflow-y:auto}
+.sr-search-wrap{width:100%;max-width:340px;background:rgba(30,27,46,0.85);border:1px solid rgba(6,182,212,0.35);border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.sr-search-wrap input{background:transparent;border:none;outline:none;color:#f8fafc;font-size:13px;width:100%}
+.sr-app-grid{width:100%;max-width:860px;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:16px 12px;justify-items:center}
+.sr-app-tile{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;padding:10px 6px;border-radius:12px;cursor:pointer;transition:background .15s ease,transform .15s ease;text-align:center;border:1px solid rgba(148,163,184,0.18);background:rgba(15,23,42,0.85)}
+.sr-app-tile:hover{background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);transform:translateY(-2px)}
+.sr-app-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12)}
+.sr-app-label{font-size:11.5px;font-weight:600;color:#f8fafc;line-height:1.25;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-app-window{position:absolute;inset:16px;background:rgba(10,7,18,0.96);backdrop-filter:blur(14px);border:1px solid #06b6d4;border-radius:12px;display:flex;flex-direction:column;z-index:20;box-shadow:0 16px 50px rgba(0,0,0,0.8)}
+.sr-app-window.hidden{display:none}
+.sr-win-titlebar{height:36px;background:rgba(6,182,212,0.14);border-bottom:1px solid rgba(6,182,212,0.3);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;font-weight:700;color:#06b6d4}
+.sr-win-close{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;border-radius:6px;width:24px;height:24px;cursor:pointer}
+.sr-win-body{flex:1;padding:16px;overflow-y:auto;font-size:13px;color:#e2e8f0}
+
+/* Windows 11 Edition Mode (.mode-win11) */
+.sr-desktop-shell.mode-win11 .sr-desktop-body{flex-direction:column;padding-bottom:58px}
+.sr-desktop-shell.mode-win11 .sr-left-dock{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:auto;height:48px;flex-direction:row;border:1px solid rgba(6,182,212,0.35);border-radius:14px;padding:4px 10px;background:rgba(10,14,26,0.88);backdrop-filter:blur(16px)}
+.sr-desktop-shell.mode-win11 .sr-dock-sep{width:1px;height:26px;margin:0 4px}
+.sr-desktop-shell.mode-win11 .sr-apps-btn{margin-top:0}
+
+/* ========== STORMRAVEN OS: YMIR EDITION 3-PANEL GLASS HUD ========== */
+@media (min-width: 860px) {
+  #app, main {
+    max-width: 1240px !important;
+  }
+}
+.ymir-hud-stage {
+  background: linear-gradient(180deg, rgba(4, 12, 24, 0.35) 0%, rgba(4, 10, 20, 0.55) 100%), url('ymir-bg.jpg') center center / cover no-repeat;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 16px;
+  padding: 18px;
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 0 45px rgba(14, 165, 233, 0.28), inset 0 0 60px rgba(2, 8, 23, 0.65);
+  position: relative;
+  overflow: hidden;
+}
+.ymir-hud-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.9fr 1.05fr;
+  gap: 16px;
+  align-items: stretch;
+  flex: 1;
+}
+@media (max-width: 960px) {
+  .ymir-hud-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ymir-glass-win {
+  background: linear-gradient(160deg, rgba(6, 18, 36, 0.84) 0%, rgba(4, 11, 24, 0.9) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 10px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75), 0 0 18px rgba(56, 189, 248, 0.22);
+  color: #e0f2fe;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.ymir-win-bar {
+  height: 28px;
+  background: linear-gradient(90deg, rgba(14, 116, 144, 0.45), rgba(7, 24, 46, 0.85));
+  border-bottom: 1px solid rgba(56, 189, 248, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #bae6fd;
+}
+.ymir-win-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ymir-r-badge {
+  background: #0284c7;
+  color: #fff;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  box-shadow: 0 0 8px #38bdf8;
+}
+.ymir-win-dots {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #7dd3fc;
+  opacity: 0.8;
+}
+.ymir-win-subbar {
+  height: 24px;
+  background: rgba(2, 10, 22, 0.75);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: #7dd3fc;
+}
+.ymir-pill {
+  color: #38bdf8;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
+}
+.ymir-win-content {
+  padding: 12px 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.ymir-sec-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e0f2fe;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+}
+.ymir-forge-split {
+  display: grid;
+  grid-template-columns: 1.45fr 0.9fr;
+  gap: 12px;
+  align-items: center;
+}
+.ymir-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ymir-meter-row {
+  display: grid;
+  grid-template-columns: 112px 1fr 28px;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: #bae6fd;
+}
+.ymir-m-track {
+  height: 10px;
+  background: rgba(2, 12, 27, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 3px;
+  overflow: hidden;
+  padding: 1px;
+}
+.ymir-m-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8, #e0f2fe);
+  box-shadow: 0 0 10px #38bdf8;
+  transition: width 0.35s ease;
+}
+.ymir-m-val {
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #f0f9ff;
+  text-align: right;
+}
+.ymir-reactor-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ymir-reactor-ring {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 3px solid rgba(56, 189, 248, 0.75);
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.55), inset 0 0 16px rgba(56, 189, 248, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.ymir-reactor-core {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e0f2fe 0%, #38bdf8 55%, #0369a1 100%);
+  box-shadow: 0 0 18px #38bdf8;
+}
+.ymir-wave {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #38bdf8;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px #38bdf8;
+}
+.ymir-rune-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.ymir-rune-tile {
+  background: linear-gradient(180deg, rgba(14, 116, 144, 0.32), rgba(2, 12, 27, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 8px;
+  padding: 8px 4px;
+  color: #e0f2fe;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+.ymir-rune-tile:hover {
+  background: rgba(56, 189, 248, 0.28);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+.rune-glyph {
+  font-size: 22px;
+  font-weight: 800;
+  color: #7dd3fc;
+  text-shadow: 0 0 12px #38bdf8;
+}
+.rune-sub {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  color: #bae6fd;
+}
+
+/* Center Crest Column */
+.ymir-center-crest {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 8px;
+}
+.ymir-crest-spacer {
+  flex: 1;
+  min-height: 220px;
+}
+.ymir-crest-title-box {
+  background: radial-gradient(ellipse at center, rgba(3, 12, 26, 0.85) 0%, rgba(3, 12, 26, 0.45) 80%, transparent 100%);
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.ymir-oath-rune {
+  font-size: 16px;
+  color: #7dd3fc;
+  text-shadow: 0 0 12px #38bdf8;
+  margin-bottom: 2px;
+}
+.ymir-main-logo {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #f8fafc;
+  text-shadow: 0 2px 14px rgba(56, 189, 248, 0.85);
+  margin: 0;
+}
+.ymir-sub-logo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #7dd3fc;
+  margin-top: 3px;
+  margin-bottom: 10px;
+}
+.ymir-quick-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.ymir-action-btn {
+  background: rgba(14, 116, 144, 0.45);
+  border: 1px solid #38bdf8;
+  color: #f0f9ff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+.ymir-action-btn:hover {
+  background: rgba(56, 189, 248, 0.4);
+}
+
+/* Right Column: Runic Console + RavenNest Virtual Server */
+.ymir-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ymir-runic-list {
+  padding: 10px 12px 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ymir-runic-row {
+  background: rgba(2, 12, 27, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 7px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0f2fe;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+.ymir-runic-row:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+}
+.ymir-r-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7dd3fc;
+  font-weight: 800;
+}
+.ymir-r-name {
+  font-weight: 700;
+  color: #f8fafc;
+}
+.ymir-r-sep {
+  color: #64748b;
+}
+.ymir-r-desc {
+  color: #38bdf8;
+  font-weight: 600;
+}
+.ymir-r-act {
+  margin-left: auto;
+  font-size: 9.5px;
+  color: #7dd3fc;
+  opacity: 0.85;
+}
+.ymir-runic-log {
+  margin: 4px 12px 10px 12px;
+  padding: 8px 10px;
+  background: rgba(2, 8, 18, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  color: #7dd3fc;
+  max-height: 88px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+/* RavenNest Virtual Server Cubes */
+.ymir-nest-grid {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.ymir-cube-node {
+  background: radial-gradient(circle at 50% 30%, rgba(14, 165, 233, 0.28), rgba(2, 12, 27, 0.88));
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 9px;
+  padding: 9px 6px;
+  color: #e0f2fe;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.ymir-cube-node:hover {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
+  transform: translateY(-2px);
+}
+.ymir-iso-cube {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(3, 105, 161, 0.85));
+  border: 1px solid #7dd3fc;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6), inset 0 0 8px #e0f2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-6deg);
+}
+.cube-glyph {
+  font-size: 18px;
+  color: #ffffff;
+  text-shadow: 0 0 8px #38bdf8;
+}
+.cube-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f0f9ff;
+}
+.cube-meta {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: #7dd3fc;
+}
+.ymir-remote-bar {
+  margin-top: 14px;
+  background: rgba(3, 12, 26, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ymir-remote-cmd-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ymir-remote-cmd-wrap code {
+  background: #020814;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+/* ============================================================================
+   NINE REALMS WHOLE-SYSTEM LORE UI THEMES (#102)
+   Re-skins the entire HUD, glass windows, cards, and active borders per realm
+   ============================================================================ */
+html[data-realm-theme="asgard"] {
+  --bg: #0c0904; --bg2: #161006; --card: #1d1508; --card2: #281d0b;
+  --line: rgba(250, 204, 21, 0.42); --accent: #facc15; --accent2: #38bdf8;
+}
+html[data-realm-theme="muspelheim"] {
+  --bg: #120406; --bg2: #1e070b; --card: #28090f; --card2: #380d15;
+  --line: rgba(244, 63, 94, 0.48); --accent: #f43f5e; --accent2: #f97316;
+}
+html[data-realm-theme="niflheim"] {
+  --bg: #030b14; --bg2: #061526; --card: #091e36; --card2: #0d2a4a;
+  --line: rgba(56, 189, 248, 0.45); --accent: #38bdf8; --accent2: #818cf8;
+}
+html[data-realm-theme="helheim"] {
+  --bg: #06070b; --bg2: #0d1018; --card: #131722; --card2: #1b2130;
+  --line: rgba(148, 163, 184, 0.42); --accent: #94a3b8; --accent2: #a855f7;
+}
+html[data-realm-theme="jotunheim"] {
+  --bg: #050a12; --bg2: #0a1424; --card: #0f1d33; --card2: #162947;
+  --line: rgba(96, 165, 250, 0.42); --accent: #60a5fa; --accent2: #34d399;
+}
+html[data-realm-theme="svartalfheim"] {
+  --bg: #090412; --bg2: #120824; --card: #1a0d33; --card2: #251247;
+  --line: rgba(192, 132, 252, 0.45); --accent: #c084fc; --accent2: #06b6d4;
+}
+html[data-realm-theme="vanaheim"] {
+  --bg: #03100b; --bg2: #061d14; --card: #0a291d; --card2: #0f3828;
+  --line: rgba(52, 211, 153, 0.42); --accent: #34d399; --accent2: #06b6d4;
+}
+html[data-realm-theme="alfheim"] {
+  --bg: #07030a; --bg2: #12061a; --card: #1b0a28; --card2: #260e38;
+  --line: rgba(232, 121, 249, 0.45); --accent: #e879f9; --accent2: #06b6d4;
+}
+html[data-realm-theme="midgard"] {
+  --bg: #040d14; --bg2: #081826; --card: #0c2236; --card2: #112e47;
+  --line: rgba(6, 182, 212, 0.45); --accent: #06b6d4; --accent2: #38bdf8;
+}
+html[data-realm-theme] .ymir-glass-win {
+  border-color: var(--line);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65), 0 0 18px var(--line);
+}
+
+/* ============================================================================
+   FREYA ANIMATED HOLOGRAPHIC VALKYRIE BODY (#102)
+   ============================================================================ */
+.freya-holo-stage {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 45%, rgba(6, 182, 212, 0.16), rgba(5, 2, 10, 0.92) 72%);
+  border: 1px solid var(--line);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.freya-halo-outer {
+  animation: freyaHaloSpin 18s linear infinite;
+  transform-origin: 0px 0px;
+}
+.freya-wings {
+  animation: freyaWingFlap 3.2s ease-in-out infinite;
+  transform-origin: 180px 108px;
+}
+.freya-heart-orb {
+  animation: freyaCorePulse 2.2s ease-in-out infinite;
+  transform-origin: 180px 112px;
+}
+.freya-holo-stage.speaking .freya-heart-orb {
+  animation-duration: 0.55s;
+}
+.freya-voice-wave {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 4px;
+  height: 24px;
+  margin-top: 4px;
+}
+.freya-voice-wave span {
+  display: inline-block;
+  width: 4px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: freyaWaveIdle 1.6s ease-in-out infinite;
+}
+.freya-voice-wave span:nth-child(odd) { animation-delay: 0.25s; }
+.freya-voice-wave span:nth-child(3n) { animation-delay: 0.5s; }
+.freya-holo-stage.speaking .freya-voice-wave span {
+  animation: freyaWaveSpeak 0.42s ease-in-out infinite;
+}
+@keyframes freyaHaloSpin {
+  0% { transform: translate(180px, 102px) rotate(0deg); }
+  100% { transform: translate(180px, 102px) rotate(360deg); }
+}
+@keyframes freyaWingFlap {
+  0%, 100% { transform: scaleX(1) translateY(0px); }
+  50% { transform: scaleX(1.06) translateY(-4px); }
+}
+@keyframes freyaCorePulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.82; }
+  50% { transform: scale(1.22); opacity: 1; }
+}
+@keyframes freyaWaveIdle {
+  0%, 100% { height: 5px; opacity: 0.55; }
+  50% { height: 11px; opacity: 0.9; }
+}
+@keyframes freyaWaveSpeak {
+  0%, 100% { height: 6px; }
+  50% { height: 22px; }
+}
+
+/* Hardened iOS 27 & Mobile Dark Enforcement — Zero White Bleed */
+html, body {
+  background-color: #07030a !important;
+  color: #eef2ff !important;
+  color-scheme: dark !important;
+}
+button, input, select, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #0d1324;
+  color: #eef2ff;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  font-family: inherit;
+}
+.ymir-run-btn, .ymir-dock-btn, .ymir-realm-pill, .ymir-quick-pill, .freya-chip, .freya-send-btn {
+  background: rgba(14, 22, 40, 0.92) !important;
+  color: #5eead4 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+.topbar {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+}

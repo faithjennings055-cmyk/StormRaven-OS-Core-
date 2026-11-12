@@ -1,0 +1,11 @@
+[Unit]
+Description=StormRaven OS Ethereal Void Desktop UI Autostart (Login Session)
+After=graphical-session.target network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'if [ -x /usr/local/bin/stormraven-ui-autostart ]; then /usr/local/bin/stormraven-ui-autostart; elif [ -x /snap/stormraven-os/current/bin/stormraven-ui-autostart ]; then /snap/stormraven-os/current/bin/stormraven-ui-autostart; fi'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target graphical-session.target

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+echo "=== [ᛉ ALGIZ — Heimdall Zero-Trust Shield & Kill-Switch] ==="
+/usr/local/bin/stormraven-vpn status 2>/dev/null || true
+ufw status 2>/dev/null || true

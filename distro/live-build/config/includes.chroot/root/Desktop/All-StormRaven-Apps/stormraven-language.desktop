@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Language Support
+Comment=Locale & Input Method Configuration
+Exec=/usr/local/bin/stormraven-app-exec language
+Icon=preferences-desktop-locale
+Terminal=false
+Categories=Settings;
+StartupNotify=false

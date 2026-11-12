@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Check & Install Updates
+Comment=Check for and install StormRaven OS + Ubuntu system updates
+Exec=/usr/local/bin/stormraven-app-exec systemupdate
+Icon=system-software-update
+Terminal=false
+Categories=System;Settings;PackageManager;
+StartupNotify=false

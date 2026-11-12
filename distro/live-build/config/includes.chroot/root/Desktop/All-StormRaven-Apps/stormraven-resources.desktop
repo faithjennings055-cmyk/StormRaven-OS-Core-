@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Nine Realms Resources
+Comment=Live Nine Realms Sensor Telemetry & Graphs
+Exec=/usr/local/bin/stormraven-app-exec resources
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;
+StartupNotify=false

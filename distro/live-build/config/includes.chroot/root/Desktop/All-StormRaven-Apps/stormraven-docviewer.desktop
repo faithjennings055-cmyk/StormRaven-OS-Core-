@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Document Viewer
+Comment=View PDF and Markdown blueprints
+Exec=/usr/local/bin/stormraven-app-exec docviewer
+Icon=x-office-document
+Terminal=false
+Categories=Office;Viewer;
+StartupNotify=false

@@ -1,0 +1,31 @@
+services:
+  stormraven-windows-ymir:
+    image: dockurr/windows:latest
+    container_name: StormRaven-Win11-Ymir-Container
+    environment:
+      VERSION: "${STORMRAVEN_WIN_VERSION:-11}"
+      RAM_SIZE: "${STORMRAVEN_WIN_RAM:-4G}"
+      CPU_CORES: "${STORMRAVEN_WIN_CORES:-4}"
+      DISK_SIZE: "${STORMRAVEN_WIN_DISK:-64G}"
+      USERNAME: "stormraven"
+      ARGUMENTS: "-smbios type=1,manufacturer=StormRaven,product=Ymir-v4.0"
+    devices:
+      - /dev/kvm
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "127.0.0.1:${STORMRAVEN_DOCKUR_WEB_PORT:-8006}:8006"
+      - "127.0.0.1:${STORMRAVEN_DOCKUR_RDP_PORT:-3389}:3389/tcp"
+      - "127.0.0.1:${STORMRAVEN_DOCKUR_RDP_PORT:-3389}:3389/udp"
+      - "127.0.0.1:${STORMRAVEN_DOCKUR_HUD_PORT:-3887}:3887/tcp"
+      - "127.0.0.1:${STORMRAVEN_DOCKUR_KERNEL_PORT:-8787}:8787/tcp"
+    volumes:
+      - stormraven-win11-storage:/storage
+      - ./oem:/oem:ro
+      - ../../windows11:/stormraven-win11-bundle:ro
+    stop_grace_period: 2m
+    restart: unless-stopped
+
+volumes:
+  stormraven-win11-storage:

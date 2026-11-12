@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sovereign AI (Freya & Odin)
+Comment=Onboard Local AI & Pantheon Decision Engine
+Exec=/usr/local/bin/stormraven-app-exec sovereign
+Icon=applications-science
+Terminal=false
+Categories=Science;Utility;
+StartupNotify=false

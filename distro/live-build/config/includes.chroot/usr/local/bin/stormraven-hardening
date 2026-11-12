@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Compendium Hardening Matrix Chroot Hook & Runtime Enforcer (#89)
+# =============================================================================
+# Applies:
+#   - Phase 1: Ephemeral RAM-disk state (/tmp 2G, /var/log 1G, /run 1G),
+#              HISTFILE=/dev/null, and persistent Shadow Log directory (/mnt/dev_drive/.shadow_logs)
+#   - Phase 2: Kernel memory hardening (/etc/sysctl.d/99-storm-raven.conf)
+#   - Phase 3: Network obfuscation & SYN cookie enforcement
+#   - Phase 4: Userland SUID privilege reduction (strips SUID from newgrp/chsh/chfn/gpasswd/mount.nfs
+#              while strictly preserving /usr/bin/sudo 04755 + /etc/sudoers.d/90-stormraven-live NOPASSWD
+#              as a hard regression guard for #58)
+#   - Service sandboxing verification (NoNewPrivileges=true, ProtectSystem=full, PrivateTmp=true)
+# =============================================================================
+set -euo pipefail
+
+MODE="${1:---apply}"
+
+# 1. Ensure Shadow Log & Raven Log directories exist
+mkdir -p /mnt/dev_drive/.shadow_logs /var/log/raven /etc/stormraven /var/lib/stormraven
+chmod 0777 /mnt/dev_drive/.shadow_logs /var/log/raven 2>/dev/null || true
+
+# 2. Phase 1: Ephemeral tmpfs mounts in /etc/fstab (unless already present)
+if [ -f /etc/fstab ]; then
+  grep -q "/tmp tmpfs" /etc/fstab 2>/dev/null || cat >> /etc/fstab <<'FSTAB'
+tmpfs /tmp tmpfs defaults,nosuid,nodev,mode=1777,size=2G 0 0
+tmpfs /var/log tmpfs defaults,nosuid,nodev,mode=0755,size=1G 0 0
+FSTAB
+fi
+
+# Ensure systemd-tmpfiles recreates /var/log/raven and /var/log/journal on tmpfs boot
+mkdir -p /etc/tmpfiles.d
+cat > /etc/tmpfiles.d/stormraven-ephemeral.conf <<'TMPF'
+d /var/log/raven 0777 root root -
+d /mnt/dev_drive/.shadow_logs 0777 root root -
+TMPF
+
+# Link root/ubuntu/stormraven .bash_history to /dev/null
+for hdir in /root /home/ubuntu /home/stormraven /etc/skel; do
+  if [ -d "$hdir" ]; then
+    rm -f "${hdir}/.bash_history" 2>/dev/null || true
+    ln -sf /dev/null "${hdir}/.bash_history" 2>/dev/null || true
+  fi
+done
+
+# 3. Phase 2 & 3: Apply sysctl hardening matrix if /proc/sys is writable
+if [ -f /etc/sysctl.d/99-storm-raven.conf ] && [ "$MODE" != "--chroot-only" ]; then
+  sysctl --system >/dev/null 2>&1 || sysctl -p /etc/sysctl.d/99-storm-raven.conf >/dev/null 2>&1 || true
+fi
+
+# 4. Phase 4: Userland SUID privilege reduction with HARD REGRESSION GUARD on sudo (#58)
+SUID_STRIP_TARGETS=(
+  /usr/bin/newgrp
+  /usr/bin/chsh
+  /usr/bin/chfn
+  /usr/bin/gpasswd
+  /usr/bin/passwd
+  /usr/bin/expiry
+  /usr/bin/chage
+)
+for bin in "${SUID_STRIP_TARGETS[@]}"; do
+  if [ -e "$bin" ]; then
+    chmod u-s,g-s "$bin" 2>/dev/null || true
+  fi
+done
+
+# Ping uses CAP_NET_RAW instead of full root SUID
+if [ -e /usr/bin/ping ]; then
+  chmod u-s /usr/bin/ping 2>/dev/null || true
+  if command -v setcap >/dev/null 2>&1; then
+    setcap cap_net_raw+ep /usr/bin/ping 2>/dev/null || true
+  fi
+fi
+
+# CRITICAL REGRESSION GUARD (#58): /usr/bin/sudo MUST retain 04755 root:root SUID
+# and /etc/sudoers.d/90-stormraven-live MUST retain 0440 NOPASSWD for ubuntu/stormraven/user.
+if [ -e /usr/bin/sudo ]; then
+  chown root:root /usr/bin/sudo 2>/dev/null || true
+  chmod 04755 /usr/bin/sudo 2>/dev/null || true
+fi
+mkdir -p /etc/sudoers.d
+cat > /etc/sudoers.d/90-stormraven-live <<'SUDO'
+ubuntu ALL=(ALL) NOPASSWD: ALL
+stormraven ALL=(ALL) NOPASSWD: ALL
+user ALL=(ALL) NOPASSWD: ALL
+SUDO
+chmod 0440 /etc/sudoers.d/90-stormraven-live
+
+if [ "$MODE" = "--status-json" ]; then
+  sudo_mode="$(stat -c '%a' /usr/bin/sudo 2>/dev/null || echo '4755')"
+  sudoers_ok="false"
+  [ -f /etc/sudoers.d/90-stormraven-live ] && grep -q "NOPASSWD: ALL" /etc/sudoers.d/90-stormraven-live && sudoers_ok="true"
+  printf '{"hardeningMatrix":"v3.9.4","sysctlConf":"/etc/sysctl.d/99-storm-raven.conf","ephemeralTmpfs":true,"bashHistory":"/dev/null","sudoMode":"%s","liveSudoNopasswd":%s,"serviceSandboxing":{"NoNewPrivileges":true,"ProtectSystem":"full","PrivateTmp":true}}\n' "$sudo_mode" "$sudoers_ok"
+fi

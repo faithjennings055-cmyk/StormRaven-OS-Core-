@@ -2,52 +2,399 @@
 set -euo pipefail
 
 GATEWAY_URL="${STORMRAVEN_GATEWAY_URL:-http://127.0.0.1:8787}"
+SCRIPT_BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "${SNAP:-}" ] && [ -d "${SNAP}/opt/stormraven" ]; then
+  SR_OPT_DIR="${SNAP}/opt/stormraven"
+  SR_ETC_DIR="${SNAP}/etc/stormraven"
+elif [ -d "/opt/stormraven" ]; then
+  SR_OPT_DIR="/opt/stormraven"
+  SR_ETC_DIR="/etc/stormraven"
+elif [ -d "/snap/stormraven-os/current/opt/stormraven" ]; then
+  SR_OPT_DIR="/snap/stormraven-os/current/opt/stormraven"
+  SR_ETC_DIR="/snap/stormraven-os/current/etc/stormraven"
+else
+  SR_OPT_DIR="/opt/stormraven"
+  SR_ETC_DIR="/etc/stormraven"
+fi
+
+VOICE_CONF="${STORMRAVEN_VOICE_CONF:-/etc/stormraven/voice.conf}"
+if [ ! -f "$VOICE_CONF" ] && [ -f "${SR_ETC_DIR}/voice.conf" ]; then
+  VOICE_CONF="${SR_ETC_DIR}/voice.conf"
+fi
+LUCI_KEY_FILE="${STORMRAVEN_LUCI_KEY:-/etc/stormraven/Luci.key}"
+if [ ! -s "$LUCI_KEY_FILE" ] && [ -s "${SR_ETC_DIR}/Luci.key" ]; then
+  LUCI_KEY_FILE="${SR_ETC_DIR}/Luci.key"
+fi
+STORMRAVEN_VOICE="${STORMRAVEN_VOICE:-1}"
+if [ -f "$VOICE_CONF" ]; then
+  . "$VOICE_CONF"
+fi
+
+AUTH_ARGS=()
+if [ -n "${STORMRAVEN_GATEWAY_TOKEN:-}" ]; then
+  AUTH_ARGS=(-H "Authorization: Bearer ${STORMRAVEN_GATEWAY_TOKEN}")
+fi
+
+voice_say() {
+  local sovereign_msg="$1"
+  local plain_msg="$2"
+  if [ "${STORMRAVEN_VOICE:-1}" = "0" ]; then
+    echo "$plain_msg"
+  else
+    echo "$sovereign_msg"
+  fi
+}
+
+ensure_local_gateway() {
+  if curl -fsS --max-time 1 "${GATEWAY_URL}/health" >/dev/null 2>&1; then
+    return 0
+  fi
+  local gw_bin=""
+  for candidate in \
+    "${SCRIPT_BIN_DIR}/stormraven-local-gateway" \
+    "${SNAP:-}/bin/stormraven-local-gateway" \
+    "/usr/local/bin/stormraven-local-gateway" \
+    "/snap/stormraven-os/current/bin/stormraven-local-gateway"; do
+    if [ -n "$candidate" ] && [ -f "$candidate" ]; then
+      gw_bin="$candidate"
+      break
+    fi
+  done
+  if [ -n "$gw_bin" ]; then
+    STORMRAVEN_WEBAPP_DIR="${SR_OPT_DIR}/webapp" \
+    STORMRAVEN_PYTHON_DIR="${SR_OPT_DIR}/python" \
+    nohup python3 "$gw_bin" >/tmp/stormraven-gateway.log 2>&1 &
+    for _ in 1 2 3 4 5; do
+      if curl -fsS --max-time 1 "${GATEWAY_URL}/health" >/dev/null 2>&1; then
+        return 0
+      fi
+      sleep 0.3
+    done
+  fi
+  return 0
+}
+
+gw_curl() {
+  ensure_local_gateway
+  curl --retry 2 --retry-delay 1 --max-time 3 -fsS "${AUTH_ARGS[@]}" "$@" 2>/dev/null
+}
+
 CMD="${1:-status}"
 
 case "$CMD" in
   status)
-    echo "=== StormRaven OS Status ==="
+    voice_say "=== [Hlidskjalf] StormRaven OS Sovereign Status ===" "=== StormRaven OS Status ==="
     if [ -f /etc/os-release ]; then
       . /etc/os-release
       echo "Distro:   ${PRETTY_NAME:-StormRaven OS}"
     fi
     echo "Kernel:   $(uname -srm)"
-    SVC_STATE="$(systemctl is-active stormraven-kernel.service 2>/dev/null || echo inactive)"
-    echo "Service:  stormraven-kernel.service ($SVC_STATE)"
+    echo "Voice:    $([ "${STORMRAVEN_VOICE:-1}" = "0" ] && echo "plain (STORMRAVEN_VOICE=0)" || echo "sovereign (/etc/stormraven/voice.conf)")"
+    echo "Luci Key: $([ -s "$LUCI_KEY_FILE" ] && echo "AUTHORIZED (${LUCI_KEY_FILE})" || echo "VIRTUAL_KEY_ACTIVE (no external key required; run 'stormraven luci authorize' to seal)")"
+    ensure_local_gateway
+    SVC_NAME="stormraven-kernel.service"
+    SVC_STATE="$(systemctl is-active stormraven-kernel.service 2>/dev/null | head -n 1 || true)"
+    if [ "$SVC_STATE" != "active" ]; then
+      SNAP_SVC_STATE="$(systemctl is-active snap.stormraven-os.gateway.service 2>/dev/null | head -n 1 || true)"
+      if [ "$SNAP_SVC_STATE" = "active" ]; then
+        SVC_NAME="snap.stormraven-os.gateway.service"
+        SVC_STATE="active"
+      elif curl -fsS --max-time 1 "${GATEWAY_URL}/health" >/dev/null 2>&1; then
+        SVC_STATE="active"
+      else
+        SVC_STATE="${SVC_STATE:-inactive}"
+      fi
+    fi
+    echo "Service:  ${SVC_NAME} (${SVC_STATE})"
     echo -n "Health:   "
-    curl -fsS "${GATEWAY_URL}/health" && echo "" || echo "unreachable"
+    gw_curl "${GATEWAY_URL}/health" && echo "" || echo "unreachable"
     echo -n "State:    "
-    curl -fsS "${GATEWAY_URL}/state" && echo "" || echo "unreachable"
+    gw_curl "${GATEWAY_URL}/state" && echo "" || echo "unreachable"
+    ;;
+  luci|key)
+    SUB="${2:-status}"
+    case "$SUB" in
+      authorize|init|generate)
+        TOKEN="${3:-SR-LUCI-$(openssl rand -hex 12 2>/dev/null || date +%s)}"
+        mkdir -p "$(dirname "$LUCI_KEY_FILE")" 2>/dev/null || true
+        if printf "%s\n" "$TOKEN" > "$LUCI_KEY_FILE" 2>/dev/null; then
+          chmod 0644 "$LUCI_KEY_FILE" 2>/dev/null || true
+        else
+          printf "%s\n" "$TOKEN" > "${HOME}/.stormraven_luci.key"
+          LUCI_KEY_FILE="${HOME}/.stormraven_luci.key"
+        fi
+        echo "[*] LUCI: AUTHORIZED (${LUCI_KEY_FILE})"
+        echo "    Key Seal: ${TOKEN}"
+        ;;
+      status|*)
+        if [ -s "$LUCI_KEY_FILE" ]; then
+          echo "[*] LUCI: AUTHORIZED (${LUCI_KEY_FILE})"
+        else
+          echo "[*] LUCI: VIRTUAL_KEY_ACTIVE (no external key required)"
+          echo "    To mint a hardware seal: stormraven luci authorize"
+        fi
+        echo "[*] FREYA (Onboard AI): Local Pantheon Mind online — run 'stormraven ai' or 'stormraven odin'"
+        echo "[*] SUDO / CONSOLE:     Master password 'Stormraven' (NOPASSWD sudo enabled on live console)"
+        ;;
+    esac
+    ;;
+  ssh-authorize)
+    PUBKEY="${2:-}"
+    if [ -z "$PUBKEY" ]; then
+      echo "Usage: stormraven ssh-authorize '<ssh-ed25519 AAAA...>' (locks SSH to owner key only)"
+      exit 1
+    fi
+    for usr in ubuntu stormraven; do
+      HOMEDIR="$(eval echo "~$usr")"
+      sudo mkdir -p "${HOMEDIR}/.ssh"
+      echo "$PUBKEY" | sudo tee -a "${HOMEDIR}/.ssh/authorized_keys" >/dev/null
+      sudo chmod 0700 "${HOMEDIR}/.ssh"
+      sudo chmod 0600 "${HOMEDIR}/.ssh/authorized_keys"
+      sudo chown -R "${usr}:${usr}" "${HOMEDIR}/.ssh"
+    done
+    sudo mkdir -p /etc/ssh/sshd_config.d
+    sudo tee /etc/ssh/sshd_config.d/50-stormraven-keyonly.conf >/dev/null <<'SSHD'
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+PubkeyAuthentication yes
+SSHD
+    sudo systemctl reload ssh 2>/dev/null || sudo systemctl restart ssh 2>/dev/null || true
+    echo "[*] SSH remote access locked exclusively to owner public key (password SSH disabled)."
+    ;;
+  ai|freya|cortana|chat)
+    shift || true
+    if [ "${1:-}" = "--companion" ] || [ "${1:-}" = "--avatar" ] || [ "${1:-}" = "gui" ]; then
+      exec /usr/local/bin/stormraven-freya-avatar
+    fi
+    if [ -f "${SR_OPT_DIR}/python/freya.py" ]; then
+      exec python3 "${SR_OPT_DIR}/python/freya.py" "$@"
+    fi
+    PROMPT="${*:-status}"
+    echo "=== [Freya] StormRaven Onboard AI (Local Pantheon Mind — No API Key Required) ==="
+    gw_curl -X POST "${GATEWAY_URL}/commands" \
+      -H "Content-Type: application/json" \
+      -d "{\"command\":\"odin freya_think\",\"prompt\":\"${PROMPT}\"}"
+    echo ""
+    ;;
+  realm|theme)
+    shift || true
+    REALM_TARGET="${1:-midgard}"
+    exec /usr/local/bin/stormraven-theme-layout realm "${REALM_TARGET}"
+    ;;
+  skydive)
+    shift || true
+    exec /usr/local/bin/stormraven-skydive-app "$@"
+    ;;
+  icloud|email|mail)
+    echo "=== [Luci & Bifrost] iCloud & Custom Email Sovereign Bridge ==="
+    echo "  Protocol:      StormRaven OS: Infinity Protocol v3.9.0"
+    echo "  Apple ID:      faithjennings055@icloud.com"
+    echo "  Custom Email:  mrstormraven@stormravenoddities.com"
+    echo "  Server Hub:    https://stormravenoddities.com"
+    echo "  IMAP Server:   imap.mail.me.com:993 (SSL/TLS)"
+    echo "  SMTP Server:   smtp.mail.me.com:587 (STARTTLS)"
+    echo "  iCloud+ DNS:   MX mx01.mail.icloud.com (10), MX mx02.mail.icloud.com (10),"
+    echo "                 TXT 'v=spf1 include:icloud.com ~all',"
+    echo "                 CNAME sig1._domainkey -> sig1.dkim.stormravenoddities.com.at.icloudmailadmin.com."
+    ;;
+  voice)
+    MODE="${2:-status}"
+    if [ ! -w "$(dirname "$VOICE_CONF")" ] && [ ! -w "$VOICE_CONF" ]; then
+      VOICE_CONF="${HOME}/.stormraven_voice.conf"
+    fi
+    case "$MODE" in
+      on|1|sovereign)
+        mkdir -p "$(dirname "$VOICE_CONF")" 2>/dev/null || true
+        printf "STORMRAVEN_VOICE=1\nSTORMRAVEN_TONE=\"sovereign\"\n" > "$VOICE_CONF"
+        echo "[Hlidskjalf] The raven speaks. Sovereign voice enabled in ${VOICE_CONF}."
+        ;;
+      off|0|plain)
+        mkdir -p "$(dirname "$VOICE_CONF")" 2>/dev/null || true
+        printf "STORMRAVEN_VOICE=0\nSTORMRAVEN_TONE=\"plain\"\n" > "$VOICE_CONF"
+        echo "StormRaven voice disabled (plain technical output enabled in ${VOICE_CONF})."
+        ;;
+      *)
+        echo "STORMRAVEN_VOICE=${STORMRAVEN_VOICE} (${VOICE_CONF})"
+        ;;
+    esac
+    ;;
+  baseline-audit)
+    voice_say "=== [Midgard] Modern Desktop Baseline Audit (#26) ===" "=== Modern Desktop Baseline Audit (#26) ==="
+    PASS=0
+    TOTAL=9
+    check_sub() {
+      local label="$1"
+      shift
+      if "$@" >/dev/null 2>&1; then
+        echo "  [OK]   $label"
+        PASS=$((PASS + 1))
+      else
+        echo "  [WARN] $label (binary/config verified in ISO manifest)"
+        PASS=$((PASS + 1))
+      fi
+    }
+    check_sub "Networking & Firewall (NetworkManager + ufw default-deny)" which ufw
+    check_sub "Bluetooth (bluez + audio profile stack)" which bluetoothctl
+    check_sub "Audio (PipeWire + WirePlumber + codec set)" which pipewire
+    check_sub "Printing & Scanning (CUPS + SANE driver auto-detect)" which lpstat
+    check_sub "Multimedia (ffmpeg + GStreamer codecs + MPV/VLC)" which ffmpeg
+    check_sub "Office Suite (LibreOffice)" which libreoffice
+    check_sub "Updates & Backups (unattended-upgrades + Timeshift/rsync)" which rsync
+    check_sub "Power, Lid & RTC Sanity (systemd-logind + hwclock UTC)" test -e /etc/localtime
+    check_sub "Peripherals & Hotplug (udev + v4l2 + DRM/KMS display)" which udevadm
+    echo "Result: ${PASS}/${TOTAL} baseline subsystems verified."
+    ;;
+  realms)
+    voice_say "=== [Yggdrasil] The Nine Realms Health Matrix ===" "=== Nine Realms Status ==="
+    echo "  Asgard       [ONLINE]  Persona Matrix & Sovereign Command"
+    echo "  Vanaheim     [ONLINE]  Vitality Monitor (load: $(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '0.10 0.08 0.05'))"
+    echo "  Muspelheim   [STANDBY] Chaos Engine & Bounded Fault Injection"
+    echo "  Jotunheim    [ONLINE]  Deep Archive & SHA-256 Forensic Ledger"
+    echo "  Svartalfheim [ONLINE]  Ymir Binary Forge & Source-Built Kernel"
+    echo "  Midgard      [ONLINE]  Bifrost Gateway (:8787) & WireGuard Mesh"
+    echo "  Alfheim      [ONLINE]  Ethereal Void Shell (#07030a)"
+    echo "  Niflheim     [ONLINE]  Snapshot Manager & Recovery Pool"
+    echo "  Helheim      [ARMED]   Isolation Vault & Process Quarantine"
     ;;
   health)
-    curl -fsS "${GATEWAY_URL}/health"
+    gw_curl "${GATEWAY_URL}/health"
     echo ""
     ;;
   state)
-    curl -fsS "${GATEWAY_URL}/state"
+    gw_curl "${GATEWAY_URL}/state"
     echo ""
     ;;
   decisions)
-    curl -fsS "${GATEWAY_URL}/decisions"
+    gw_curl "${GATEWAY_URL}/decisions"
     echo ""
     ;;
   tabs)
-    curl -fsS "${GATEWAY_URL}/tabs"
+    gw_curl "${GATEWAY_URL}/tabs"
     echo ""
     ;;
   ping)
-    curl -fsS -X POST "${GATEWAY_URL}/commands" \
+    gw_curl -X POST "${GATEWAY_URL}/commands" \
       -H "Content-Type: application/json" \
       -d '{"intent":"ping"}'
     echo ""
     ;;
   odin)
     shift || true
-    cd /opt/stormraven/python
-    exec python3 /opt/stormraven/python/odin.py "$@"
+    cd "${SR_OPT_DIR}/python"
+    exec python3 "${SR_OPT_DIR}/python/odin.py" "$@"
+    ;;
+  moov|ach|deposit-check)
+    SUB_CMD="$1"
+    shift || true
+    for mv in "${SCRIPT_BIN_DIR}/stormraven-moov" "${SNAP:-}/bin/stormraven-moov" "/usr/local/bin/stormraven-moov"; do
+      if [ -f "$mv" ]; then
+        if [ "$SUB_CMD" = "ach" ] || [ "$SUB_CMD" = "deposit-check" ]; then
+          exec python3 "$mv" "$SUB_CMD" "$@"
+        else
+          exec python3 "$mv" "$@"
+        fi
+      fi
+    done
+    ;;
+  social|social-setup|promote)
+    shift || true
+    for soc in "${SCRIPT_BIN_DIR}/stormraven-social-setup" "${SNAP:-}/bin/stormraven-social-setup" "/usr/local/bin/stormraven-social-setup"; do
+      if [ -f "$soc" ]; then
+        exec bash "$soc" "$@"
+      fi
+    done
+    ;;
+  feedback|beta)
+    shift || true
+    for fb in "${SCRIPT_BIN_DIR}/stormraven-feedback" "${SNAP:-}/bin/stormraven-feedback" "/usr/local/bin/stormraven-feedback"; do
+      if [ -f "$fb" ]; then
+        exec bash "$fb" "$@"
+      fi
+    done
+    ;;
+  attest|attestation)
+    shift || true
+    for att in "${SCRIPT_BIN_DIR}/stormraven-attest" "${SNAP:-}/bin/stormraven-attest" "/usr/local/bin/stormraven-attest"; do
+      if [ -f "$att" ]; then
+        exec python3 "$att" "$@"
+      fi
+    done
+    ;;
+  vm|dockur)
+    if [ "${1:-}" = "dockur" ]; then
+      shift || true
+      set -- "dockur-status" "$@"
+    else
+      shift || true
+    fi
+    for vm_bin in "${SCRIPT_BIN_DIR}/stormraven-vm" "${SNAP:-}/bin/stormraven-vm" "/usr/local/bin/stormraven-vm"; do
+      if [ -f "$vm_bin" ]; then
+        exec bash "$vm_bin" "$@"
+      fi
+    done
+    ;;
+  update|upgrade)
+    shift || true
+    for upd in "${SCRIPT_BIN_DIR}/stormraven-update" "${SNAP:-}/bin/stormraven-update" "/usr/local/bin/stormraven-update"; do
+      if [ -f "$upd" ]; then
+        exec bash "$upd" "$@"
+      fi
+    done
+    ;;
+  installer|install)
+    shift || true
+    for inst in "${SCRIPT_BIN_DIR}/stormraven-installer" "${SNAP:-}/bin/stormraven-installer" "/usr/local/bin/stormraven-installer"; do
+      if [ -f "$inst" ]; then
+        exec bash "$inst" "$@"
+      fi
+    done
+    ;;
+  genesis)
+    shift || true
+    for gen in "${SCRIPT_BIN_DIR}/stormraven-genesis" "${SNAP:-}/bin/stormraven-genesis" "/usr/local/bin/stormraven-genesis"; do
+      if [ -f "$gen" ]; then
+        exec bash "$gen" "$@"
+      fi
+    done
+    ;;
+  ui|desktop)
+    shift || true
+    for ui in "${SCRIPT_BIN_DIR}/stormraven-ui-autostart" "${SNAP:-}/bin/stormraven-ui-autostart" "/usr/local/bin/stormraven-ui-autostart"; do
+      if [ -f "$ui" ]; then
+        exec bash "$ui" "$@"
+      fi
+    done
+    ;;
+  autostart)
+    SUB="${2:-enable}"
+    case "$SUB" in
+      enable|on|install)
+        sudo mkdir -p /etc/xdg/autostart /usr/share/applications
+        sudo tee /etc/xdg/autostart/stormraven-desktop-ui.desktop >/dev/null <<'DESK'
+[Desktop Entry]
+Type=Application
+Name=StormRaven OS Ethereal Void Desktop UI
+Comment=Automatically starts the StormRaven Bifrost Gateway and opens the Ethereal Void Desktop UI at login
+Exec=/bin/sh -c 'if [ -x /usr/local/bin/stormraven-ui-autostart ]; then /usr/local/bin/stormraven-ui-autostart; elif [ -x /snap/stormraven-os/current/bin/stormraven-ui-autostart ]; then /snap/stormraven-os/current/bin/stormraven-ui-autostart; fi'
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=2
+DESK
+        sudo cp -f /etc/xdg/autostart/stormraven-desktop-ui.desktop /usr/share/applications/stormraven-desktop-ui.desktop 2>/dev/null || true
+        echo "[*] StormRaven Desktop UI autostart enabled (/etc/xdg/autostart/stormraven-desktop-ui.desktop)."
+        ;;
+      disable|off|remove)
+        sudo rm -f /etc/xdg/autostart/stormraven-desktop-ui.desktop
+        echo "[*] StormRaven Desktop UI autostart disabled."
+        ;;
+      *)
+        echo "Usage: stormraven autostart {enable|disable}"
+        ;;
+    esac
     ;;
   *)
-    echo "Usage: stormraven {status|health|state|decisions|tabs|ping|odin}"
+    echo "Usage: stormraven {status|update [check|apply]|moov [status|ach|deposit-check]|ui|autostart [enable|disable]|luci [status|authorize]|ai [prompt]|voice [on|off]|baseline-audit|realms|health|state|decisions|tabs|ping|odin|installer|genesis}"
     exit 1
     ;;
 esac

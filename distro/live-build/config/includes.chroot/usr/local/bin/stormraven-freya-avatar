@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""
+StormRaven OS — Freya Animated Holographic Desktop Companion & Whole-System Orchestrator (#102)
+Renders a live 30fps Cairo-animated Cortana-style Cyber-Valkyrie AI body on the native Linux desktop,
+backed by Freya's local SovereignMemoryCore and the 9 Realms Whole-System Theme Engine.
+"""
+import math
+import os
+import subprocess
+import sys
+import time
+
+os.environ.setdefault("GDK_BACKEND", "x11")
+os.environ.setdefault("NO_AT_BRIDGE", "1")
+
+sys.path.insert(0, "/opt/stormraven/python")
+try:
+    from freya import Freya, REALM_LORE
+except Exception:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../opt/stormraven/python"))
+    from freya import Freya, REALM_LORE
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+
+def hex_to_rgb(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+
+
+class FreyaDesktopCompanion(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Freya — Sovereign AI Companion & 9 Realms Orchestrator")
+        self.set_default_size(520, 660)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.freya = Freya()
+        self.tick = 0.0
+        self.speaking_until = 0.0
+        self.active_realm = self.freya.memory.state.get("active_realm", "midgard")
+
+        self.css_provider = Gtk.CssProvider()
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            self.css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        root.set_margin_top(12)
+        root.set_margin_bottom(12)
+        root.set_margin_start(12)
+        root.set_margin_end(12)
+        self.add(root)
+
+        # Header
+        self.lbl_title = Gtk.Label()
+        self.lbl_title.set_xalign(0)
+        root.pack_start(self.lbl_title, False, False, 0)
+
+        # Animated Cairo Holographic Valkyrie Body Canvas
+        self.canvas = Gtk.DrawingArea()
+        self.canvas.set_size_request(480, 250)
+        self.canvas.connect("draw", self.on_draw_hologram)
+        root.pack_start(self.canvas, False, False, 0)
+
+        # Whole-System 9 Realms Theme Bar
+        realm_lbl = Gtk.Label(label="Whole-System 9 Realms Lore UI Switcher (GTK + Openbox + Dock + Terminal + HUD):")
+        realm_lbl.set_xalign(0)
+        root.pack_start(realm_lbl, False, False, 0)
+
+        realm_grid = Gtk.Grid()
+        realm_grid.set_column_spacing(6)
+        realm_grid.set_row_spacing(6)
+        realm_grid.set_column_homogeneous(True)
+        for idx, (r_id, r_meta) in enumerate(REALM_LORE.items()):
+            btn = Gtk.Button(label=r_meta["label"])
+            btn.connect("clicked", self.on_select_realm, r_id)
+            realm_grid.attach(btn, idx % 3, idx // 3, 1, 1)
+        root.pack_start(realm_grid, False, False, 0)
+
+        # Conversation Log
+        self.txt_view = Gtk.TextView()
+        self.txt_view.set_editable(False)
+        self.txt_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.buf = self.txt_view.get_buffer()
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_min_content_height(150)
+        scroll.add(self.txt_view)
+        root.pack_start(scroll, True, True, 0)
+
+        # Input Row
+        inp_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.entry = Gtk.Entry()
+        self.entry.set_placeholder_text("Speak to Freya (e.g. 'switch to muspelheim', 'remember I prefer Niflheim', 'war room')...")
+        self.entry.connect("activate", self.on_send)
+        inp_row.pack_start(self.entry, True, True, 0)
+        send_btn = Gtk.Button(label="Send ❯")
+        send_btn.connect("clicked", self.on_send)
+        inp_row.pack_end(send_btn, False, False, 0)
+        root.pack_start(inp_row, False, False, 0)
+
+        self.apply_window_theme()
+        self.append_log("Freya", "I am listening, Doctor. My holographic body and Sovereign Memory Core are online.")
+        GLib.timeout_add(33, self.on_animate)
+
+    def apply_window_theme(self):
+        meta = REALM_LORE.get(self.active_realm, REALM_LORE["midgard"])
+        ms = self.freya.memory.summary()
+        self.lbl_title.set_markup(
+            f"<b>✦ FREYA SOVEREIGN AI</b> · <span>{ms['synapticRank']}</span> · "
+            f"Realm: <b>{meta['label'].upper()}</b> (Adapt: {ms['adaptationScore']})"
+        )
+        css = f"""
+        window {{ background-color: {meta['bg']}; color: #e2e8f0; font-family: Monospace; }}
+        entry, textview, textview text {{ background-color: #07040d; color: {meta['primary']}; border: 1px solid {meta['primary']}; }}
+        button {{ background-image: none; background-color: #110b1d; color: #f8fafc; border: 1px solid {meta['primary']}; border-radius: 6px; padding: 5px; }}
+        button:hover {{ background-color: #1d1430; color: {meta['primary']}; }}
+        """.encode("utf-8")
+        self.css_provider.load_from_data(css)
+
+    def append_log(self, speaker, text):
+        end = self.buf.get_end_iter()
+        self.buf.insert(end, f"[{speaker}] {text}\n\n")
+
+    def on_select_realm(self, _btn, realm_id):
+        self.active_realm = realm_id
+        self.speaking_until = time.time() + 2.5
+        res = self.freya.converse(f"switch to {realm_id}", execute_actions=True)
+        self.apply_window_theme()
+        self.append_log("Freya", res["reply"])
+
+    def on_send(self, *_args):
+        text = self.entry.get_text().strip()
+        if not text:
+            return
+        self.entry.set_text("")
+        self.append_log("Doctor", text)
+        self.speaking_until = time.time() + 2.5
+        res = self.freya.converse(text, execute_actions=True)
+        if res.get("realmTheme"):
+            self.active_realm = res["realmTheme"]
+            self.apply_window_theme()
+        self.append_log("Freya", res["reply"])
+
+    def on_animate(self):
+        self.tick += 0.08
+        self.canvas.queue_draw()
+        return True
+
+    def on_draw_hologram(self, widget, cr):
+        w = widget.get_allocated_width()
+        h = widget.get_allocated_height()
+        cx, cy = w / 2.0, h / 2.0 - 8.0
+        meta = REALM_LORE.get(self.active_realm, REALM_LORE["midgard"])
+        pr, pg, pb = hex_to_rgb(meta["primary"])
+        ar, ag, ab = hex_to_rgb(meta["accent"])
+        br, bg_c, bb = hex_to_rgb(meta["bg"])
+
+        # Background
+        cr.set_source_rgb(br, bg_c, bb)
+        cr.paint()
+
+        speaking = time.time() < self.speaking_until
+        pulse = 1.0 + (0.18 if speaking else 0.07) * math.sin(self.tick * (3.5 if speaking else 1.4))
+
+        # Outer rotating runic halo
+        cr.save()
+        cr.translate(cx, cy)
+        cr.rotate(self.tick * 0.25)
+        cr.set_source_rgba(pr, pg, pb, 0.35)
+        cr.set_line_width(1.5)
+        cr.arc(0, 0, 88 * pulse, 0, 2 * math.pi)
+        cr.stroke()
+        cr.restore()
+
+        # Holographic Valkyrie Wings
+        wing_span = 115 + 10 * math.sin(self.tick * 1.8)
+        for sign in (-1, 1):
+            cr.set_source_rgba(ar, ag, ab, 0.28)
+            cr.move_to(cx + sign * 18, cy - 10)
+            cr.line_to(cx + sign * wing_span, cy - 55)
+            cr.line_to(cx + sign * (wing_span - 18), cy + 10)
+            cr.line_to(cx + sign * 24, cy + 25)
+            cr.close_path()
+            cr.fill_preserve()
+            cr.set_source_rgba(pr, pg, pb, 0.75)
+            cr.set_line_width(1.5)
+            cr.stroke()
+
+        # Cyber-Valkyrie Head, Crown & Torso Silhouette
+        cr.set_source_rgba(pr, pg, pb, 0.85)
+        cr.arc(cx, cy - 36, 18 * pulse, 0, 2 * math.pi)
+        cr.fill()
+
+        # Glowing Neural Core & Torso
+        cr.set_source_rgba(pr, pg, pb, 0.45)
+        cr.move_to(cx - 26, cy - 12)
+        cr.line_to(cx + 26, cy - 12)
+        cr.line_to(cx + 16, cy + 54)
+        cr.line_to(cx - 16, cy + 54)
+        cr.close_path()
+        cr.fill_preserve()
+        cr.set_source_rgba(ar, ag, ab, 0.9)
+        cr.stroke()
+
+        # Heart Chakra Core Pulse
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.95)
+        cr.arc(cx, cy + 12, 8 * pulse, 0, 2 * math.pi)
+        cr.fill()
+
+        # Voice Waveform Bars at bottom
+        num_bars = 24
+        bar_w = 6
+        start_x = cx - (num_bars * (bar_w + 3)) / 2
+        for i in range(num_bars):
+            amp = (18 if speaking else 5) * abs(math.sin(self.tick * 3.0 + i * 0.45)) + 3
+            cr.set_source_rgba(pr, pg, pb, 0.85)
+            cr.rectangle(start_x + i * (bar_w + 3), h - 22 - amp, bar_w, amp)
+            cr.fill()
+
+
+if __name__ == "__main__":
+    win = FreyaDesktopCompanion()
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    Gtk.main()

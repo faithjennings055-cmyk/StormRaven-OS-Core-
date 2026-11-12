@@ -1,0 +1,29 @@
+name: stormraven-os
+base: core24
+version: '3.9.0'
+summary: StormRaven OS Infinity Protocol v3.9.0 CLI, Pantheon & Genesis ISO Builder
+description: |
+  StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS / Linux 7.0 HWE).
+  Provides the StormRaven CLI, Odin Python Pantheon, Try/Install Disk Wizard,
+  Ubuntu Boot Disk Rescue Suite, Desktop UI Login Autostart, and Genesis ISO Builder.
+grade: stable
+confinement: classic
+
+apps:
+  stormraven:
+    command: bin/stormraven
+  ui:
+    command: bin/stormraven-ui-autostart
+  installer:
+    command: bin/stormraven-installer
+  genesis:
+    command: bin/stormraven-genesis
+  gateway:
+    command: bin/stormraven-local-gateway
+    daemon: simple
+    restart-condition: always
+
+parts:
+  stormraven:
+    plugin: dump
+    source: distro/live-build/config/includes.chroot

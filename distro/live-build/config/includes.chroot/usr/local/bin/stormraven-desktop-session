@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Full Ethereal Void Graphical Desktop Environment (v3.9.3)
+# =============================================================================
+set +e
+
+WALLPAPER="/usr/share/backgrounds/stormraven/ethereal-void-desktop.png"
+GATEWAY_PORT="${STORMRAVEN_GATEWAY_PORT:-8787}"
+UI_PORT="${STORMRAVEN_UI_PORT:-3887}"
+LIVE_USER="ubuntu"
+LIVE_UID="$(id -u "${LIVE_USER}" 2>/dev/null || echo 1001)"
+
+# 1. Start StormRaven Local Gateway + Webapp Server on :8787 and :3887
+if ! ss -tln 2>/dev/null | grep -q ":${GATEWAY_PORT} "; then
+  python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
+fi
+if ! ss -tln 2>/dev/null | grep -q ":${UI_PORT} "; then
+  STORMRAVEN_GATEWAY_PORT="${UI_PORT}" STORMRAVEN_UI_PORT=3000 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
+fi
+
+# 2. If invoked without DISPLAY, start Xorg as root (-ac)
+if [ -z "${DISPLAY:-}" ]; then
+  if [ "$(id -u)" -ne 0 ]; then
+    exec sudo -n -E /usr/local/bin/stormraven-desktop-session "$@"
+  fi
+  plymouth quit 2>/dev/null || true
+
+  if ! pgrep -x Xorg >/dev/null 2>&1; then
+    rm -f /tmp/.X0-lock /tmp/.X11-unix/X0 2>/dev/null || true
+    /usr/lib/xorg/Xorg :0 vt1 -keeptty -ac -noreset >/tmp/stormraven-xorg.log 2>&1 &
+    XORG_PID=$!
+    for _ in $(seq 1 35); do
+      if [ -S /tmp/.X11-unix/X0 ]; then
+        break
+      fi
+      if ! kill -0 "${XORG_PID}" 2>/dev/null; then
+        break
+      fi
+      sleep 0.25
+    done
+  fi
+
+  if [ ! -S /tmp/.X11-unix/X0 ]; then
+    echo "[StormRaven OS v3.9.3] Xorg did not start on :0 (see /tmp/stormraven-xorg.log)."
+    exit 1
+  fi
+
+  export DISPLAY=:0
+  mkdir -p "/run/user/${LIVE_UID}" /dev/shm /tmp
+  chmod 1777 /dev/shm /tmp /var/tmp 2>/dev/null || true
+  chown -R "${LIVE_USER}:${LIVE_USER}" "/run/user/${LIVE_UID}" "/home/${LIVE_USER}" 2>/dev/null || true
+  chmod 0700 "/run/user/${LIVE_UID}" 2>/dev/null || true
+
+  exec su - "${LIVE_USER}" -c "DISPLAY=:0 XDG_RUNTIME_DIR=/run/user/${LIVE_UID} /usr/local/bin/stormraven-desktop-session --inside-x11"
+fi
+
+# 3. Inside X11 session (running as `ubuntu` with DISPLAY=:0):
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+mkdir -p "${XDG_RUNTIME_DIR}" 2>/dev/null || true
+chmod 0700 "${XDG_RUNTIME_DIR}" 2>/dev/null || true
+
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && command -v dbus-launch >/dev/null 2>&1; then
+  eval "$(dbus-launch --sh-syntax --exit-with-session)" 2>/dev/null || true
+fi
+
+xset s off -dpms s noblank 2>/dev/null || true
+xsetroot -solid "#050d1a" 2>/dev/null || true
+if [ -x /usr/local/bin/stormraven-display-hp ]; then
+  /usr/local/bin/stormraven-display-hp >/tmp/stormraven-display-hp.log 2>&1 || true
+fi
+if [ -x /usr/local/bin/stormraven-cloud-bridge ] && ! pgrep -f stormraven-cloud-bridge >/dev/null 2>&1; then
+  nohup /usr/local/bin/stormraven-cloud-bridge >/tmp/stormraven-cloud-bridge.log 2>&1 &
+fi
+if [ -f "${WALLPAPER}" ] && command -v feh >/dev/null 2>&1; then
+  feh --bg-fill "${WALLPAPER}" 2>/dev/null || true
+fi
+
+if command -v openbox >/dev/null 2>&1; then
+  openbox &
+  WM_PID=$!
+  sleep 0.6
+fi
+
+if command -v pcmanfm >/dev/null 2>&1; then
+  pcmanfm --desktop --profile default >/tmp/stormraven-pcmanfm.log 2>&1 &
+  sleep 0.5
+fi
+
+if command -v tint2 >/dev/null 2>&1; then
+  tint2 -c /etc/xdg/tint2/tint2rc >/tmp/stormraven-tint2.log 2>&1 &
+  sleep 0.4
+fi
+
+if command -v lxterminal >/dev/null 2>&1; then
+  lxterminal --geometry=80x22 --title="StormRaven OS — Odin Pantheon & Void Shell" \
+    -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
+elif command -v xterm >/dev/null 2>&1; then
+  xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 10 -geometry 80x22+760+420 \
+    -T "StormRaven OS — Odin Pantheon & Void Shell" \
+    -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'" &
+fi
+
+/usr/local/bin/stormraven-open-ui &
+
+if [ -n "${WM_PID:-}" ]; then
+  wait "${WM_PID}"
+else
+  wait
+fi

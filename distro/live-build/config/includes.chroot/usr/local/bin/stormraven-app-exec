@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set +e
+APP_ID="${1:-desktop}"
+export DISPLAY="${DISPLAY:-:0}"
+
+# Ensure local gateway is up on 3887 & 8787
+if ! ss -tln 2>/dev/null | grep -q ":8787 "; then
+  python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-gateway.log 2>&1 &
+fi
+if ! ss -tln 2>/dev/null | grep -q ":3887 "; then
+  STORMRAVEN_GATEWAY_PORT=3887 STORMRAVEN_UI_PORT=3000 python3 /usr/local/bin/stormraven-local-gateway >/tmp/stormraven-ui-gateway.log 2>&1 &
+fi
+
+run_term() {
+  local title="$1"
+  shift
+  if command -v lxterminal >/dev/null 2>&1; then
+    exec lxterminal --geometry=95x28 --title="${title}" -e "/bin/bash -c \"$*\""
+  else
+    exec xterm -bg "#07030a" -fg "#06b6d4" -fa "Monospace" -fs 11 -geometry 95x28 -T "${title}" -e "/bin/bash -c \"$*\""
+  fi
+}
+
+case "${APP_ID}" in
+  systemupdate|update|updates)
+    run_term "StormRaven OS — Check & Install System Updates" "sudo /usr/local/bin/stormraven-update apply; read -p 'Press Enter to close...'; exec /bin/bash"
+    ;;
+  layout-toggle|switch-layout|win11-mode)
+    /usr/local/bin/stormraven-theme-layout toggle
+    exit 0
+    ;;
+  installos|startupdisk|iso)
+    run_term "StormRaven OS — Try / Install & Boot Rescue Wizard" "sudo /usr/local/bin/stormraven-installer; exec /bin/bash"
+    ;;
+  gparted)
+    if command -v gparted >/dev/null 2>&1; then exec sudo -E gparted; fi
+    run_term "StormRaven Disks & Partitions" "lsblk -f; echo ''; sudo fdisk -l; exec /bin/bash"
+    ;;
+  bootrepair|rescue)
+    run_term "StormRaven Boot Repair & Rescue Suite" "stormraven baseline-audit || true; lsblk -f; exec /bin/bash"
+    ;;
+  firmware|hp-w2558hc)
+    run_term "StormRaven HP w2558hc & 2011-2026 Firmware Manager" "/usr/local/bin/stormraven-display-hp; echo ''; inxi -Gxx || lspci -k | grep -EA3 'VGA|3D|Display'; echo ''; read -p 'Press Enter to keep shell open...'; exec /bin/bash"
+    ;;
+  browser)
+    if [ -x /usr/local/bin/google-chrome ]; then exec /usr/local/bin/google-chrome "http://127.0.0.1:3887/"; fi
+    if command -v google-chrome-stable >/dev/null 2>&1; then exec google-chrome-stable --no-sandbox "http://127.0.0.1:3887/"; fi
+    if command -v chromium >/dev/null 2>&1; then exec chromium --no-sandbox "http://127.0.0.1:3887/"; fi
+    if command -v firefox >/dev/null 2>&1; then exec firefox "http://127.0.0.1:3887/"; fi
+    exec /usr/local/bin/stormraven-open-ui
+    ;;
+  files|fafnir)
+    exec pcmanfm "${HOME:-/home/ubuntu}"
+    ;;
+  calc)
+    if command -v galculator >/dev/null 2>&1; then exec galculator; fi
+    if command -v gnome-calculator >/dev/null 2>&1; then exec gnome-calculator; fi
+    exec /usr/local/bin/stormraven-open-ui calc
+    ;;
+  calendar)
+    if command -v gnome-calendar >/dev/null 2>&1; then exec gnome-calendar; fi
+    run_term "StormRaven Calendar" "cal -y; exec /bin/bash"
+    ;;
+  clocks)
+    if command -v gnome-clocks >/dev/null 2>&1; then exec gnome-clocks; fi
+    run_term "StormRaven World Clocks" "timedatectl status || date; exec /bin/bash"
+    ;;
+  characters)
+    if command -v gnome-characters >/dev/null 2>&1; then exec gnome-characters; fi
+    exec /usr/local/bin/stormraven-open-ui characters
+    ;;
+  docviewer)
+    if command -v evince >/dev/null 2>&1; then exec evince; fi
+    exec /usr/local/bin/stormraven-open-ui docviewer
+    ;;
+  lowriter)
+    if command -v lowriter >/dev/null 2>&1; then exec lowriter; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --writer; fi
+    exec /usr/local/bin/stormraven-open-ui lowriter
+    ;;
+  localc)
+    if command -v localc >/dev/null 2>&1; then exec localc; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --calc; fi
+    exec /usr/local/bin/stormraven-open-ui localc
+    ;;
+  lodraw)
+    if command -v lodraw >/dev/null 2>&1; then exec lodraw; fi
+    if command -v gimp >/dev/null 2>&1; then exec gimp; fi
+    exec /usr/local/bin/stormraven-open-ui lodraw
+    ;;
+  loimpress)
+    if command -v loimpress >/dev/null 2>&1; then exec loimpress; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --impress; fi
+    exec /usr/local/bin/stormraven-open-ui loimpress
+    ;;
+  lomath)
+    if command -v lomath >/dev/null 2>&1; then exec lomath; fi
+    if command -v libreoffice >/dev/null 2>&1; then exec libreoffice --math; fi
+    exec /usr/local/bin/stormraven-open-ui lomath
+    ;;
+  video)
+    if command -v vlc >/dev/null 2>&1; then exec vlc; fi
+    if command -v mpv >/dev/null 2>&1; then exec mpv; fi
+    exec /usr/local/bin/stormraven-open-ui video
+    ;;
+  remmina)
+    if command -v remmina >/dev/null 2>&1; then exec remmina; fi
+    exec /usr/local/bin/stormraven-open-ui remmina
+    ;;
+  shotwell)
+    if command -v shotwell >/dev/null 2>&1; then exec shotwell; fi
+    exec feh /usr/share/backgrounds/stormraven
+    ;;
+  texteditor)
+    if command -v mousepad >/dev/null 2>&1; then exec mousepad; fi
+    if command -v gedit >/dev/null 2>&1; then exec gedit; fi
+    run_term "StormRaven Void Text Editor (nano)" "nano"
+    ;;
+  transmission)
+    if command -v transmission-gtk >/dev/null 2>&1; then exec transmission-gtk; fi
+    exec /usr/local/bin/stormraven-open-ui transmission
+    ;;
+  resources|system)
+    if command -v htop >/dev/null 2>&1; then
+      run_term "StormRaven System Resources (htop)" "htop"
+    fi
+    run_term "StormRaven System Telemetry" "stormraven status; exec /bin/bash"
+    ;;
+  security)
+    run_term "Heimdall & Luci Security Center" "stormraven status; echo ''; sudo ufw status verbose || true; exec /bin/bash"
+    ;;
+  sovereign|odin)
+    run_term "Sovereign AI — Odin & Freya Pantheon" "stormraven odin; exec /bin/bash"
+    ;;
+  virtmanager|boxes)
+    if command -v virt-manager >/dev/null 2>&1; then exec virt-manager; fi
+    run_term "StormRaven KVM / QEMU Hypervisor" "stormraven-vm status || true; exec /bin/bash"
+    ;;
+  settings)
+    if command -v lxappearance >/dev/null 2>&1; then exec lxappearance; fi
+    exec /usr/local/bin/stormraven-open-ui
+    ;;
+  camera)
+    if command -v cheese >/dev/null 2>&1; then exec cheese; fi
+    run_term "HP w2558hc Webcam & V4L2 Devices" "lsusb; echo ''; ls -la /dev/video* 2>/dev/null || echo 'Plug in HP w2558hc USB upstream cable to enable built-in 2MP webcam'; exec /bin/bash"
+    ;;
+  moov|ach|banking)
+    if [ -x /usr/local/bin/google-chrome ]; then exec /usr/local/bin/google-chrome "http://127.0.0.1:3887/moov"; fi
+    if command -v google-chrome-stable >/dev/null 2>&1; then exec google-chrome-stable --no-sandbox "http://127.0.0.1:3887/moov"; fi
+    if command -v chromium >/dev/null 2>&1; then exec chromium --no-sandbox "http://127.0.0.1:3887/moov"; fi
+    if command -v firefox >/dev/null 2>&1; then exec firefox "http://127.0.0.1:3887/moov"; fi
+    exec /usr/local/bin/stormraven-open-ui moov
+    ;;
+  software)
+    run_term "StormRaven Software Installer" "echo '=== StormRaven Software Center ==='; echo 'Type: install chrome | install vlc | install gimp | install libreoffice | install steam'; echo ''; exec /bin/bash"
+    ;;
+  *)
+    exec /usr/local/bin/stormraven-open-ui "${APP_ID}"
+    ;;
+esac

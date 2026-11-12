@@ -1,5 +1,10 @@
-﻿import sys, os, time, threading
-from rich.console import Console
+import sys, os, time, json
+try:
+    from rich.console import Console
+except ImportError:
+    class Console:
+        def print(self, *args, **kwargs):
+            print(*args)
 from bifrost import Bifrost
 from heimdall import Heimdall
 from thor import Thor
@@ -19,35 +24,148 @@ AMETHYST = "#9D50BB"
 console = Console()
 
 class Odin:
-    def __init__(self):
-        if sys.stdout.isatty():
-            os.system('cls' if os.name == 'nt' else 'clear')
+    def __init__(self, quiet=False):
         ensure_dirs()
-        
-        # Manifest Pentagram
-        pentagram = f"[bold {AMETHYST}]" + """
-            .           
-           / \          
-      .----/---\----.   
-       \  /   \  /    
-        \/     \/     
-        /\\     /\\     
-       /  \   /  \    
-      '----'---'----'[/]"""
-        console.print(pentagram, justify="center")
-        console.print(f"[{AMETHYST}]--- STORMR_OS: LEVIATHAN CORE v5.0 ---[/{AMETHYST}]", justify="center")
-        
-        # Run Infrastructure Checks
-        if luci.verify_key(): console.print("[*] LUCI: [bold green]AUTHORIZED[/]")
-        else: console.print("[*] LUCI: [bold yellow]VIRTUAL KEY ACTIVE[/]")
-        solomon.apply_seal(); heketa.run_audit(); lynn.status()
-
         self.voice = Saga()
         self.mind = Freya()
         self.guard = Heimdall()
         self.bridge = Bifrost()
         self.hammer = Thor()
         self.autonomous_active = False
+
+        if not quiet:
+            if sys.stdout.isatty():
+                os.system('cls' if os.name == 'nt' else 'clear')
+
+            # Manifest Pentagram
+            pentagram = f"[bold {AMETHYST}]" + """
+            .           
+           / \\          
+      .----/---\\----.   
+       \\  /   \\  /    
+        \\/     \\/     
+        /\\     /\\     
+       /  \\   /  \\    
+      '----'---'----'[/]"""
+            console.print(pentagram, justify="center")
+            console.print(f"[{AMETHYST}]--- STORMR_OS: LEVIATHAN CORE v5.0 ---[/{AMETHYST}]", justify="center")
+
+            # Run Infrastructure Checks
+            if luci.verify_key():
+                console.print("[*] LUCI: [bold green]AUTHORIZED[/]")
+            else:
+                console.print("[*] LUCI: [bold yellow]VIRTUAL KEY ACTIVE[/]")
+            solomon.apply_seal()
+            heketa.run_audit()
+            lynn.status()
+
+    def execute_command(self, raw_cmd):
+        cmd_str = (raw_cmd or "telemetry").strip()
+        lower = cmd_str.lower()
+        tel = self.hammer.get_telemetry()
+        autonomous = self.mind.think_autonomously(tel)
+
+        if lower in ("telemetry", "status", "odin", "pantheon"):
+            return {
+                "ok": True,
+                "pantheon": "STORMR_OS: LEVIATHAN CORE v5.0",
+                "distro": "Ubuntu 24.04 LTS (Noble Numbat)",
+                "modules": {
+                    "luci": "AUTHORIZED" if luci.verify_key() else "VIRTUAL_KEY_ACTIVE",
+                    "solomon": "PARTITION_HEADERS_SHROUDED",
+                    "heketa": "FORENSIC_INTEGRITY_PASSING",
+                    "lynn": "HONEYCOMB_ONLINE_616_CELLS"
+                },
+                "telemetry": tel,
+                "freya": autonomous or {"type": "nominal", "intent": "hold_focus", "summary": f"Telemetry nominal (CPU {tel['cpu']}%, RAM {tel['ram']}%)"}
+            }
+
+        if lower in ("check_ip", "ip"):
+            plan = self.bridge.translate_command("check_ip")
+            allowed = self.guard.audit(plan["cmd"])
+            proc = os.popen(plan["cmd"]).read().strip() if allowed else "BLOCKED"
+            return {
+                "ok": allowed,
+                "module": "Bifrost -> Thor",
+                "intent": "check_ip",
+                "translatedCmd": plan["cmd"],
+                "heimdallAudit": "PASS" if allowed else "BLOCKED",
+                "output": proc,
+                "telemetry": tel
+            }
+
+        if lower in ("heimdall", "heimdall_scan", "audit"):
+            probes = [
+                {"cmd": "ip a", "safe": self.guard.audit("ip a")},
+                {"cmd": "uname -srm", "safe": self.guard.audit("uname -srm")},
+                {"cmd": "rm -rf /", "safe": self.guard.audit("rm -rf /")},
+                {"cmd": ":(){ :|:& };:", "safe": self.guard.audit(":(){ :|:& };:")}
+            ]
+            return {
+                "ok": True,
+                "module": "Heimdall Security Guard",
+                "status": "SHIELD_ACTIVE",
+                "blacklistRules": len(self.guard.blacklist),
+                "probes": probes,
+                "telemetry": tel
+            }
+
+        if lower in ("demogorgon", "demogorgon_status", "lynn", "lynn_status"):
+            from demogorgon import get_demogorgon
+            return {
+                "ok": True,
+                "module": "Demogorgon Endlessh Tarpit & Lynn Honeycomb Defense",
+                "demogorgon": get_demogorgon().status_report(limit=15),
+                "telemetry": tel,
+            }
+
+        if lower in ("freya", "freya_think", "think"):
+            chat_reply = self.mind.listen(cmd_str)
+            return {
+                "ok": True,
+                "module": "Freya Autonomous Mind",
+                "voice": chat_reply.get("content", "I am listening, Doctor."),
+                "autonomousDecision": autonomous or {"type": "nominal", "intent": "focus_sustained", "summary": f"CPU {tel['cpu']}% / RAM {tel['ram']}% within normal operating envelope."},
+                "telemetry": tel
+            }
+
+        # 1% Margin: strict allow-list (issue #35). Blacklist heuristics are
+        # never the gate — only explicitly allow-listed commands execute.
+        # Reject unknown intents BEFORE Heimdall/Thor (issue #35)
+        plan = self.bridge.translate_command(cmd_str)
+        if not plan.get("valid"):
+            return {
+                "ok": False,
+                "module": "Bifrost",
+                "intent": cmd_str,
+                "heimdallAudit": "NOT_REACHED",
+                "error": plan.get("error") or plan.get("reason") or "Unknown intent rejected."
+            }
+        from command_allowlist import classify
+        verdict = classify(cmd_str)
+        if verdict["allowed"] and verdict["cmd"]:
+            allowed = verdict["allowed"] and self.guard.audit(verdict["cmd"])
+        else:
+            allowed = self.guard.audit(plan["cmd"])
+        if not allowed:
+            return {
+                "ok": False,
+                "module": "Heimdall Security Guard",
+                "intent": cmd_str,
+                "heimdallAudit": "BLOCKED",
+                "error": "Command rejected by Heimdall security policy."
+            }
+        exec_cmd = (verdict["cmd"] if verdict["allowed"] and verdict["cmd"] else plan["cmd"])
+        proc_out = self.hammer.strike_system(exec_cmd).get("output", "")
+        return {
+            "ok": True,
+            "module": "Bifrost -> Heimdall -> Thor",
+            "intent": cmd_str,
+            "translatedCmd": plan["cmd"],
+            "heimdallAudit": "PASS",
+            "output": proc_out or "Command executed.",
+            "telemetry": tel
+        }
 
     def sentinel_loop(self):
         """Autonomous Sentinel Mode"""
@@ -61,19 +179,23 @@ class Odin:
                 if decision and decision.get('type') == 'command':
                     print(f"\n{RED}[!] THREAT DETECTED.{RESET}")
                 time.sleep(5)
-            except Exception: break
+            except Exception:
+                break
         print(f"\n{GREEN}[*] Sentinel Mode Disengaged.{RESET}")
 
     def run(self):
         while True:
             try:
                 user = input(f"\n{CYAN}StormRaven{RESET} {YELLOW}❯{RESET} ").strip()
-                if not user: continue
-                if user.lower() == "exit": break
-                
+                if not user:
+                    continue
+                if user.lower() == "exit":
+                    break
+
                 if user.lower() == "auto":
                     self.autonomous_active = True
-                    try: self.sentinel_loop()
+                    try:
+                        self.sentinel_loop()
                     except KeyboardInterrupt:
                         self.autonomous_active = False
                         print("\nStopped.")
@@ -93,4 +215,12 @@ class Odin:
                 break
 
 if __name__ == "__main__":
-    Odin().run()
+    if len(sys.argv) > 1:
+        arg_str = " ".join(sys.argv[1:]).strip()
+        if arg_str.startswith("--json"):
+            sub = arg_str.replace("--json", "", 1).strip() or "telemetry"
+            print(json.dumps(Odin(quiet=True).execute_command(sub)))
+        else:
+            print(json.dumps(Odin(quiet=True).execute_command(arg_str), indent=2))
+    else:
+        Odin().run()

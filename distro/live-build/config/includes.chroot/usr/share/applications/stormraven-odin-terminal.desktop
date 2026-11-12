@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Odin Pantheon Terminal
+Comment=Launch StormRaven Odin Core & Void Shell
+Exec=lxterminal --title='StormRaven OS — Odin Pantheon & Void Shell' -e "/bin/bash -c 'cat /etc/motd; stormraven status || true; exec /bin/bash -i'"
+Icon=utilities-terminal
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=false

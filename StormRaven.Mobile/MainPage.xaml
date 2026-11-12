@@ -2,17 +2,69 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="StormRaven.Mobile.MainPage"
-             Title="StormRaven">
-    <VerticalStackLayout Padding="30,60" Spacing="12">
-        <Label Text="StormRaven Mobile"
-               FontSize="28"
-               FontAttributes="Bold"
-               HorizontalOptions="Center" />
-        <Label x:Name="StatusLabel"
-               Text="Kernel starting…"
-               FontSize="16"
-               HorizontalOptions="Center" />
-        <Button Text="Check kernel"
-                Clicked="OnCheckKernel" />
-    </VerticalStackLayout>
+             Title="StormRaven OS Mobile"
+             BackgroundColor="#0A0E1A">
+    <ScrollView>
+        <VerticalStackLayout Padding="20,44,20,28" Spacing="14">
+            <Label Text="✦ STORMRAVEN OS MOBILE"
+                   TextColor="#9D50BB"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="SubtitleLabel"
+                   Text="Ubuntu 24.04 LTS (Noble) · Portable Kernel + Bifrost Bridge"
+                   TextColor="#8B96B8"
+                   FontSize="13"
+                   HorizontalOptions="Center" />
+
+            <Frame BackgroundColor="#131A2E" BorderColor="#232C4D" CornerRadius="14" Padding="16">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="ON-DEVICE PORTABLE KERNEL" TextColor="#8B96B8" FontSize="11" FontAttributes="Bold" />
+                    <Label x:Name="StatusLabel"
+                           Text="Kernel active · ContextBus + DecisionEngine online"
+                           TextColor="#2ECC71"
+                           FontSize="15"
+                           FontAttributes="Bold" />
+                    <Label x:Name="TelemetryLabel"
+                           Text="Focus: focused · Activity: browser · SQLite: ready"
+                           TextColor="#E8ECF8"
+                           FontSize="13" />
+                    <Button Text="Evaluate On-Device Kernel"
+                            BackgroundColor="#9D50BB"
+                            TextColor="White"
+                            CornerRadius="10"
+                            Clicked="OnCheckKernel" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#131A2E" BorderColor="#232C4D" CornerRadius="14" Padding="16">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="REMOTE BIFROST GATEWAY (HTTPS / LAN)" TextColor="#8B96B8" FontSize="11" FontAttributes="Bold" />
+                    <Entry x:Name="GatewayUrlEntry"
+                           Text="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app"
+                           Placeholder="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app"
+                           TextColor="#E8ECF8"
+                           BackgroundColor="#070B16" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Button Text="Sync Bifrost Status"
+                                BackgroundColor="#6C5CE7"
+                                TextColor="White"
+                                CornerRadius="10"
+                                Clicked="OnSyncGateway" />
+                        <Button Text="Run Odin Telemetry"
+                                BackgroundColor="#1A2240"
+                                TextColor="#E8ECF8"
+                                CornerRadius="10"
+                                Clicked="OnRunOdinTelemetry" />
+                    </HorizontalStackLayout>
+                    <Label x:Name="GatewayOutputLabel"
+                           Text="Ready to sync with live StormRaven OS Ubuntu 24.04 gateway."
+                           TextColor="#8B96B8"
+                           FontFamily="Monospace"
+                           FontSize="12" />
+                </VerticalStackLayout>
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

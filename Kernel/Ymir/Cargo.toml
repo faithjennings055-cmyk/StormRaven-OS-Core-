@@ -1,0 +1,17 @@
+[package]
+name = "stormraven-infinity-protocol"
+version = "1.0.0"
+edition = "2021"
+authors = ["Leviathan"]
+description = "Ymir Primordial Core - Hardened Ring 0 Microkernel"
+
+[dependencies]
+# no_std core dependencies
+spin = "0.9" # For atomic spinlocks
+volatile = "0.4" # For memory-mapped I/O
+bare-metal = "0.5" # Low-level hardware access
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = "z" # Optimize for size to reduce forensic footprint

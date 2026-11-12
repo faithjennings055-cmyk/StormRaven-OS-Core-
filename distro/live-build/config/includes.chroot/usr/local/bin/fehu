@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+echo "=== [ᚠ FEHU — RunicSys Resource & Memory Optimizer] ==="
+sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+free -h
+df -h /

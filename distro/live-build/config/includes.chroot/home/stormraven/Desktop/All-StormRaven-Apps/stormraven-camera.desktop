@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=HP Webcam & Camera
+Comment=HP w2558hc Built-in 2MP Webcam & Video Capture
+Exec=/usr/local/bin/stormraven-app-exec camera
+Icon=camera-web
+Terminal=false
+Categories=AudioVideo;Video;
+StartupNotify=false

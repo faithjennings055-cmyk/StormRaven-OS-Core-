@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GParted Disks
+Comment=Partition and manage hard drives and USB sticks
+Exec=/usr/local/bin/stormraven-app-exec gparted
+Icon=drive-harddisk
+Terminal=false
+Categories=System;Filesystem;
+StartupNotify=false

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Infinity Protocol v3.9.0 — Desktop UI Autostart Launcher
+# =============================================================================
+# Ensures the local Bifrost Gateway + Webapp Server is running on :8787 and :3000,
+# then opens the Ethereal Void Desktop UI in the user's graphical session.
+# =============================================================================
+set +e
+
+GATEWAY_PORT="${STORMRAVEN_GATEWAY_PORT:-8787}"
+UI_PORT="${STORMRAVEN_UI_PORT:-3000}"
+SCRIPT_BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -n "${SNAP:-}" ] && [ -d "${SNAP}/opt/stormraven" ]; then
+  SR_OPT_DIR="${SNAP}/opt/stormraven"
+elif [ -d "/opt/stormraven" ]; then
+  SR_OPT_DIR="/opt/stormraven"
+elif [ -d "/snap/stormraven-os/current/opt/stormraven" ]; then
+  SR_OPT_DIR="/snap/stormraven-os/current/opt/stormraven"
+else
+  SR_OPT_DIR="/opt/stormraven"
+fi
+
+# 1. Ensure local gateway is listening on :8787 and :3000
+if [ -x /usr/local/bin/stormraven-theme-layout ]; then
+  /usr/local/bin/stormraven-theme-layout apply >/dev/null 2>&1 || true
+fi
+if ! curl -fsS --max-time 1 "http://127.0.0.1:${GATEWAY_PORT}/health" >/dev/null 2>&1; then
+  for gw in \
+    "${SCRIPT_BIN_DIR}/stormraven-local-gateway" \
+    "${SNAP:-}/bin/stormraven-local-gateway" \
+    "/usr/local/bin/stormraven-local-gateway" \
+    "/snap/stormraven-os/current/bin/stormraven-local-gateway"; do
+    if [ -n "$gw" ] && [ -f "$gw" ]; then
+      STORMRAVEN_WEBAPP_DIR="${SR_OPT_DIR}/webapp" \
+      STORMRAVEN_PYTHON_DIR="${SR_OPT_DIR}/python" \
+      nohup python3 "$gw" >/tmp/stormraven-gateway.log 2>&1 &
+      sleep 1
+      break
+    fi
+  done
+fi
+
+if [ "${1:-}" = "--gateway-only" ]; then
+  exit 0
+fi
+
+# 2. Wait up to 5 seconds for UI port :3000 to respond
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -fsS --max-time 1 "http://127.0.0.1:${UI_PORT}/health" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.5
+done
+
+# 3. Open the Ethereal Void Desktop UI in full-screen app mode (no browser address bar)
+if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+  URL="http://127.0.0.1:${UI_PORT}/"
+  for chrome_bin in google-chrome chromium chromium-browser brave-browser microsoft-edge; do
+    if command -v "$chrome_bin" >/dev/null 2>&1; then
+      nohup "$chrome_bin" --app="$URL" --start-fullscreen >/dev/null 2>&1 &
+      exit 0
+    fi
+  done
+  if command -v falkon >/dev/null 2>&1; then
+    nohup falkon --fullscreen "$URL" >/dev/null 2>&1 &
+    exit 0
+  fi
+  if command -v firefox >/dev/null 2>&1; then
+    nohup firefox --kiosk "$URL" >/dev/null 2>&1 &
+    exit 0
+  fi
+  if command -v xdg-open >/dev/null 2>&1; then
+    nohup xdg-open "$URL" >/dev/null 2>&1 &
+    exit 0
+  fi
+fi
+exit 0

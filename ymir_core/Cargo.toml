@@ -1,0 +1,10 @@
+[package]
+name = "ymir-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Add necessary no_std crates for microkernel development
+# e.g., spin for spinlocks, xnoaa for atomic primitives
+spin = "1.0"
+volatile = "0.6"

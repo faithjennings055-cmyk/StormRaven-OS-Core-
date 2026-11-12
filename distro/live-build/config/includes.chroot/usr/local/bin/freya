@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# StormRaven OS — Freya Cortana-Class Conversational AI CLI (#102)
+set -euo pipefail
+if [ "${1:-}" = "--companion" ] || [ "${1:-}" = "--avatar" ] || [ "${1:-}" = "gui" ]; then
+  exec /usr/local/bin/stormraven-freya-avatar
+fi
+for p in /opt/stormraven/python/freya.py /snap/stormraven-os/current/opt/stormraven/python/freya.py; do
+  if [ -f "$p" ]; then
+    exec python3 "$p" "$@"
+  fi
+done
+exec python3 -m freya "$@"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Firmware & Drivers
+Comment=2011-2026 CPU/GPU/Wi-Fi Firmware & HP Monitor Drivers
+Exec=/usr/local/bin/stormraven-app-exec firmware
+Icon=preferences-desktop-peripherals
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupNotify=false

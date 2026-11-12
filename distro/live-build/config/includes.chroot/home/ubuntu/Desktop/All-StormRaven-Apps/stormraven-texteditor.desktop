@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Void Text Editor
+Comment=Code & Configuration Editor
+Exec=/usr/local/bin/stormraven-app-exec texteditor
+Icon=accessories-text-editor
+Terminal=false
+Categories=Utility;TextEditor;
+StartupNotify=false

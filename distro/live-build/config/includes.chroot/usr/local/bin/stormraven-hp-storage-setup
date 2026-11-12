@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Ymir Edition — HP Pro 3500 3-Drive Architecture Setup
+# =============================================================================
+# Configured specifically for Faith Jennings' HP Pro 3500 drive map:
+#   • /dev/sdc (MSI S270 240GB SSD)      -> Untouched Main StormRaven Ubuntu OS (/)
+#   • /dev/sda (WDC WD7500BPKX 698.6GB)  -> Linked Expansion Vault (/mnt/vault + ~/Vault)
+#   • /dev/sdb (Micron 1100 256GB SSD)   -> Custom Windows 11 (25H2) Ymir Edition Dual-Boot
+# =============================================================================
+set -euo pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+  exec sudo -E bash "$0" "$@"
+fi
+
+WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+WIN11_ISO_SHA="$(curl -fsSL "${WIN11_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
+WIN11_ISO_SHA="${WIN11_ISO_SHA:-6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157}"
+
+echo "======================================================================="
+echo " ✦ STORMRAVEN OS — HP PRO 3500 STORAGE & DUAL-BOOT ARCHITECT"
+echo "   • Main OS (Untouched): /dev/sdc (MSI S270 240GB SSD)"
+echo "   • Linked HDD Vault:    /dev/sda (Western Digital 698.6GB HDD -> /mnt/vault)"
+echo "   • Windows 11 DualBoot: /dev/sdb (Micron 1100 256GB SSD)"
+echo "======================================================================="
+
+# Safety lock: verify /dev/sdc is the active root disk and refuse to touch it
+ROOT_SRC="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
+if [[ "${ROOT_SRC}" == /dev/sda* ]] || [[ "${ROOT_SRC}" == /dev/sdb* ]]; then
+  echo "CRITICAL SAFETY STOP: Active root (${ROOT_SRC}) is on sda or sdb! Aborting."
+  exit 1
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+# Fix broken /usr/bin/apt_hook_ubuntu_virt hook if missing on host
+if [ ! -x /usr/bin/apt_hook_ubuntu_virt ]; then
+  printf '#!/bin/sh\nexit 0\n' > /usr/bin/apt_hook_ubuntu_virt
+  chmod +x /usr/bin/apt_hook_ubuntu_virt
+fi
+apt-get update -qq 2>/dev/null || true
+apt-get install -y -qq parted dosfstools ntfs-3g p7zip-full os-prober rsync curl >/dev/null 2>&1 || true
+
+# -----------------------------------------------------------------------------
+# STEP 1: Format & Link /dev/sda (698.6 GB Western Digital HDD) as /mnt/vault
+# -----------------------------------------------------------------------------
+echo "==> [1/4] Formatting /dev/sda (Western Digital 698.6GB) as STORMRAVEN_VAULT..."
+for p in $(lsblk -ln -o NAME /dev/sda 2>/dev/null | tail -n +2); do
+  umount -lf "/dev/${p}" 2>/dev/null || true
+done
+wipefs -a /dev/sda >/dev/null 2>&1 || true
+parted -s /dev/sda mklabel gpt
+parted -s /dev/sda mkpart primary ext4 1MiB 100%
+partprobe /dev/sda 2>/dev/null || true
+sleep 2
+
+mkfs.ext4 -F -L "STORMRAVEN_VAULT" /dev/sda1 >/dev/null
+mkdir -p /mnt/vault
+umount /mnt/vault 2>/dev/null || true
+mount /dev/sda1 /mnt/vault
+
+SDA1_UUID="$(blkid -s UUID -o value /dev/sda1)"
+sed -i '\|/mnt/vault|d' /etc/fstab
+echo "UUID=${SDA1_UUID}  /mnt/vault  ext4  defaults,nofail,noatime  0  2" >> /etc/fstab
+systemctl daemon-reload 2>/dev/null || true
+
+# Create linked expansion directories on the 700GB Western Digital Vault
+mkdir -p /mnt/vault/StormRaven-Expansion /mnt/vault/isos /mnt/vault/vms /mnt/vault/void/niflheim /mnt/vault/void/helheim /mnt/vault/void/jotunheim /mnt/vault/backups
+chmod -R 775 /mnt/vault
+
+for u in stormraven ubuntu; do
+  if id -u "$u" >/dev/null 2>&1; then
+    chown -R "$u:$u" /mnt/vault/StormRaven-Expansion /mnt/vault/isos /mnt/vault/vms /mnt/vault/backups 2>/dev/null || true
+    ln -sfn /mnt/vault/StormRaven-Expansion "/home/$u/Vault"
+    mkdir -p "/home/$u/Desktop"
+    ln -sfn /mnt/vault/StormRaven-Expansion "/home/$u/Desktop/Western-Digital-700GB-Vault"
+    chown -h "$u:$u" "/home/$u/Vault" "/home/$u/Desktop/Western-Digital-700GB-Vault" 2>/dev/null || true
+  fi
+done
+
+mkdir -p /var/lib/stormraven
+if [ ! -L /var/lib/stormraven/void ]; then
+  cp -a /var/lib/stormraven/void/* /mnt/vault/void/ 2>/dev/null || true
+  rm -rf /var/lib/stormraven/void
+  ln -sfn /mnt/vault/void /var/lib/stormraven/void
+fi
+echo "    ✓ Linked /dev/sda1 (698.6GB) -> /mnt/vault, ~/Vault, Desktop/Western-Digital-700GB-Vault & /var/lib/stormraven/void"
+
+# -----------------------------------------------------------------------------
+# STEP 2: Download & SHA-256 Verify Custom Windows 11 25H2 Ymir ISO onto Vault
+# -----------------------------------------------------------------------------
+WIN11_ISO="/mnt/vault/isos/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+echo "==> [2/4] Downloading Custom Windows 11 Ymir ISO (6.8 GB) to Western Digital Vault (${WIN11_ISO})..."
+if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
+  curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+fi
+echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
+
+# -----------------------------------------------------------------------------
+# STEP 3: Prepare /dev/sdb (Micron 1100 256GB SSD) for Custom Windows 11 Dual-Boot
+# -----------------------------------------------------------------------------
+echo "==> [3/4] Partitioning /dev/sdb (Micron 256GB SSD) for StormRaven Custom Windows 11 25H2..."
+for p in $(lsblk -ln -o NAME /dev/sdb 2>/dev/null | tail -n +2); do
+  umount -lf "/dev/${p}" 2>/dev/null || true
+done
+wipefs -a /dev/sdb >/dev/null 2>&1 || true
+dd if=/dev/zero of=/dev/sdb bs=1M count=16 status=none || true
+parted -s /dev/sdb mklabel gpt
+parted -s /dev/sdb mkpart SR_WIN_EFI fat32 1MiB 1025MiB
+parted -s /dev/sdb set 1 esp on
+parted -s /dev/sdb mkpart SR_WIN11 ntfs 1025MiB 100%
+parted -s /dev/sdb set 2 msftdata on
+partprobe /dev/sdb 2>/dev/null || true
+sleep 2
+
+mkfs.vfat -F 32 -n "SR_WIN_EFI" /dev/sdb1 >/dev/null
+mkfs.ntfs -Q -F -L "STORMRAVEN_WIN11" /dev/sdb2 >/dev/null
+
+mkdir -p /mnt/sr-win-efi /mnt/sr-win-ntfs
+mount /dev/sdb1 /mnt/sr-win-efi
+mount /dev/sdb2 /mnt/sr-win-ntfs
+
+echo "    Extracting Custom Windows 11 Ymir Edition onto Micron SSD (/dev/sdb)..."
+7z x -y "${WIN11_ISO}" -o/mnt/sr-win-ntfs >/dev/null
+if [ ! -s /mnt/sr-win-ntfs/autounattend.xml ] || ! grep -q "BypassTPMCheck" /mnt/sr-win-ntfs/autounattend.xml 2>/dev/null; then
+  cat > /mnt/sr-win-ntfs/autounattend.xml <<'UNATTEND_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>false</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+    </component>
+  </settings>
+</unattend>
+UNATTEND_EOF
+fi
+cp -a /mnt/sr-win-ntfs/efi /mnt/sr-win-efi/
+cp -a /mnt/sr-win-ntfs/boot /mnt/sr-win-efi/
+cp -f /mnt/sr-win-ntfs/bootmgr* /mnt/sr-win-efi/ 2>/dev/null || true
+cp -f /mnt/sr-win-ntfs/autounattend.xml /mnt/sr-win-efi/ 2>/dev/null || true
+
+sync
+umount /mnt/sr-win-efi /mnt/sr-win-ntfs
+
+# -----------------------------------------------------------------------------
+# STEP 4: Add StormRaven Windows 11 Ymir Edition to MSI SSD's GRUB Menu
+# -----------------------------------------------------------------------------
+echo "==> [4/4] Registering Dual-Boot Menu on MSI Main SSD (/dev/sdc)..."
+SDB1_UUID="$(blkid -s UUID -o value /dev/sdb1)"
+
+cat > /etc/grub.d/40_custom <<GRUB40
+#!/bin/sh
+exec tail -n +3 \$0
+
+menuentry "StormRaven OS: Ymir Edition — Custom Windows 11 (25H2 · Micron 256GB SSD)" {
+    insmod part_gpt
+    insmod fat
+    insmod ntfs
+    insmod chain
+    search --no-floppy --fs-uuid --set=root ${SDB1_UUID}
+    chainloader /efi/boot/bootx64.efi
+}
+GRUB40
+chmod +x /etc/grub.d/40_custom
+
+sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=menu/' /etc/default/grub 2>/dev/null || true
+sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=10/' /etc/default/grub 2>/dev/null || true
+grep -q "^GRUB_DISABLE_OS_PROBER=" /etc/default/grub \
+  && sed -i 's/^GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub \
+  || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
+
+update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
+
+echo ""
+echo "======================================================================="
+echo " ✦ HP PRO 3500 3-DRIVE ARCHITECTURE & DUAL-BOOT COMPLETE!"
+echo "   1. Main OS (/dev/sdc MSI 240GB SSD):    Active & untouched (/)"
+echo "   2. Linked Vault (/dev/sda WD 698.6GB):  Mounted at /mnt/vault & ~/Vault"
+echo "   3. Windows 11 (/dev/sdb Micron 256GB):  Staged & added to GRUB boot menu"
+echo ""
+echo "   When you reboot, the GRUB menu will show both:"
+echo "     • Ubuntu / StormRaven OS 26.04 LTS (on MSI SSD)"
+echo "     • StormRaven OS: Ymir Edition — Custom Windows 11 (on Micron SSD)"
+echo "======================================================================="
+df -h / /mnt/vault

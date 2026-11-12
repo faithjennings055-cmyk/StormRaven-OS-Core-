@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+VOICE_CONF="/etc/stormraven/voice.conf"
+STORMRAVEN_VOICE=1
+[ -f "$VOICE_CONF" ] && . "$VOICE_CONF"
+
+if [ "${STORMRAVEN_VOICE:-1}" = "0" ]; then
+  echo "StormRaven OS 24.04 LTS ($(uname -srm))"
+  exit 0
+fi
+
+TAGLINES=(
+  "One eye on the kernel, one eye on the void. Nothing executes unseen."
+  "Every port is a drawbridge. Heimdall sleeps on none of them."
+  "A healthy kernel breathes in microseconds; a dying one gasps in swap."
+  "Memory lies when convenient. A signed SHA-256 manifest does not."
+  "Trust no binary you did not forge from source and measure in the dark."
+  "Freeze the state before the fault spreads; thaw only what is proven pure."
+  "Dead processes tell no tales—unless you lock them in Helheim and read their syscalls."
+)
+IDX=$(( $(date +%s) % ${#TAGLINES[@]} ))
+echo ""
+echo "  [Hlidskjalf] \"${TAGLINES[$IDX]}\""
+echo "  Voice: active (/etc/stormraven/voice.conf -> STORMRAVEN_VOICE=0 for plain mode)"
+echo ""

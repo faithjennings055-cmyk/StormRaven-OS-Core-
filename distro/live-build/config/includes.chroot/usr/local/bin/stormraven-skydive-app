@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS — Skydive Desktop & CLI Portal Wrapper (#103)
+# Runs the Skydive App & CLI Portal natively on StormRaven Ubuntu & Windows 11
+# instead of requiring macOS.
+# =============================================================================
+set +e
+
+SKYDIVE_URL="${SKYDIVE_APP_URL:-https://skydive.com}"
+MODE="${1:-gui}"
+
+ensure_skydive_cli() {
+  if ! command -v skydive >/dev/null 2>&1; then
+    echo "[StormRaven Skydive Wrapper] Installing official Skydive CLI..."
+    curl -fsSL https://skydive.sh | sh 2>/dev/null || true
+    export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+  fi
+}
+
+case "$MODE" in
+  cli|chat|portal)
+    shift || true
+    ensure_skydive_cli
+    if command -v skydive >/dev/null 2>&1; then
+      exec skydive chat "$@"
+    else
+      echo "[StormRaven Skydive Wrapper] Opening Skydive web workspace: ${SKYDIVE_URL}"
+      exec "$0" gui
+    fi
+    ;;
+  status|--status-json)
+    CLI_BIN="$(command -v skydive 2>/dev/null || echo '/usr/local/bin/skydive')"
+    cat <<JSON
+{
+  "app": "Skydive Desktop Wrapper for StormRaven OS",
+  "platforms": ["Ubuntu 24.04/26.04 Linux", "Windows 11 Ymir Edition"],
+  "webAppUrl": "${SKYDIVE_URL}",
+  "cliPath": "${CLI_BIN}",
+  "modes": ["gui (--app chromeless window)", "cli (skydive chat + local portal)"],
+  "status": "ready"
+}
+JSON
+    ;;
+  gui|*)
+    for browser in chromium chromium-browser google-chrome brave-browser microsoft-edge epiphany-browser falkon firefox; do
+      if command -v "$browser" >/dev/null 2>&1; then
+        case "$browser" in
+          chromium*|google-chrome*|brave*|microsoft-edge*)
+            "$browser" --app="${SKYDIVE_URL}" --class="StormRavenSkydive" --new-window >/dev/null 2>&1 &
+            ;;
+          *)
+            "$browser" "${SKYDIVE_URL}" >/dev/null 2>&1 &
+            ;;
+        esac
+        echo "[StormRaven Skydive Wrapper] Launched Skydive Desktop window via ${browser} (${SKYDIVE_URL})."
+        exit 0
+      fi
+    done
+    if command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "${SKYDIVE_URL}" >/dev/null 2>&1 &
+      exit 0
+    fi
+    echo "[StormRaven Skydive Wrapper] Open ${SKYDIVE_URL} or run: stormraven skydive cli"
+    ;;
+esac

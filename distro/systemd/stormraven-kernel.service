@@ -1,5 +1,5 @@
 [Unit]
-Description=StormRaven OS Kernel + Bifrost Gateway (Ubuntu 24.04 Noble)
+Description=StormRaven OS Kernel + Bifrost Gateway (Ubuntu 26.04 Resolute)
 Documentation=https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-
 After=network.target
 
@@ -8,11 +8,18 @@ Type=simple
 User=stormraven
 Group=stormraven
 WorkingDirectory=/opt/stormraven
-ExecStartPre=/usr/bin/install -d -o stormraven -g stormraven /var/lib/stormraven
+ExecStartPre=/usr/bin/install -d -o stormraven -g stormraven -m 0775 /var/lib/stormraven /var/log/raven
 ExecStart=/opt/stormraven/StormRaven.Kernel
 Environment=STORMRAVEN_DB=/var/lib/stormraven/kernel.db
 Environment=STORMRAVEN_GATEWAY_PORT=8787
+Environment=STORMRAVEN_RAVEN_LOG_DIR=/var/log/raven
 Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
 Restart=always
 RestartSec=3
 

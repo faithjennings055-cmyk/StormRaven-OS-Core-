@@ -1,5 +1,5 @@
-/* StormRaven OS — offline shell service worker */
-const CACHE = 'stormraven-v1';
+/* StormRaven OS Mobile — network-first service worker (v7) */
+const CACHE = 'stormraven-mobile-v7';
 const SHELL = [
   './',
   './index.html',
@@ -22,29 +22,32 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  // never cache API/WS traffic to the kernel gateway
-  if (url.pathname.startsWith('/status') || url.pathname.startsWith('/tabs') ||
-      url.pathname.startsWith('/command') || url.pathname.startsWith('/events')) return;
-
-  if (e.request.mode === 'navigate') {
-    // network-first for the shell page, fall back to cache offline
-    e.respondWith(
-      fetch(e.request).then((r) => {
-        const copy = r.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy));
-        return r;
-      }).catch(() => caches.match(e.request).then((m) => m || caches.match('./index.html')))
-    );
+  if (
+    url.pathname.startsWith('/status') ||
+    url.pathname.startsWith('/health') ||
+    url.pathname.startsWith('/state') ||
+    url.pathname.startsWith('/tabs') ||
+    url.pathname.startsWith('/decisions') ||
+    url.pathname.startsWith('/commands') ||
+    url.pathname.startsWith('/command') ||
+    url.pathname.startsWith('/signals') ||
+    url.pathname.startsWith('/events') ||
+    url.pathname.startsWith('/ws') ||
+    url.pathname.startsWith('/iso/') ||
+    url.pathname.startsWith('/downloads/') ||
+    url.pathname.startsWith('/install-')
+  ) {
     return;
   }
 
-  // cache-first for static assets
+  // Always network-first so updates to index.html, app.js, and style.css appear immediately on reload
   e.respondWith(
-    caches.match(e.request).then((m) => m || fetch(e.request).then((r) => {
+    fetch(e.request, { cache: 'no-store' }).then((r) => {
       const copy = r.clone();
       caches.open(CACHE).then((c) => c.put(e.request, copy));
       return r;
-    }))
+    }).catch(() => caches.match(e.request).then((m) => m || caches.match('./index.html')))
   );
 });

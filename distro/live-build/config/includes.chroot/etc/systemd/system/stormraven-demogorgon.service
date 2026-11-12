@@ -1,0 +1,26 @@
+[Unit]
+Description=StormRaven OS Demogorgon Endlessh TCP Tarpit & Lynn Honeycomb Sensor (Port 2222)
+Documentation=https://github.com/faithjennings055-cmyk/StormRaven-OS-Core-
+After=network.target stormraven-kernel.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/stormraven
+ExecStart=/usr/bin/python3 /usr/local/bin/stormraven-demogorgon daemon
+Environment=STORMRAVEN_PYTHON_DIR=/opt/stormraven/python
+Environment=STORMRAVEN_RAVEN_LOG_DIR=/var/log/raven
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target graphical.target

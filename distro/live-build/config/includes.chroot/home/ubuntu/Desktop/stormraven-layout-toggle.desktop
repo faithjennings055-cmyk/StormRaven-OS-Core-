@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Switch Ubuntu / Win11 Layout
+Comment=Toggle GNOME Shell between Ubuntu Left Dock and Windows 11 Centered Bottom Taskbar (Ymir Theme)
+Exec=/usr/local/bin/stormraven-app-exec layout-toggle
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupNotify=false

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>StormRaven OS</title>
-<meta name="description" content="StormRaven OS companion — kernel status, Edge tabs, and decision console.">
-<!-- iOS PWA meta -->
+<title>StormRaven OS: Infinity Protocol v3.9.0</title>
+<meta name="description" content="StormRaven OS Mobile — Ubuntu 24.04 LTS (Noble Numbat) kernel status, Edge tabs, Odin Python Pantheon, and decision console.">
+<!-- iOS & Android PWA meta -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,7 +22,7 @@
     <div class="brand">
       <span class="sigil">✦</span>
       <div>
-        <h1>STORMRAVEN <span class="os">OS</span></h1>
+        <h1>STORMRAVEN <span class="os">INFINITY PROTOCOL v3.9.0</span></h1>
         <div id="connState" class="conn-state">connecting…</div>
       </div>
     </div>
@@ -30,36 +30,425 @@
   </header>
 
   <nav class="tabbar">
-    <button class="tab active" data-view="status">Status</button>
+    <button class="tab active" data-view="ymir">❄ Ymir Edition</button>
+    <button class="tab" data-view="freya">✨ Freya AI</button>
+    <button class="tab" data-view="realms">🌌 9 Realms UI</button>
+    <button class="tab" data-view="desktop">App Grid</button>
+    <button class="tab" data-view="status">Status</button>
     <button class="tab" data-view="tabs">Tabs</button>
+    <button class="tab" data-view="fafnir">Fafnir</button>
+    <button class="tab" data-view="decisions">Decisions</button>
+    <button class="tab" data-view="odin">Odin</button>
     <button class="tab" data-view="console">Console</button>
   </nav>
 
   <main>
+    <!-- STORMRAVEN OS: YMIR EDITION 3-PANEL GLASS HUD (Exact Mockup Architecture) -->
+    <section id="view-ymir" class="view active">
+      <div class="ymir-hud-stage">
+        <div class="ymir-hud-grid">
+          <!-- LEFT COLUMN: Panel 1 (Kernel Forge Status + RunicSys Modules) -->
+          <div class="ymir-glass-win ymir-win-forge">
+            <div class="ymir-win-bar">
+              <div class="ymir-win-brand"><span class="ymir-r-badge">R</span> <span>File &nbsp;Edit &nbsp;View &nbsp;Runic &nbsp;Core</span></div>
+              <div class="ymir-win-dots"><span>─</span><span>□</span><span>✕</span></div>
+            </div>
+            <div class="ymir-win-subbar">
+              <span>◀ ▶ ⟳</span>
+              <span class="ymir-subbar-path">ymir://kernel-forge/ring0</span>
+              <span id="ymirBridgePill" class="ymir-pill">● BIFRÖST ACTIVE</span>
+            </div>
+            <div class="ymir-win-content">
+              <div class="ymir-sec-head">▴ Kernel Forge Status</div>
+              <div class="ymir-forge-split">
+                <div class="ymir-meters">
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">Kernel Forge Status</span>
+                    <div class="ymir-m-track"><div id="ymBarForge" class="ymir-m-fill" style="width:98%"></div></div>
+                    <span id="ymValForge" class="ymir-m-val">98</span>
+                  </div>
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">CPU, Processes</span>
+                    <div class="ymir-m-track"><div id="ymBarCpu" class="ymir-m-fill" style="width:18%"></div></div>
+                    <span id="ymValCpu" class="ymir-m-val">18</span>
+                  </div>
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">Memory</span>
+                    <div class="ymir-m-track"><div id="ymBarRam" class="ymir-m-fill" style="width:42%"></div></div>
+                    <span id="ymValRam" class="ymir-m-val">42</span>
+                  </div>
+                  <div class="ymir-meter-row">
+                    <span class="ymir-m-lbl">Disk</span>
+                    <div class="ymir-m-track"><div id="ymBarDisk" class="ymir-m-fill" style="width:26%"></div></div>
+                    <span id="ymValDisk" class="ymir-m-val">26</span>
+                  </div>
+                </div>
+                <div class="ymir-reactor-col">
+                  <div class="ymir-reactor-ring">
+                    <div class="ymir-reactor-core"></div>
+                  </div>
+                  <div class="ymir-wave">▁▂▄▆█▄▂▅▇▃▂▆█▄▂▁▃▅</div>
+                </div>
+              </div>
+
+              <div class="ymir-sec-head" style="margin-top:12px">▾ RunicSys Modules</div>
+              <div class="ymir-rune-tiles">
+                <button type="button" class="ymir-rune-tile" data-rune="fehu" title="Fehu — Resource &amp; Memory Optimizer">
+                  <span class="rune-glyph">ᚠ</span>
+                  <span class="rune-sub">FEHU</span>
+                </button>
+                <button type="button" class="ymir-rune-tile" data-rune="algiz" title="Algiz — Heimdall Zero-Trust Shield">
+                  <span class="rune-glyph">ᛉ</span>
+                  <span class="rune-sub">ALGIZ</span>
+                </button>
+                <button type="button" class="ymir-rune-tile" data-rune="isa" title="Isa — Niflheim Cryo-Freeze &amp; Snapshot">
+                  <span class="rune-glyph">ᛁ</span>
+                  <span class="rune-sub">ISA</span>
+                </button>
+                <button type="button" class="ymir-rune-tile" data-rune="raido" title="Raido — Bifrost &amp; Pantheon Update">
+                  <span class="rune-glyph">ᚱ</span>
+                  <span class="rune-sub">RAIDO</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CENTER COLUMN: Ymir Frost Giant & Winged Raven-Skull Emblem -->
+          <div class="ymir-center-crest">
+            <div class="ymir-crest-spacer"></div>
+            <div class="ymir-crest-title-box">
+              <div class="ymir-oath-rune">❄️ &nbsp; ᛟ &nbsp; ❄️</div>
+              <h2 class="ymir-main-logo">STORMRAVEN OS</h2>
+              <div class="ymir-sub-logo">Y M I R &nbsp; E D I T I O N</div>
+              <div class="ymir-quick-actions">
+                <button type="button" class="ymir-action-btn" data-ViewJump="desktop">⠿ Open 29-App Suite</button>
+                <button type="button" id="ymirUpdateBtn" class="ymir-action-btn" data-rune="system_update">🔄 Check &amp; Install Updates</button>
+                <button type="button" class="ymir-action-btn" data-rune="pc_launch_hud">🖥 Push Ymir HUD to PC</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Panel 2 (Runic Command Console) + Panel 3 (RavenNest Virtual Server) -->
+          <div class="ymir-right-col">
+            <!-- Panel 2: Runic Command Console -->
+            <div class="ymir-glass-win ymir-win-runic">
+              <div class="ymir-win-bar">
+                <div class="ymir-win-brand"><span>⛨ RunicSys Command Console</span></div>
+                <div class="ymir-win-dots"><span>⚙</span><span>□</span><span>✕</span></div>
+              </div>
+              <div class="ymir-runic-list">
+                <button type="button" class="ymir-runic-row" data-rune="fehu">
+                  <span class="ymir-r-icon">ᚠ</span>
+                  <span class="ymir-r-name">fehu</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">resource</span>
+                  <span class="ymir-r-act">EXECUTE ▸</span>
+                </button>
+                <button type="button" class="ymir-runic-row" data-rune="algiz">
+                  <span class="ymir-r-icon">ᛉ</span>
+                  <span class="ymir-r-name">algiz</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">defend</span>
+                  <span class="ymir-r-act">LOCK SHIELD ▸</span>
+                </button>
+                <button type="button" class="ymir-runic-row" data-rune="isa">
+                  <span class="ymir-r-icon">ᛁ</span>
+                  <span class="ymir-r-name">isa</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">freeze</span>
+                  <span class="ymir-r-act">CRYO SNAPSHOT ▸</span>
+                </button>
+                <button type="button" class="ymir-runic-row" data-rune="raido">
+                  <span class="ymir-r-icon">ᚱ</span>
+                  <span class="ymir-r-name">raido</span>
+                  <span class="ymir-r-sep">-</span>
+                  <span class="ymir-r-desc">update</span>
+                  <span class="ymir-r-act">SYNC CORE ▸</span>
+                </button>
+              </div>
+              <div id="ymirRunicLog" class="ymir-runic-log">[Ymir Ring-0] Click any Runic command or RavenNest server cube to execute on the kernel…</div>
+            </div>
+
+            <!-- Panel 3: RavenNest VIRTUAL SERVER -->
+            <div class="ymir-glass-win ymir-win-ravennest">
+              <div class="ymir-win-bar">
+                <div class="ymir-win-brand"><span>▸ <strong>RavenNest</strong> <small style="opacity:.8;letter-spacing:.1em">VIRTUAL SERVER</small></span></div>
+                <div class="ymir-win-dots"><span>─</span><span>□</span><span>✕</span></div>
+              </div>
+              <div class="ymir-nest-grid">
+                <button type="button" class="ymir-cube-node" data-rune="ravencore">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">❖</span></div>
+                  <div class="cube-title">RavenCore</div>
+                  <div class="cube-meta">Ring-0 · :8787</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="frostvault">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">❄</span></div>
+                  <div class="cube-title">FrostVault</div>
+                  <div class="cube-meta">Cryo Isolation</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="frostnode">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">🧊</span></div>
+                  <div class="cube-title">FrostNode</div>
+                  <div class="cube-meta">KVM Hypervisor</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="ymirvault">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">ᛟ</span></div>
+                  <div class="cube-title">YmirVault</div>
+                  <div class="cube-meta">Buddy/SLAB · Luci</div>
+                </button>
+                <button type="button" class="ymir-cube-node" data-rune="echoshell">
+                  <div class="ymir-iso-cube"><span class="cube-glyph">❯_</span></div>
+                  <div class="cube-title">EchoShell</div>
+                  <div class="cube-meta">Live PC Bridge</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Hardware Remote Control Bar -->
+        <div class="ymir-remote-bar">
+          <div>
+            <strong style="color:#38bdf8">⚡ Live PC Hardware Remote Control &amp; Ymir Theme Upgrade:</strong>
+            <span class="muted" style="font-size:11.5px;margin-left:6px">Run on your booted PC terminal (<code>root@stormraven:~#</code>) to transform the desktop &amp; link mobile control:</span>
+          </div>
+          <div class="ymir-remote-cmd-wrap">
+            <code id="ymirUpgradeCmd">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-void.sh.sha256 &amp;&amp; sha256sum -c upgrade-void.sh.sha256 &amp;&amp; sudo bash upgrade-void.sh</code>
+            <button type="button" id="copyYmirUpgradeBtn" class="btn small">Copy</button>
+          </div>
+        </div>
+
+        <!-- SECURITY WAR ROOM (#99) + WHOLE-SYSTEM 9 REALMS BAR (#102) -->
+        <div class="ymir-glass-win" style="margin-top:12px">
+          <div class="ymir-win-bar">
+            <div class="ymir-win-brand"><span class="ymir-r-badge">🛡</span> <span>Security War Room (#99) · Whole-System Nine Realms Theme Switcher (#102) · Skydive Wrapper (#103)</span></div>
+            <div class="ymir-win-dots"><span id="activeRealmBadge" class="ymir-pill">REALM: MIDGARD</span></div>
+          </div>
+          <div class="ymir-win-content" style="padding:12px">
+            <div class="chip-grid" id="ymirRealmThemeBar" style="margin-bottom:10px">
+              <button class="chip-btn" data-set-realm="asgard" style="border-color:#facc15;color:#facc15">👑 Asgard Gold</button>
+              <button class="chip-btn" data-set-realm="muspelheim" style="border-color:#f43f5e;color:#f43f5e">🔥 Muspelheim Fire</button>
+              <button class="chip-btn" data-set-realm="niflheim" style="border-color:#38bdf8;color:#38bdf8">❄️ Niflheim Frost</button>
+              <button class="chip-btn" data-set-realm="helheim" style="border-color:#94a3b8;color:#cbd5e1">⛓️ Helheim Iron</button>
+              <button class="chip-btn" data-set-realm="jotunheim" style="border-color:#60a5fa;color:#60a5fa">🗿 Jotunheim Stone</button>
+              <button class="chip-btn" data-set-realm="svartalfheim" style="border-color:#c084fc;color:#c084fc">⚒️ Svartalfheim Forge</button>
+              <button class="chip-btn" data-set-realm="vanaheim" style="border-color:#34d399;color:#34d399">🌿 Vanaheim Canopy</button>
+              <button class="chip-btn" data-set-realm="alfheim" style="border-color:#e879f9;color:#e879f9">✨ Alfheim Prism</button>
+              <button class="chip-btn" data-set-realm="midgard" style="border-color:#06b6d4;color:#06b6d4">🌈 Midgard Bifrost</button>
+            </div>
+            <div class="grid2" style="gap:8px;margin-bottom:8px">
+              <div class="card stat" style="padding:8px"><div class="stat-label">Heimdall CWE-77 Gate</div><div id="wrHeimdall" class="stat-val" style="font-size:13px;color:var(--ok)">ENFORCING · 0 BYPASS</div></div>
+              <div class="card stat" style="padding:8px"><div class="stat-label">Demogorgon Tarpit (:2222)</div><div id="wrTarpit" class="stat-val" style="font-size:13px;color:#38bdf8">616 CELLS ARMED</div></div>
+              <div class="card stat" style="padding:8px"><div class="stat-label">WSU Sovereign Cell (#96)</div><div id="wrWsu" class="stat-val" style="font-size:13px;color:#c084fc">HMAC + NONCE LOCKED</div></div>
+              <div class="card stat" style="padding:8px"><div class="stat-label">Freya Sovereign AI (#102)</div><div id="wrFreya" class="stat-val" style="font-size:13px;color:#facc15">VALKYRIE HOLOGRAM ONLINE</div></div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" id="openFreyaHudBtn" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;border:0">✨ Talk to Freya AI (Cortana Hologram)</button>
+              <button type="button" id="launchSkydiveWrapperBtn" class="btn small accent-outline">🪂 Launch Skydive App Wrapper (Ubuntu &amp; Win11)</button>
+              <button type="button" id="warRoomRefreshBtn" class="btn small">🛡 Refresh Security War Room</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FREYA SOVEREIGN AI (CORTANA-CLASS ANIMATED HOLOGRAPHIC BODY + ADAPTIVE MEMORY CORE, #102) -->
+    <section id="view-freya" class="view">
+      <div class="card" style="background:radial-gradient(circle at 50% 18%, rgba(6,182,212,0.18), rgba(168,85,247,0.12) 45%, rgba(7,3,10,0.96));border:1px solid var(--accent)">
+        <div class="row-between" style="flex-wrap:wrap;gap:8px">
+          <div>
+            <h2 id="freyaTitleHeader" style="color:var(--accent)">✦ FREYA · CORTANA-CLASS SOVEREIGN AI COMPANION</h2>
+            <div id="freyaRankSub" class="muted" style="font-size:11.5px">Animated Neural-Valkyrie Body · Whole-System Orchestrator · Local Sovereign Memory Core</div>
+          </div>
+          <span id="freyaStateBadge" class="badge ok">● HOLOGRAM ONLINE</span>
+        </div>
+
+        <!-- Animated Holographic Valkyrie Avatar Stage -->
+        <div class="freya-holo-stage" id="freyaHoloStage">
+          <svg class="freya-holo-svg" viewBox="0 0 360 220" width="100%" height="210" aria-label="Freya Animated Holographic AI Body">
+            <defs>
+              <radialGradient id="freyaCoreGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+                <stop offset="45%" stop-color="#06b6d4" stop-opacity="0.75"/>
+                <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="freyaWingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#a855f7" stop-opacity="0.20"/>
+              </linearGradient>
+            </defs>
+            <!-- Outer Rotating Elder Futhark Rune Halo -->
+            <g class="freya-halo-outer" transform="translate(180,102)">
+              <circle r="86" fill="none" stroke="rgba(6,182,212,0.38)" stroke-width="1.5" stroke-dasharray="6 4"/>
+              <circle r="74" fill="none" stroke="rgba(168,85,247,0.32)" stroke-width="1" stroke-dasharray="3 6"/>
+              <text x="0" y="-78" text-anchor="middle" fill="#67e8f9" font-size="9" font-family="monospace">ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ</text>
+              <text x="0" y="84" text-anchor="middle" fill="#e879f9" font-size="9" font-family="monospace">ᚺ ᚾ ᛁ ᛃ ᛇ ᛈ ᛉ ᛊ</text>
+            </g>
+            <!-- Holographic Valkyrie Wings (Animated Flap) -->
+            <g class="freya-wings">
+              <polygon points="162,92 48,44 68,112 152,126" fill="url(#freyaWingGrad)" stroke="#06b6d4" stroke-width="1.4"/>
+              <polygon points="156,112 76,122 96,156 160,140" fill="url(#freyaWingGrad)" stroke="#a855f7" stroke-width="1.1"/>
+              <polygon points="198,92 312,44 292,112 208,126" fill="url(#freyaWingGrad)" stroke="#06b6d4" stroke-width="1.4"/>
+              <polygon points="204,112 284,122 264,156 200,140" fill="url(#freyaWingGrad)" stroke="#a855f7" stroke-width="1.1"/>
+            </g>
+            <!-- Valkyrie Crown, Head & Cyber-Torso Silhouette -->
+            <g class="freya-body-core">
+              <polygon points="180,32 192,50 180,44 168,50" fill="#facc15" opacity="0.9"/>
+              <circle cx="180" cy="64" r="16" fill="rgba(6,182,212,0.28)" stroke="#67e8f9" stroke-width="1.8"/>
+              <circle cx="174" cy="62" r="2.3" fill="#ffffff"/>
+              <circle cx="186" cy="62" r="2.3" fill="#ffffff"/>
+              <!-- Shoulders & Neural Torso Lattice -->
+              <polygon points="150,86 210,86 198,154 162,154" fill="rgba(14,22,42,0.72)" stroke="#06b6d4" stroke-width="1.6"/>
+              <line x1="180" y1="86" x2="180" y2="154" stroke="rgba(103,232,249,0.5)" stroke-width="1"/>
+              <line x1="156" y1="108" x2="204" y2="108" stroke="rgba(168,85,247,0.5)" stroke-width="1"/>
+              <!-- Breathing Heart Chakra Core -->
+              <circle class="freya-heart-orb" cx="180" cy="112" r="14" fill="url(#freyaCoreGlow)"/>
+            </g>
+          </svg>
+          <!-- Animated Voice Waveform -->
+          <div id="freyaVoiceWave" class="freya-voice-wave">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <!-- Adaptive Memory Core Stats -->
+        <div class="grid2" style="margin-top:10px;gap:8px">
+          <div class="card stat" style="padding:8px"><div class="stat-label">Synaptic Rank</div><div id="freyaMemRank" class="stat-val" style="font-size:13px;color:#67e8f9">Valkyrie Sentinel · Tier I</div></div>
+          <div class="card stat" style="padding:8px"><div class="stat-label">Adaptation Score</div><div id="freyaMemScore" class="stat-val" style="font-size:13px;color:#34d399">100</div></div>
+          <div class="card stat" style="padding:8px"><div class="stat-label">Preferred Realm Affinity</div><div id="freyaMemRealm" class="stat-val" style="font-size:13px;color:#facc15">MIDGARD</div></div>
+          <div class="card stat" style="padding:8px"><div class="stat-label">Sovereign Memories Locked</div><div id="freyaMemCount" class="stat-val" style="font-size:13px;color:#e879f9">2</div></div>
+        </div>
+
+        <!-- Conversational Log & Input -->
+        <div id="freyaChatLog" class="console-out" style="height:175px;margin-top:10px"></div>
+        <form id="freyaChatForm" class="console-form" style="margin-top:8px">
+          <span class="prompt">Freya ❯</span>
+          <input id="freyaChatInput" type="text" autocomplete="off" placeholder="Talk to Freya: 'switch to muspelheim', 'remember I prefer Niflheim', 'war room', 'status'…">
+          <button class="btn" type="submit">Speak</button>
+        </form>
+
+        <div class="chip-grid" style="margin-top:10px">
+          <button type="button" class="chip-btn" data-freya-ask="status">⚡ System Status</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to asgard">👑 Manifest Asgard</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to muspelheim">🔥 Manifest Muspelheim</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to niflheim">❄️ Manifest Niflheim</button>
+          <button type="button" class="chip-btn" data-freya-ask="switch to helheim">⛓️ Manifest Helheim</button>
+          <button type="button" class="chip-btn" data-freya-ask="war room">🛡 Security War Room</button>
+          <button type="button" class="chip-btn" data-freya-ask="memory">🧠 Inspect Memory Core</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESKTOP APP GRID (Ubuntu GNOME Dock + Top Bar + 8x4 App Grid + Win11 Mode Toggle) -->
+    <section id="view-desktop" class="view">
+      <div id="srDesktopShell" class="sr-desktop-shell mode-ubuntu">
+        <!-- Top Bar -->
+        <div class="sr-top-panel">
+          <div class="sr-top-left">
+            <span class="sr-activities-pill">━ ●</span>
+            <span class="sr-top-brand">StormRaven OS · Infinity Protocol v3.9.0</span>
+          </div>
+          <div id="srTopClock" class="sr-top-clock">Nov 2 &nbsp;00:10</div>
+          <div class="sr-top-right">
+            <button id="srTopUpdateBtn" class="btn small" style="padding:3px 10px;font-size:10.5px;background:linear-gradient(135deg,#10b981,#0284c7);color:#fff;border:0">🔄 Check &amp; Install Updates</button>
+            <button id="srTryInstallBtn" class="btn small" style="padding:3px 10px;font-size:10.5px;background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff">💿 Install StormRaven OS</button>
+            <button id="srModeToggleBtn" class="btn small accent-outline" style="padding:3px 8px;font-size:10px">Switch to Windows 11 Mode</button>
+            <span>🖧</span><span>🔊</span><span>⏻</span>
+          </div>
+        </div>
+
+        <div class="sr-desktop-body">
+          <!-- Left Vertical Dock (Ubuntu Mode) / Bottom Centered Taskbar (Win11 Mode) -->
+          <aside id="srDock" class="sr-left-dock">
+            <button class="sr-dock-item" data-app="installos" title="Install StormRaven OS v3.9.0">💿</button>
+            <button class="sr-dock-item" data-app="freyaai" title="Freya Sovereign AI (Cortana Hologram)">✨</button>
+            <button class="sr-dock-item" data-app="skydive" title="Skydive App &amp; Agent Portal Wrapper">🪂</button>
+            <button class="sr-dock-item" data-app="systemupdate" title="Check &amp; Install System Updates">🔄</button>
+            <button class="sr-dock-item" data-app="gparted" title="GParted Partition Editor">🖴</button>
+            <button class="sr-dock-item" data-app="files" title="Files (Fafnir)">📁</button>
+            <button class="sr-dock-item" data-app="music" title="Rhythmbox Music">💿</button>
+            <button class="sr-dock-item" data-app="mail" title="Thunderbird Mail">✉️</button>
+            <button class="sr-dock-item" data-app="software" title="App Center">🅰️</button>
+            <button class="sr-dock-item" data-app="help" title="StormRaven Help">❓</button>
+            <button class="sr-dock-item" data-app="terminal" title="Terminal (Void Shell)">❯_</button>
+            <button class="sr-dock-item" data-app="browser" title="Web Browser">🌐</button>
+            <div class="sr-dock-sep"></div>
+            <button class="sr-dock-item" data-app="ssd" title="512GB NVMe SSD">🖴</button>
+            <button class="sr-dock-item" data-app="iso" title="StormRaven Live ISO">📀</button>
+            <button class="sr-dock-item" data-app="usb" title="USB Drive">🔌</button>
+            <button class="sr-dock-item" data-app="trash" title="Trash">🗑️</button>
+            <button class="sr-dock-item sr-apps-btn active" data-app="grid" title="Show Applications">⠿</button>
+          </aside>
+
+          <!-- Main App Grid Canvas -->
+          <div class="sr-grid-canvas">
+            <!-- Try or Install Welcome Banner (Ubuntu Boot Disk Style) -->
+            <div id="srTryInstallBanner" class="card" style="background:linear-gradient(135deg,rgba(6,182,212,0.16),rgba(168,85,247,0.18));border:1px solid rgba(6,182,212,0.45);margin-bottom:14px;padding:14px 16px">
+              <div class="row-between" style="flex-wrap:wrap;gap:12px">
+                <div>
+                  <div style="font-size:15px;font-weight:700;color:#fff">✦ Welcome to StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS Boot Disk)</div>
+                  <div class="muted" style="font-size:12px;margin-top:3px">Includes full Ubuntu Live Rescue Suite: <code>GParted</code> · <code>TestDisk/PhotoRec</code> · <code>ddrescue</code> · <code>LVM2/LUKS/RAID</code> · <code>EFIBootMgr/Boot-Repair</code> · <code>NVMe/SMART</code></div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <button id="srBannerTryBtn" class="btn small accent-outline">🖥 Try StormRaven OS (Live)</button>
+                  <button id="srBannerInstallBtn" class="btn small" style="background:linear-gradient(135deg,#06b6d4,#a855f7);color:#fff;border:0">💿 Install StormRaven OS to Disk</button>
+                  <button id="srBannerRescueBtn" class="btn small">🛠 Boot Disk Rescue Tools</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="sr-search-wrap">
+              <span class="sr-search-icon">🔍</span>
+              <input id="srAppSearch" type="text" placeholder="Type to search" autocomplete="off">
+            </div>
+
+            <div id="srAppGrid" class="sr-app-grid"></div>
+
+            <!-- Interactive App Window Overlay -->
+            <div id="srAppWindow" class="sr-app-window hidden">
+              <div class="sr-win-titlebar">
+                <span id="srWinTitle">Application</span>
+                <button id="srWinClose" class="sr-win-close">✕</button>
+              </div>
+              <div id="srWinBody" class="sr-win-body"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- STATUS -->
-    <section id="view-status" class="view active">
+    <section id="view-status" class="view">
       <div class="card hero">
         <div class="hero-row">
           <div class="pulse-dot" id="pulseDot"></div>
           <div>
-            <div id="kernelName" class="kernel-name">Kernel</div>
+            <div id="kernelName" class="kernel-name">StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 Noble)</div>
             <div id="kernelUptime" class="muted">uptime —</div>
           </div>
           <div id="healthBadge" class="badge">unknown</div>
         </div>
       </div>
       <div class="grid2">
-        <div class="card stat"><div class="stat-label">Version</div><div id="stVersion" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Distro / Bridge</div><div id="stVersion" class="stat-val">—</div></div>
         <div class="card stat"><div class="stat-label">Uptime</div><div id="stUptime" class="stat-val">—</div></div>
-        <div class="card stat"><div class="stat-label">Providers</div><div id="stProviders" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Active Tabs</div><div id="stProviders" class="stat-val">—</div></div>
         <div class="card stat"><div class="stat-label">Decisions</div><div id="stDecisions" class="stat-val">—</div></div>
       </div>
       <div class="card">
-        <h2>Kernel health</h2>
+        <div class="row-between">
+          <h2>Kernel &amp; Distro Health</h2>
+          <button id="statusUpdateBtn" class="btn small" style="background:linear-gradient(135deg,#10b981,#0284c7);color:#fff;border:0">🔄 Check &amp; Install Updates</button>
+        </div>
         <div id="healthList" class="health-list"><div class="muted">Waiting for kernel…</div></div>
+        <pre id="statusUpdateBox" class="code-box hidden" style="margin-top:10px"></pre>
       </div>
       <div class="card">
-        <h2>Recent decisions</h2>
+        <div class="row-between">
+          <h2>Recent Decisions</h2>
+          <button id="evalQuickBtn" class="btn small">Evaluate Now</button>
+        </div>
         <div id="decisionsList" class="feed"><div class="muted">No decisions yet.</div></div>
       </div>
     </section>
@@ -68,21 +457,217 @@
     <section id="view-tabs" class="view">
       <div class="card">
         <div class="row-between">
-          <h2>Edge tabs</h2>
-          <button id="refreshTabs" class="btn small">Refresh</button>
+          <h2>Edge &amp; Mobile Tabs</h2>
+          <div class="row-actions">
+            <button id="ingestDemoTabBtn" class="btn small accent-outline">+ Demo Tab</button>
+            <button id="refreshTabs" class="btn small">Refresh</button>
+          </div>
         </div>
         <div id="tabsList" class="tab-list"><div class="muted">No tab signal yet — kernel offline or provider idle.</div></div>
+      </div>
+    </section>
+
+    <!-- DECISIONS -->
+    <section id="view-decisions" class="view">
+      <div class="card">
+        <div class="row-between">
+          <h2>Decision Engine Ledger</h2>
+          <button id="evalEngineBtn" class="btn small">Run Engine</button>
+        </div>
+        <p class="muted" style="margin-bottom:10px">Deterministic evaluations from <code>DecisionEngine.cs</code> persisted in SQLite via Bifrost.</p>
+        <div id="fullDecisionsList" class="feed"><div class="muted">Loading decisions…</div></div>
+      </div>
+    </section>
+
+    <!-- FAFNIR FILE EXPLORER -->
+    <section id="view-fafnir" class="view">
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <h2>Fafnir File Explorer · Clinical Grid</h2>
+            <div class="muted" style="font-size:11px">Yggdrasil VFS · Ymir Buddy/SLAB Memory State</div>
+          </div>
+          <div class="row-actions">
+            <button id="fafnirDensityBtn" class="btn small accent-outline">Clinical (0-4px)</button>
+            <button id="fafnirModeBtn" class="btn small">HEX</button>
+          </div>
+        </div>
+        <div class="chip-grid" id="fafnirRealms" style="margin-bottom:8px">
+          <button class="chip-btn active" data-frealm="ALL">/all</button>
+          <button class="chip-btn" data-frealm="ALFHEIM">/alfheim</button>
+          <button class="chip-btn" data-frealm="MIDGARD">/midgard</button>
+          <button class="chip-btn" data-frealm="NIFLHEIM">/niflheim</button>
+          <button class="chip-btn" data-frealm="HELHEIM">/helheim</button>
+        </div>
+        <div class="fafnir-table-wrap">
+          <table class="fafnir-table" id="fafnirTable">
+            <thead>
+              <tr>
+                <th>Node / Path</th>
+                <th>Realm</th>
+                <th>Size</th>
+                <th>Perms</th>
+                <th>Entropy</th>
+                <th>SHA-256</th>
+              </tr>
+            </thead>
+            <tbody id="fafnirBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row-between">
+          <h2 id="fafnirPreviewTitle">Void Preview · /alfheim/ostara-genesis.md</h2>
+          <span id="fafnirPreviewMeta" class="badge ok">VERIFIED</span>
+        </div>
+        <pre id="fafnirPreviewBox" class="code-box">Select a node in the Fafnir Clinical Grid above to inspect raw source or hex memory state…</pre>
+      </div>
+    </section>
+
+    <!-- REALMS -->
+    <section id="view-realms" class="view">
+      <div class="card realms-card">
+        <div class="pulse-container">
+          <div class="sovereign-pulse"></div>
+          <div class="pulse-ring"></div>
+        </div>
+        <div class="realms-content">
+          <h2 class="realms-title">Sovereign Nine Realms · Whole-System Lore UI</h2>
+          <div id="pulseStatus" class="pulse-status">Sampling Yggdrasil Live Telemetry…</div>
+          <p id="pulseSub" class="muted text-center text-xs mt-2">Tap any Realm below to re-theme the ENTIRE OS (GTK + Openbox + Dock + Terminal + HUD) to its Norse lore palette</p>
+        </div>
+      </div>
+      <div class="card" id="realmLoreBanner" style="border-left:4px solid var(--accent);margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent)" id="realmLoreTitle">MIDGARD · Icy Bifrost Perimeter &amp; Tactical Mesh</div>
+        <div class="muted" style="font-size:11.5px;margin-top:3px" id="realmLoreDesc">The mortal perimeter where network packets, WireGuard tunnels, and browser tabs meet Heimdall's gate.</div>
+        <div style="font-size:11px;font-style:italic;color:#cbd5e1;margin-top:4px" id="realmLoreQuote">"Every port is a drawbridge. Heimdall sleeps on none of them."</div>
+      </div>
+      <div id="realmsGrid" class="grid2">
+        <div class="card realm-stat" data-realm="asgard">
+          <div class="stat-label">Asgard (Persona Matrix)</div>
+          <div id="rm-asgard" class="stat-val">ONLINE</div>
+          <div id="rm-asgard-sub" class="muted text-xs">7 Sovereign Personas · Luci Authorized</div>
+        </div>
+        <div class="card realm-stat" data-realm="vanaheim">
+          <div class="stat-label">Vanaheim (Vitality)</div>
+          <div id="rm-vanaheim" class="stat-val">—</div>
+          <div id="rm-vanaheim-sub" class="muted text-xs">Live Host CPU &amp; RAM Sensors</div>
+        </div>
+        <div class="card realm-stat" data-realm="midgard">
+          <div class="stat-label">Midgard (Bifrost &amp; VPN)</div>
+          <div id="rm-midgard" class="stat-val">ONLINE</div>
+          <div id="rm-midgard-sub" class="muted text-xs">Bifrost v1 · WireGuard wg0</div>
+        </div>
+        <div class="card realm-stat" data-realm="alfheim">
+          <div class="stat-label">Alfheim (Ethereal Void)</div>
+          <div id="rm-alfheim" class="stat-val">NOMINAL</div>
+          <div id="rm-alfheim-sub" class="muted text-xs">29-App Shell · Ubuntu &amp; Win11</div>
+        </div>
+        <div class="card realm-stat" data-realm="niflheim">
+          <div class="stat-label">Niflheim (Cold Vault)</div>
+          <div id="rm-niflheim" class="stat-val">SECURE</div>
+          <div id="rm-niflheim-sub" class="muted text-xs">Immutable Snapshot Manager</div>
+        </div>
+        <div class="card realm-stat" data-realm="helheim">
+          <div class="stat-label">Helheim (Demogorgon Tarpit)</div>
+          <div id="rm-helheim" class="stat-val">ARMED</div>
+          <div id="rm-helheim-sub" class="muted text-xs">Lynn 616-Cell Honeycomb · Port 2222</div>
+        </div>
+        <div class="card realm-stat" data-realm="muspelheim">
+          <div class="stat-label">Muspelheim (Chaos)</div>
+          <div id="rm-muspelheim" class="stat-val">STANDBY</div>
+          <div id="rm-muspelheim-sub" class="muted text-xs">Tap to Run Bounded Fault Probe</div>
+        </div>
+        <div class="card realm-stat" data-realm="jotunheim">
+          <div class="stat-label">Jotunheim (Forensics)</div>
+          <div id="rm-jotunheim" class="stat-val">VERIFIED</div>
+          <div id="rm-jotunheim-sub" class="muted text-xs">SHA-256 Chain-of-Custody Ledger</div>
+        </div>
+        <div class="card realm-stat" data-realm="svartalfheim">
+          <div class="stat-label">Svartalfheim (Ymir Core)</div>
+          <div id="rm-svartalfheim" class="stat-val">LOCKED</div>
+          <div id="rm-svartalfheim-sub" class="muted text-xs">Bitmap Buddy/SLAB · 0% Drift</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <h2>Quadrant A · Lynn Honeycomb Defense &amp; Demogorgon Tarpit</h2>
+            <div class="muted" style="font-size:11px">Port 2222 Endlessh Slow-Banner Hold · Loki JSONL/SQLite Trail · Valkyrie First-Contact Alerts</div>
+          </div>
+          <div class="row-actions">
+            <button id="demogorgonProbeBtn" class="btn small accent-outline">⚡ Simulate Tarpit Probe</button>
+            <button id="demogorgonRefreshBtn" class="btn small">Refresh Log</button>
+          </div>
+        </div>
+        <pre id="demogorgonLiveBox" class="code-box" style="margin-top:8px">Loading Lynn 616-cell Honeycomb &amp; Demogorgon SQLite incident trail…</pre>
+      </div>
+      <div class="card">
+        <div class="row-between">
+          <h2>Live Realm Telemetry Output</h2>
+          <button id="refreshRealmsBtn" class="btn small">Refresh Pulse</button>
+        </div>
+        <pre id="realmsLiveBox" class="code-box">Fetching live Nine Realms telemetry from Bifrost gateway…</pre>
+      </div>
+    </section>
+
+    <!-- ODIN / UBUNTU MOBILE -->
+    <section id="view-odin" class="view">
+      <div class="card hero">
+        <div class="row-between">
+          <div>
+            <div class="kernel-name">Odin Leviathan Core v5.0</div>
+            <div id="odinDistro" class="muted">Ubuntu 24.04 LTS (Noble Numbat) · Python Pantheon</div>
+          </div>
+          <span class="badge ok" id="odinBadge">ACTIVE</span>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card stat"><div class="stat-label">Thor CPU Load</div><div id="odinCpu" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Thor RAM Usage</div><div id="odinRam" class="stat-val">—</div></div>
+        <div class="card stat"><div class="stat-label">Linux Kernel</div><div id="odinKernelVer" class="stat-val" style="font-size:13px">—</div></div>
+        <div class="card stat"><div class="stat-label">Heimdall Guard</div><div id="odinHeimdall" class="stat-val" style="color:var(--ok)">SHIELD ON</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Odin Pantheon Mobile Actions</h2>
+        <div class="chip-grid">
+          <button class="chip-btn" data-odin="system_update" style="border-color:#10b981;color:#10b981;font-weight:700">🔄 Check &amp; Install Updates</button>
+          <button class="chip-btn" data-odin="telemetry">⚡ Telemetry</button>
+          <button class="chip-btn" data-odin="check_ip">🌐 Check IP</button>
+          <button class="chip-btn" data-odin="heimdall_scan">🛡 Heimdall Scan</button>
+          <button class="chip-btn" data-odin="freya_think">🧠 Freya Think</button>
+          <button class="chip-btn" data-odin="vpn_connect">🔒 VPN + Kill-Switch</button>
+          <button class="chip-btn" data-odin="vm_status">🖥 KVM Hypervisor</button>
+          <button class="chip-btn" data-odin="forensics_status">🔍 Forensics Suite</button>
+          <button class="chip-btn" data-odin="demogorgon_status">🕳 Demogorgon Tarpit</button>
+          <button class="chip-btn" data-odin="evaluate">⚖️ Evaluate Focus</button>
+          <button class="chip-btn" data-odin="ping">📡 Ping Kernel</button>
+          <button class="chip-btn" data-odin="ingest_demo_tab">📑 Ingest Tab Signal</button>
+        </div>
+        <pre id="odinOutput" class="code-box">Tap any Pantheon action above to execute on the live StormRaven Ubuntu kernel…</pre>
+      </div>
+
+      <div class="card">
+        <h2>Install Ubuntu 24.04 Mobile On-Device</h2>
+        <p class="muted" style="margin-bottom:8px"><strong>Android (Termux / Linux Mobile):</strong> Run this 1-liner in Termux to bootstrap Ubuntu 24.04 LTS (Noble) + Odin Pantheon + <code>stormraven</code> CLI:</p>
+        <div class="copy-row">
+          <code id="installCmdText" class="install-cmd">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh.sha256 &amp;&amp; sha256sum -c install-mobile.sh.sha256 &amp;&amp; bash install-mobile.sh</code>
+          <button id="copyInstallBtn" class="btn small">Copy</button>
+        </div>
+        <p class="muted" style="margin-top:10px"><strong>iOS / iPhone:</strong> Tap Safari <strong>Share → Add to Home Screen</strong> to install StormRaven OS Mobile as a full-screen native app, or link the native SwiftUI <code>StormRavenCompanion</code> app to this HTTPS gateway.</p>
       </div>
     </section>
 
     <!-- CONSOLE -->
     <section id="view-console" class="view">
       <div class="card console-card">
-        <h2>Decision engine console</h2>
-        <div id="consoleOut" class="console-out"><div class="muted">Type a command for the kernel. Try: <code>status</code>, <code>tabs</code>, <code>evaluate</code></div></div>
+        <h2>Bifrost &amp; Odin Console</h2>
+        <div id="consoleOut" class="console-out"><div class="muted">Connected to StormRaven OS. Try: <code>status</code>, <code>tabs</code>, <code>evaluate</code>, <code>ping</code>, <code>odin check_ip</code>, <code>heimdall</code>, <code>freya</code></div></div>
         <form id="consoleForm" class="console-form">
           <span class="prompt">❯</span>
-          <input id="consoleInput" type="text" autocomplete="off" placeholder="command…">
+          <input id="consoleInput" type="text" autocomplete="off" placeholder="status, odin check_ip, evaluate…">
           <button class="btn" type="submit">Send</button>
         </form>
       </div>
@@ -92,10 +677,10 @@
   <!-- SETTINGS -->
   <div id="settingsModal" class="modal hidden">
     <div class="modal-card">
-      <h2>Settings</h2>
-      <label class="field-label" for="serverUrl">Kernel gateway URL</label>
-      <input id="serverUrl" type="url" inputmode="url" autocapitalize="off" placeholder="http://192.168.1.10:5080">
-      <p class="hint">HTTP/WS endpoint of the StormRaven IPC gateway (branch <code>ios-companion</code>). REST: <code>GET /status</code>, <code>GET /tabs</code>, <code>POST /command</code> · WS: <code>/events</code>.</p>
+      <h2>Gateway Settings</h2>
+      <label class="field-label" for="serverUrl">Kernel Gateway URL</label>
+      <input id="serverUrl" type="url" inputmode="url" autocapitalize="off" placeholder="https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app">
+      <p class="hint">Defaults to same-origin (<code>window.location.origin</code>) so mobile browsers connect automatically. Supports Bifrost v1 (<code>/health</code>, <code>/state</code>, <code>/tabs</code>, <code>/decisions</code>, <code>/commands</code>, <code>/ws</code>) and PWA endpoints (<code>/status</code>, <code>/command</code>, <code>/events</code>).</p>
       <div class="row-end">
         <button id="settingsCancel" class="btn ghost">Cancel</button>
         <button id="settingsSave" class="btn">Save</button>

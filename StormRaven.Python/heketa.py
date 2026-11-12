@@ -1,1 +1,1 @@
-﻿def run_audit(): print("[*] HEKETA: Forensic integrity audit passing.")
+def run_audit(): print("[*] HEKETA: Forensic integrity audit passing.")

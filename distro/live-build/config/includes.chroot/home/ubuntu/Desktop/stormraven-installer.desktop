@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install StormRaven OS
+Comment=Install StormRaven OS 24.04 LTS to Disk + Boot Repair
+Exec=/usr/local/bin/stormraven-app-exec installos
+Icon=system-software-install
+Terminal=false
+Categories=System;Settings;
+StartupNotify=false

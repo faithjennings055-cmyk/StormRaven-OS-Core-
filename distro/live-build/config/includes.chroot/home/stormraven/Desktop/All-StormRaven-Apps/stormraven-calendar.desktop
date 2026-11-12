@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Calendar
+Comment=StormRaven Calendar & Schedule
+Exec=/usr/local/bin/stormraven-app-exec calendar
+Icon=x-office-calendar
+Terminal=false
+Categories=Office;Calendar;
+StartupNotify=false

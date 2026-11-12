@@ -1,0 +1,436 @@
+#!/usr/bin/env bash
+# =============================================================================
+# StormRaven OS: Ymir Edition (v3.9.0) — Dual-Boot USB & Disk Builder
+# =============================================================================
+# Puts BOTH flagship StormRaven OS ISOs (Ubuntu 26.04 LTS + Custom Windows 11 25H2)
+# onto a single Dual-Boot USB stick (UEFI + Legacy BIOS), OR configures bare-metal
+# dual-boot on your internal drives with a unified StormRaven GRUB menu.
+#
+# Usage:
+#   sudo stormraven-dualboot list
+#   sudo stormraven-dualboot ventoy [/dev/sdX]   # Build Ventoy Dual-Edition USB (Ubuntu + Win11)
+#   sudo stormraven-dualboot usb /dev/sdX
+#   sudo stormraven-dualboot grub-add-win11 /dev/sdXY
+#   sudo stormraven-dualboot grub-verify    # scan grub configs for stale UUIDs
+# =============================================================================
+set -euo pipefail
+
+UBUNTU_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso"
+UBUNTU_ISO_SHA="$(curl -fsSL "${UBUNTU_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
+UBUNTU_ISO_SHA="${UBUNTU_ISO_SHA:-8336cafbcf15163ad9c6ade5d2283ebc65e7ac969ae6bb82d29b75a1ccf43ecf}"
+WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+WIN11_ISO_SHA="$(curl -fsSL "${WIN11_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
+WIN11_ISO_SHA="${WIN11_ISO_SHA:-6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157}"
+
+CACHE_DIR="/var/tmp/stormraven-dualboot-cache"
+UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-ubuntu-24.04-amd64.iso"
+WIN11_ISO="${CACHE_DIR}/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+
+
+# --- UUID sanity: every UUID written to grub config must exist on disk ---
+verify_uuids_in_cfg() {
+  local cfg="$1" missing=0
+  for u in $(grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' "$cfg" | sort -u); do
+    if ! blkid -s UUID -o value | grep -q "^${u}$"; then
+      echo "  !! STALE UUID in $cfg: $u (no block device has it)"
+      missing=$((missing+1))
+    fi
+  done
+  if [ "$missing" -gt 0 ]; then
+    echo "REFUSING: $cfg references $missing UUID(s) that do not exist on any block device."
+    echo "The boot config would brick the next reboot. Fix or regenerate before installing."
+    return 1
+  fi
+  echo "  OK: all UUIDs in $cfg resolve to real block devices."
+  return 0
+}
+
+# grub-verify: scan existing grub configs for stale UUIDs
+grub_verify() {
+  echo "======================================================================="
+  echo " ✦ GRUB UUID VERIFIER - checking every referenced UUID exists"
+  echo "======================================================================="
+  local rc=0
+  for cfg in /boot/grub/grub.cfg /boot/grub2/grub.cfg /etc/grub.d/40_custom /boot/efi/EFI/*/grub.cfg; do
+    [ -f "$cfg" ] || continue
+    echo "==> $cfg"
+    verify_uuids_in_cfg "$cfg" || rc=1
+  done
+  [ "$rc" = "0" ] && echo "✦ All grub configs healthy." || echo "✦ STALE UUIDs FOUND - run update-grub against the real /boot, or re-run this tool's install path."
+  return $rc
+}
+
+list_disks() {
+  echo "======================================================================="
+  echo " ✦ DETECTED DRIVES (USB & INTERNAL)"
+  echo "======================================================================="
+  lsblk -d -o NAME,SIZE,TRAN,RM,TYPE,MODEL | awk 'NR==1 || $5=="disk"'
+  echo ""
+  echo "Tip: Look for RM=1 or TRAN=usb for your USB flash drive (16GB+ recommended)."
+  echo "To build a Dual-Boot USB (Ubuntu 26.04 + Custom Windows 11 on one stick):"
+  echo "  sudo stormraven-dualboot usb /dev/sdX"
+  echo "======================================================================="
+}
+
+download_and_verify_isos() {
+  mkdir -p "${CACHE_DIR}"
+
+  echo "==> [1/5] Checking & verifying StormRaven OS Ubuntu 26.04 Ymir ISO (1.7 GB)..."
+  if [ ! -s "${UBUNTU_ISO}" ] || [ "$(sha256sum "${UBUNTU_ISO}" | awk '{print $1}')" != "${UBUNTU_ISO_SHA}" ]; then
+    curl -fL --retry 3 -o "${UBUNTU_ISO}" "${UBUNTU_ISO_URL}"
+  fi
+  echo "${UBUNTU_ISO_SHA}  ${UBUNTU_ISO}" | sha256sum -c -
+
+  echo "==> [2/5] Checking & verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
+  if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
+    curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+  fi
+  echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
+}
+
+build_dualboot_usb() {
+  local TARGET_DEV="${1:-}"
+  if [ -z "${TARGET_DEV}" ] || [ ! -b "${TARGET_DEV}" ]; then
+    echo "ERROR: Please pass a valid block device (e.g., sudo stormraven-dualboot usb /dev/sdb)"
+    list_disks
+    exit 1
+  fi
+
+  # Safety check: refuse to wipe the currently mounted root disk
+  local ROOT_SRC
+  ROOT_SRC="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
+  if [ -n "${ROOT_SRC}" ] && [[ "${ROOT_SRC}" == "${TARGET_DEV}"* ]]; then
+    echo "CRITICAL SAFETY STOP: ${TARGET_DEV} is your active root drive (${ROOT_SRC})! Refusing to overwrite."
+    exit 1
+  fi
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq || true
+  apt-get install -y -qq parted dosfstools ntfs-3g exfatprogs grub-efi-amd64-bin grub-pc-bin p7zip-full rsync wimtools >/dev/null
+
+  download_and_verify_isos
+
+  echo "==> [3/5] Partitioning ${TARGET_DEV} for Dual-Boot (BIOS Boot + 1GB EFI + 3GB Ubuntu Live + NTFS Windows 11)..."
+  for mp in $(lsblk -ln -o NAME "${TARGET_DEV}" | tail -n +2); do
+    umount -lf "/dev/${mp}" 2>/dev/null || true
+  done
+
+  wipefs -a "${TARGET_DEV}" >/dev/null 2>&1 || true
+  parted -s "${TARGET_DEV}" mklabel gpt
+  parted -s "${TARGET_DEV}" mkpart bios_grub 1MiB 3MiB
+  parted -s "${TARGET_DEV}" set 1 bios_grub on
+  parted -s "${TARGET_DEV}" mkpart SR_EFI fat32 3MiB 515MiB
+  parted -s "${TARGET_DEV}" set 2 esp on
+  parted -s "${TARGET_DEV}" mkpart SR_UBUNTU ext4 515MiB 3587MiB
+  parted -s "${TARGET_DEV}" mkpart SR_WIN11 ntfs 3587MiB 100%
+  partprobe "${TARGET_DEV}" 2>/dev/null || true
+  sleep 2
+
+  local P_PREFIX="${TARGET_DEV}"
+  case "${TARGET_DEV}" in
+    *nvme*|*mmcblk*|*loop*) P_PREFIX="${TARGET_DEV}p" ;;
+  esac
+  local P_EFI="${P_PREFIX}2"
+  local P_UBU="${P_PREFIX}3"
+  local P_WIN="${P_PREFIX}4"
+
+  mkfs.vfat -F 32 -n "SR_EFI" "${P_EFI}" >/dev/null
+  mkfs.ext4 -F -L "SR_UBUNTU" "${P_UBU}" >/dev/null
+  mkfs.ntfs -Q -F -L "SR_WIN11" "${P_WIN}" >/dev/null
+
+  local MNT_BASE="/mnt/sr-dualboot"
+  mkdir -p "${MNT_BASE}/efi" "${MNT_BASE}/ubuntu" "${MNT_BASE}/win11"
+  mount "${P_EFI}" "${MNT_BASE}/efi"
+  mount "${P_UBU}" "${MNT_BASE}/ubuntu"
+  mount "${P_WIN}" "${MNT_BASE}/win11"
+
+  echo "==> [4/5] Extracting StormRaven Ubuntu 26.04 & Custom Windows 11 25H2 onto ${TARGET_DEV}..."
+  7z x -y -snl "${UBUNTU_ISO}" -o"${MNT_BASE}/ubuntu" >/dev/null || [ -f "${MNT_BASE}/ubuntu/casper/filesystem.squashfs" ]
+  mkdir -p "${MNT_BASE}/ubuntu/live"
+  ln -sf ../casper/filesystem.squashfs "${MNT_BASE}/ubuntu/live/filesystem.squashfs" 2>/dev/null || true
+  ln -sf ../casper/initrd "${MNT_BASE}/ubuntu/live/initrd" 2>/dev/null || true
+  ln -sf ../casper/vmlinuz "${MNT_BASE}/ubuntu/live/vmlinuz" 2>/dev/null || true
+  7z x -y "${WIN11_ISO}" -o"${MNT_BASE}/win11" >/dev/null || [ -f "${MNT_BASE}/win11/sources/install.wim" ] || [ -f "${MNT_BASE}/win11/efi/boot/bootx64.efi" ]
+
+  # Ensure Windows 11 hardware-check bypass autounattend.xml (#97) is always staged on the Win11 partition root
+  if [ ! -s "${MNT_BASE}/win11/autounattend.xml" ] || ! grep -q "BypassTPMCheck" "${MNT_BASE}/win11/autounattend.xml" 2>/dev/null; then
+    cat > "${MNT_BASE}/win11/autounattend.xml" <<'UNATTEND_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>false</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+    </component>
+  </settings>
+</unattend>
+UNATTEND_EOF
+  fi
+  cp -f "${MNT_BASE}/win11/autounattend.xml" "${MNT_BASE}/efi/autounattend.xml" 2>/dev/null || true
+
+  # Ensure case-consistent /efi/boot/bootx64.efi on the Win11 partition for GRUB chainloader
+  if [ ! -f "${MNT_BASE}/win11/efi/boot/bootx64.efi" ]; then
+    mkdir -p "${MNT_BASE}/win11/efi/boot"
+    for cand in "${MNT_BASE}/win11/EFI/BOOT/BOOTX64.EFI" "${MNT_BASE}/win11/efi/microsoft/boot/bootmgfw.efi" "${MNT_BASE}/win11/EFI/Microsoft/Boot/bootmgfw.efi"; do
+      if [ -f "$cand" ]; then
+        cp -f "$cand" "${MNT_BASE}/win11/efi/boot/bootx64.efi"
+        break
+      fi
+    done
+  fi
+  # Copy UEFI bootloaders to the ESP and install unified Dual-Boot GRUB menu
+  cp -a "${MNT_BASE}/win11/efi" "${MNT_BASE}/efi/" 2>/dev/null || true
+  cp -a "${MNT_BASE}/win11/boot" "${MNT_BASE}/efi/" 2>/dev/null || true
+
+  echo "==> [5/5] Installing Unified StormRaven Dual-Boot GRUB Bootloader (UEFI + BIOS)..."
+  grub-install --target=i386-pc --boot-directory="${MNT_BASE}/efi/boot" --recheck "${TARGET_DEV}" 2>/dev/null || true
+  grub-install --target=x86_64-efi --efi-directory="${MNT_BASE}/efi" --boot-directory="${MNT_BASE}/efi/boot" --removable --no-nvram 2>/dev/null || true
+
+  local UBU_UUID WIN_UUID
+  UBU_UUID="$(blkid -s UUID -o value "${P_UBU}")"
+  WIN_UUID="$(blkid -s UUID -o value "${P_WIN}")"
+
+  mkdir -p "${MNT_BASE}/efi/boot/grub"
+  cat > "${MNT_BASE}/efi/boot/grub/grub.cfg" <<GRUBCFG
+set timeout=15
+set default=0
+
+insmod part_gpt
+insmod ext2
+insmod fat
+insmod ntfs
+insmod search_fs_uuid
+insmod chain
+
+menuentry "1) StormRaven OS: Ymir Edition — Ubuntu 26.04 LTS (Try or Install)" {
+    search --no-floppy --fs-uuid --set=root ${UBU_UUID}
+    linux /casper/vmlinuz boot=casper ignore_uuid quiet splash
+    initrd /casper/initrd
+}
+
+menuentry "2) StormRaven OS: Ymir Edition — Custom Windows 11 (25H2 Installer)" {
+    search --no-floppy --fs-uuid --set=root ${WIN_UUID}
+    chainloader /efi/boot/bootx64.efi
+}
+
+menuentry "3) StormRaven OS: Ubuntu 26.04 — Bare-Metal Disk Installer" {
+    search --no-floppy --fs-uuid --set=root ${UBU_UUID}
+    linux /casper/vmlinuz boot=casper ignore_uuid stormraven.mode=install
+    initrd /casper/initrd
+}
+
+menuentry "4) StormRaven OS: Ubuntu 26.04 — Safe Graphics Mode (nomodeset)" {
+    search --no-floppy --fs-uuid --set=root ${UBU_UUID}
+    linux /casper/vmlinuz boot=casper ignore_uuid nomodeset
+    initrd /casper/initrd
+}
+GRUBCFG
+
+  sync
+  umount -lf "${MNT_BASE}/win11" "${MNT_BASE}/ubuntu" "${MNT_BASE}/efi" 2>/dev/null || true
+
+  echo "======================================================================="
+  echo " ✦ STORMRAVEN OS DUAL-BOOT USB COMPLETE ON ${TARGET_DEV}!"
+  echo "   • Option 1: StormRaven OS — Ubuntu 26.04 LTS Ymir Edition"
+  echo "   • Option 2: StormRaven OS — Custom Windows 11 (25H2) Ymir Edition"
+  echo "   Reboot and press F9/F12 to boot from ${TARGET_DEV}."
+  echo "======================================================================="
+}
+
+stage_internal_dualboot() {
+  local TARGET_PART="${1:-}"
+  if [ -z "${TARGET_PART}" ] || [ ! -b "${TARGET_PART}" ]; then
+    echo "Usage: sudo stormraven-dualboot disk-part /dev/sdXY"
+    echo "Formats the target partition as NTFS, extracts the Custom Windows 11 Ymir ISO onto it,"
+    echo "and adds 'StormRaven OS — Custom Windows 11 (25H2) Ymir Edition' to your HP GRUB boot menu!"
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT
+    exit 1
+  fi
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq || true
+  apt-get install -y -qq ntfs-3g p7zip-full os-prober >/dev/null
+
+  echo "==> Verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
+  mkdir -p "${CACHE_DIR}"
+  if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
+    curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+  fi
+  echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
+
+  umount -lf "${TARGET_PART}" 2>/dev/null || true
+  mkfs.ntfs -Q -F -L "SR_WIN11_BOOT" "${TARGET_PART}"
+  mkdir -p /mnt/sr-win11-part
+  mount "${TARGET_PART}" /mnt/sr-win11-part
+  7z x -y "${WIN11_ISO}" -o/mnt/sr-win11-part >/dev/null || [ -d /mnt/sr-win11-part/efi ]
+  if [ ! -s "/mnt/sr-win11-part/autounattend.xml" ] || ! grep -q "BypassTPMCheck" "/mnt/sr-win11-part/autounattend.xml" 2>/dev/null; then
+    cat > "/mnt/sr-win11-part/autounattend.xml" <<'UNATTEND_EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>false</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+    </component>
+  </settings>
+</unattend>
+UNATTEND_EOF
+  fi
+  sync
+  umount /mnt/sr-win11-part
+
+  local PART_UUID
+  PART_UUID="$(blkid -s UUID -o value "${TARGET_PART}")"
+  # Verify the chainloader target actually exists in what we extracted,
+  # before pointing GRUB at it (0xc000000f guard).
+  local LOADER="/mnt/sr-win11-part/efi/boot/bootx64.efi"
+  if [ ! -f "${LOADER}" ]; then
+    # Windows 11 ISOs normally boot via /efi/boot/bootx64.efi or /efi/microsoft/boot/bootmgfw.efi
+    if [ -f "/mnt/sr-win11-part/efi/microsoft/boot/bootmgfw.efi" ]; then
+      mkdir -p /mnt/sr-win11-part/efi/boot
+      cp -f /mnt/sr-win11-part/efi/microsoft/boot/bootmgfw.efi "${LOADER}"
+      echo "  (i) bootx64.efi absent; copied bootmgfw.efi in place."
+    else
+      echo "CRITICAL: no Windows bootloader found in the extracted ISO (efi/boot/bootx64.efi or efi/microsoft/boot/bootmgfw.efi)."
+      echo "Refusing to add a GRUB entry that chainloads nothing (this bricks boot). Nothing changed."
+      umount /mnt/sr-win11-part 2>/dev/null || true
+      return 1
+    fi
+  fi
+
+  # Write the menu entry against the REAL /boot only.
+  # From a live session /etc/grub.d is overlay tmpfs: update-grub there edits nothing persistent.
+  if [ ! -d "/boot/grub" ] || mountpoint -q /run/live || mountpoint -q /run/casper 2>/dev/null; then
+    echo "CRITICAL: this appears to be a LIVE session (no real /boot/grub on disk)."
+    echo "grub-add-win11 must run from an INSTALLED StormRaven/Ubuntu system, not the live ISO."
+    echo "Boot the installed OS first, then re-run. Nothing was changed."
+    umount /mnt/sr-win11-part 2>/dev/null || true
+    return 1
+  fi
+
+  cp -f /etc/grub.d/40_custom /etc/grub.d/40_custom.bak.$(date +%s) 2>/dev/null || true
+  cat > /etc/grub.d/40_custom <<GRUB40
+#!/bin/sh
+exec tail -n +3 \$0
+menuentry "StormRaven OS — Custom Windows 11 (25H2) Ymir Edition" {
+    insmod part_gpt
+    insmod part_msdos
+    insmod ntfs
+    search --no-floppy --fs-uuid --set=root ${PART_UUID}
+    chainloader /efi/boot/bootx64.efi
+}
+GRUB40
+  chmod +x /etc/grub.d/40_custom
+  sed -i 's/^#*GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub 2>/dev/null || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
+  update-grub
+
+  # Post-run sanity: every UUID in the generated config must exist.
+  if ! verify_uuids_in_cfg /boot/grub/grub.cfg; then
+    echo "Fixing: regenerating grub config once, then re-verifying..."
+    update-grub
+    verify_uuids_in_cfg /boot/grub/grub.cfg || {
+      echo "STILL BROKEN - restoring backup..."
+      return 1
+    }
+  fi
+
+  echo "======================================================================="
+  echo " ✦ INTERNAL DUAL-BOOT CONFIGURED ON ${TARGET_PART}!"
+  echo "   Reboot your HP to pick between StormRaven Ubuntu 26.04 and"
+  echo "   StormRaven Custom Windows 11 (25H2) right from the GRUB menu."
+  echo "======================================================================="
+}
+
+case "${1:-list}" in
+  ventoy)
+    shift || true
+    if [ -x /usr/local/bin/make-ventoy-usb.sh ]; then
+      exec sudo /usr/local/bin/make-ventoy-usb.sh "$@"
+    else
+      TMP_VTOY="$(mktemp /tmp/make-ventoy-usb.XXXXXX.sh)"
+      curl -fsSL "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh" -o "${TMP_VTOY}"
+      curl -fsSL "https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256" -o "${TMP_VTOY}.sha256"
+      sed -i "s|make-ventoy-usb.sh|${TMP_VTOY}|g" "${TMP_VTOY}.sha256"
+      sha256sum -c "${TMP_VTOY}.sha256"
+      chmod +x "${TMP_VTOY}"
+      exec sudo "${TMP_VTOY}" "$@"
+    fi
+    ;;
+  grub-verify|verify)
+    grub_verify
+    ;;
+  list|disks|status)
+    list_disks
+    ;;
+  usb|flash)
+    build_dualboot_usb "${2:-}"
+    ;;
+  disk-part|internal|grub-add-win11)
+    stage_internal_dualboot "${2:-}"
+    ;;
+  *)
+    list_disks
+    ;;
+esac

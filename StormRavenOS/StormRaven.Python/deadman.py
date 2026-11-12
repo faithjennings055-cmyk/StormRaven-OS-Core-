@@ -1,4 +1,4 @@
-﻿import os, time, subprocess
+import os, time, subprocess
 from constants import DEV_DRIVE, IS_WINDOWS
 
 def monitor():

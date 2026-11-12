@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+REAL_INSTALL="/usr/bin/install"
+[ -x /usr/bin/install.coreutils ] && REAL_INSTALL="/usr/bin/install.coreutils"
+
+if [ "$#" -eq 0 ]; then
+  echo "Usage:"
+  echo "  install <app-name>           Install an application (e.g., install chrome, install firefox, install vlc, install hp)"
+  echo "  install [OPTIONS] SRC DEST   Copy files and set attributes (GNU coreutils)"
+  exit 1
+fi
+
+for arg in "$@"; do
+  case "$arg" in
+    -*)
+      exec "$REAL_INSTALL" "$@"
+      ;;
+  esac
+done
+
+if [ "$#" -ge 2 ] && { [ -e "$1" ] || [[ "$1" == */* ]] || [[ "$2" == */* ]]; }; then
+  exec "$REAL_INSTALL" "$@"
+fi
+
+if [ "$(id -u)" -ne 0 ]; then
+  exec sudo "$0" "$@"
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq || true
+
+for pkg in "$@"; do
+  case "${pkg,,}" in
+    chrome|google-chrome|google-chrome-stable)
+      echo "==> Downloading and installing Google Chrome Stable (amd64)..."
+      curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/google-chrome.deb
+      apt-get install -y /tmp/google-chrome.deb || (dpkg -i /tmp/google-chrome.deb && apt-get install -f -y)
+      rm -f /tmp/google-chrome.deb
+      cat > /usr/local/bin/google-chrome <<'CHWRAP'
+#!/usr/bin/env bash
+if [ "$(id -u)" -eq 0 ]; then
+  exec /usr/bin/google-chrome-stable --no-sandbox --user-data-dir=/tmp/chrome-root-profile "$@"
+else
+  exec /usr/bin/google-chrome-stable --no-sandbox "$@"
+fi
+CHWRAP
+      chmod 0755 /usr/local/bin/google-chrome
+      echo "==> Google Chrome installed! Run 'google-chrome' or click Web Browser on the desktop."
+      ;;
+    hp|w2558hc|hp-w2558hc)
+      /usr/local/bin/stormraven-display-hp 1920x1200
+      ;;
+    *)
+      echo "==> Installing ${pkg} via APT..."
+      apt-get install -y "${pkg}"
+      ;;
+  esac
+done

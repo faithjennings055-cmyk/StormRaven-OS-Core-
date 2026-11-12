@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Desktop Settings
+Comment=Theme, Appearance, Display & Audio Settings
+Exec=/usr/local/bin/stormraven-app-exec settings
+Icon=preferences-desktop
+Terminal=false
+Categories=Settings;
+StartupNotify=false

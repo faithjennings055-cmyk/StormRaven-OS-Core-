@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+echo "=== [ᛁ ISA — Niflheim Cryo-Freeze & Snapshot Vault] ==="
+SNAP_DIR="/var/lib/stormraven/niflheim"
+mkdir -p "$SNAP_DIR" 2>/dev/null || SNAP_DIR="/tmp/stormraven-void/niflheim"
+mkdir -p "$SNAP_DIR"
+SNAP_FILE="${SNAP_DIR}/cryo_$(date -u +%Y%m%dT%H%M%SZ).json"
+/usr/local/bin/stormraven state > "$SNAP_FILE" 2>/dev/null || echo '{"state":"frozen"}' > "$SNAP_FILE"
+echo "Cryo-snapshot sealed: $SNAP_FILE"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Calculator
+Comment=StormRaven Scientific & Financial Calculator
+Exec=/usr/local/bin/stormraven-app-exec calc
+Icon=accessories-calculator
+Terminal=false
+Categories=Utility;Calculator;
+StartupNotify=false
