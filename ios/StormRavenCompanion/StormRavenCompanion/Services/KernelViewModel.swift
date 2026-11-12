@@ -47,9 +47,10 @@ final class KernelViewModel: ObservableObject {
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = body
-        let (data, http) = try await session.data(for: req)
-        guard (200..<300).contains(http.statusCode) else {
-            throw KernelError.http(http.statusCode, String(data: data, encoding: .utf8) ?? "")
+        let (data, resp) = try await session.data(for: req)
+        let statusCode = (resp as? HTTPURLResponse)?.statusCode ?? 200
+        guard (200..<300).contains(statusCode) else {
+            throw KernelError.http(statusCode, String(data: data, encoding: .utf8) ?? "")
         }
         let envelope = try decoder.decode(GatewayEnvelope<T>.self, from: data)
         guard envelope.ok, let payload = envelope.data else {
@@ -67,7 +68,7 @@ final class KernelViewModel: ObservableObject {
             async let st: KernelState? = try? fetch("state", as: KernelState.self)
             async let tb: TabsEnvelope = fetch("tabs", as: TabsEnvelope.self)
             async let dc: DecisionsEnvelope = fetch("decisions", as: DecisionsEnvelope.self)
-            let (s, t, d) = await (st, tb, dc)
+            let (s, t, d) = try await (st, tb, dc)
             state = s
             tabs = t.tabs
             decisions = d.decisions
@@ -107,7 +108,9 @@ final class KernelViewModel: ObservableObject {
         receiveLoop(task)
         // keep NAT/sockets alive through idle periods
         pingTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
-            self?.socketTask?.sendPing { _ in }
+            Task { @MainActor in
+                self?.socketTask?.sendPing { _ in }
+            }
         }
     }
 

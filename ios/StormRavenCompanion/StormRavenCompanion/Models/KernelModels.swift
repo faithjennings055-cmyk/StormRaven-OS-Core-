@@ -118,7 +118,7 @@ struct KernelDecision: Decodable, Identifiable {
     /// Live WebSocket shape: { id, time, severity, summary, ruleId }
     init(live: LiveDecisionEvent) {
         self.init(id: live.id, time: live.time, severity: live.severity,
-                  summary: live.summary, ruleId: live.ruleId, confidence: 1.0)
+                  summary: live.summary, ruleId: live.ruleId ?? "", confidence: 1.0)
     }
 
     private enum CodingKeys: String, CodingKey { case v, type, id, time, severity, summary, evidence, explainability }

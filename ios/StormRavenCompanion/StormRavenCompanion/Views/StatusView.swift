@@ -96,7 +96,8 @@ struct StatusView: View {
     private var stateCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Normalized state")
-                .font(.caption.uppercase())
+                .font(.caption)
+                .textCase(.uppercase)
                 .foregroundStyle(Theme.textDim)
             chipRow("focus", vm.state?.focus.attention ?? "unknown")
             chipRow("activity", vm.state?.focus.foregroundActivity ?? "unknown")
@@ -130,7 +131,8 @@ struct StatusView: View {
     private var providersCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Providers")
-                .font(.caption.uppercase())
+                .font(.caption)
+                .textCase(.uppercase)
                 .foregroundStyle(Theme.textDim)
             ForEach(vm.health?.providers ?? [], id: \.name) { p in
                 HStack {
@@ -157,7 +159,8 @@ struct StatusView: View {
     private var quickActionsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Kernel commands")
-                .font(.caption.uppercase())
+                .font(.caption)
+                .textCase(.uppercase)
                 .foregroundStyle(Theme.textDim)
             HStack(spacing: 10) {
                 actionButton("Ping", "bolt.horizontal") { await vm.sendCommand("ping") }
