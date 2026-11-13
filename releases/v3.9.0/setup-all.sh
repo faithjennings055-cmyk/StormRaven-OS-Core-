@@ -140,3 +140,23 @@ echo "  2. Fast DNS   : AdGuard 94.140.14.14 / 94.140.15.15 + 1.1.1.1"
 echo "  3. Tailnet    : Tailscale SSH + MagicDNS Ready"
 echo "  4. Ymir CLI   : Run './sr status' | './sr freya' | './ssh-keygen -lf ~/.ssh/id_ed25519.pub'"
 echo "=================================================================="
+
+# Configure optimal DevBox ~/.ssh/config for Tailnet & StormRaven nodes
+cat << 'SSHCFG' > "$SSH_DIR/config"
+Host stormraven stormraven-node
+    HostName stormraven-node
+    User ubuntu
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    TCPKeepAlive yes
+    Compression yes
+
+Host *
+    IdentityFile ~/.ssh/id_ed25519
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    AddKeysToAgent yes
+SSHCFG
+chmod 600 "$SSH_DIR/config" 2>/dev/null || true

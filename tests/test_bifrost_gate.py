@@ -194,6 +194,29 @@ class BifrostGateContract(unittest.TestCase):
         self.assertIn("echo-at-faith-s-workspace-2.skydive.app/beta", showcase_src,
             "showcase/index.html must feature the Worldwide 1,000-Slot Beta Portal")
 
+    def test_ios_mdm_and_mobileconfig_profiles_pass_strict_plistlib_validation(self):
+        import plistlib
+        import uuid
+
+        profiles_dir = os.path.join(ROOT, "releases", "v3.9.0", "profiles")
+        self.assertTrue(os.path.isdir(profiles_dir), f"Missing profiles directory: {profiles_dir}")
+        checked_profiles = 0
+        for fname in sorted(os.listdir(profiles_dir)):
+            if not (fname.endswith(".mobileconfig") or fname.endswith(".mdm")):
+                continue
+            fpath = os.path.join(profiles_dir, fname)
+            with open(fpath, "rb") as pf:
+                data = plistlib.load(pf)
+            self.assertEqual(data.get("PayloadType"), "Configuration", f"{fname} must have PayloadType=Configuration")
+            self.assertEqual(data.get("PayloadVersion"), 1, f"{fname} must have PayloadVersion=1")
+            uuid.UUID(data["PayloadUUID"])
+            content = data.get("PayloadContent", [])
+            self.assertGreaterEqual(len(content), 1, f"{fname} must contain at least 1 payload")
+            for item in content:
+                uuid.UUID(item["PayloadUUID"])
+            checked_profiles += 1
+        self.assertGreaterEqual(checked_profiles, 6, "Expected at least 6 validated .mobileconfig/.mdm profiles")
+
 
 if __name__ == "__main__":
     unittest.main()
