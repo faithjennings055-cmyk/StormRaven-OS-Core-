@@ -25,16 +25,26 @@ SR_ROOT="$HOME_DIR/.stormraven"
 BIN_DIR="$HOME_DIR/bin"
 SSH_DIR="$HOME_DIR/.ssh"
 mkdir -p "$SR_ROOT" "$BIN_DIR" "$SSH_DIR"
+export PATH="$BIN_DIR:$HOME_DIR:$PATH"
 chmod 700 "$SSH_DIR" 2>/dev/null || true
 
-# 1. Provision Sovereign Ed25519 SSH Key + Authorized Keys
+# 1. Provision Sovereign Ed25519 SSH Key + Authorized Keys + Pure-Python ssh-keygen Polyfill
 touch "$SSH_DIR/authorized_keys"
 chmod 600 "$SSH_DIR/authorized_keys" 2>/dev/null || true
 if ! grep -q "IHMmx/Un999flE1aGZxsbWZlMddSCBaSkVNhPf2RIN96" "$SSH_DIR/authorized_keys" 2>/dev/null; then
   printf '%s\n' "$FAITH_PUBKEY" >> "$SSH_DIR/authorized_keys"
 fi
-if [ ! -f "$SSH_DIR/id_ed25519" ] && command -v ssh-keygen >/dev/null 2>&1; then
-  ssh-keygen -t ed25519 -N "" -C "faith@iphone13-stormraven" -f "$SSH_DIR/id_ed25519" >/dev/null 2>&1 || true
+if ! command -v ssh-keygen >/dev/null 2>&1; then
+  curl -fsSL "$BASE_URL/ssh-keygen" -o "$BIN_DIR/ssh-keygen" 2>/dev/null || true
+  chmod 755 "$BIN_DIR/ssh-keygen" 2>/dev/null || true
+  cp "$BIN_DIR/ssh-keygen" "$HOME_DIR/ssh-keygen" 2>/dev/null || true
+fi
+if [ ! -f "$SSH_DIR/id_ed25519" ]; then
+  if command -v ssh-keygen >/dev/null 2>&1; then
+    ssh-keygen -t ed25519 -N "" -C "faith@iphone13-stormraven" -f "$SSH_DIR/id_ed25519" >/dev/null 2>&1 || true
+  elif command -v python3 >/dev/null 2>&1 && [ -f "$BIN_DIR/ssh-keygen" ]; then
+    python3 "$BIN_DIR/ssh-keygen" -t ed25519 -N "" -C "faith@iphone13-stormraven" -f "$SSH_DIR/id_ed25519" >/dev/null 2>&1 || true
+  fi
 fi
 
 # 2. Download & SHA-256 Verify Full 32-Bit / iOS StormRaven Runtime Bundle
