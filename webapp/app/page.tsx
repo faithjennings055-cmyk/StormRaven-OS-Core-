@@ -117,19 +117,42 @@ export default function Page() {
     return () => clearInterval(id)
   }, [dispatch, telemetry.daemons, telemetry.threatLevel])
 
-  function handleRunicSubmit(e: React.FormEvent) {
+  async function handleRunicSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!runeInput.trim()) return
-    const verdict = heimdallrInspect(runeInput)
-    dispatch(
-      pushEvent({
-        id: `evt-${Date.now()}`,
-        daemon: "heimdall",
-        severity: verdict.severity,
-        message: `[${ runeInput.trim() }] → ${verdict.reason}`,
-        ts: Date.now(),
-      }),
-    )
+    
+    const cmd = runeInput.trim()
+    const verdict = heimdallrInspect(cmd)
+
+    try {
+      const res = await fetch(`${gatewayUrl.replace(/\/+$/, "")}/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd })
+      })
+      const data = await res.json()
+      
+      dispatch(
+        pushEvent({
+          id: `evt-${Date.now()}`,
+          daemon: "kernel",
+          severity: "info",
+          message: `[${cmd}] → ${data.data?.detail || 'Executed'}`,
+          ts: Date.now(),
+        }),
+      )
+    } catch (err) {
+      dispatch(
+        pushEvent({
+          id: `evt-${Date.now()}`,
+          daemon: "kernel",
+          severity: "alert",
+          message: `Command failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          ts: Date.now(),
+        }),
+      )
+    }
+    
     setRuneInput("")
   }
 
