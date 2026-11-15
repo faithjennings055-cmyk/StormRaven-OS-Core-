@@ -248,7 +248,15 @@ echo [StormRaven Display] External HP w2558hc 1920x1200@60Hz WUXGA profile appli
 exit /b 0
 
 :desktop
-start msedge --app="$CloudUrl/?mode=win10-surface" 2>nul || start chrome --app="$CloudUrl/?mode=win10-surface" 2>nul || start "$CloudUrl/?mode=win10-surface"
+if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" (
+    start "" "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --app="$CloudUrl/?mode=win10-surface"
+) else if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" (
+    start "" "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" --app="$CloudUrl/?mode=win10-surface"
+) else if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
+    start "" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --app="$CloudUrl/?mode=win10-surface"
+) else (
+    start "" "$CloudUrl/?mode=win10-surface"
+)
 exit /b 0
 "@
 Set-Content -Path "$env:SystemRoot\System32\stormraven.cmd" -Value $CliContent -Encoding ASCII
@@ -366,8 +374,26 @@ function New-SrShortcut($Path, $Target, $ArgsStr, $Desc) {
     $s.Save()
 }
 
-New-SrShortcut "$DesktopDir\StormRaven OS (Windows 10 Surface x64).lnk" "msedge.exe" "--app=http://127.0.0.1:8787/?mode=win10-surface" "StormRaven OS: Infinity Protocol Ymir HUD (Windows 10 x64 Surface Edition)"
-New-SrShortcut "$StartMenuDir\StormRaven OS (Windows 10 Surface x64).lnk" "msedge.exe" "--app=http://127.0.0.1:8787/?mode=win10-surface" "StormRaven OS: Infinity Protocol Ymir HUD (Windows 10 x64 Surface Edition)"
+# Resolve browser executable (Edge x86/x64, Chrome, or explorer URL fallback)
+$BrowserCandidates = @(
+    "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
+    "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe",
+    "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+    "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe"
+)
+$BrowserExe = $BrowserCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+if ($BrowserExe) {
+    $HudTarget = $BrowserExe
+    $HudLocalArgs = "--app=http://127.0.0.1:8787/?mode=win10-surface"
+    $HudCloudArgs = "--app=$CloudUrl/?mode=win10-surface"
+} else {
+    $HudTarget = "$env:SystemRoot\explorer.exe"
+    $HudLocalArgs = "$CloudUrl/?mode=win10-surface"
+    $HudCloudArgs = "$CloudUrl/?mode=win10-surface"
+}
+
+New-SrShortcut "$DesktopDir\StormRaven OS (Windows 10 Surface x64).lnk" $HudTarget $HudCloudArgs "StormRaven OS: Infinity Protocol Ymir HUD (Windows 10 x64 Surface Edition)"
+New-SrShortcut "$StartMenuDir\StormRaven OS (Windows 10 Surface x64).lnk" $HudTarget $HudCloudArgs "StormRaven OS: Infinity Protocol Ymir HUD (Windows 10 x64 Surface Edition)"
 New-SrShortcut "$DesktopDir\Check & Install Updates.lnk" "cmd.exe" "/c stormraven update & pause" "Check & Install StormRaven OS + Windows 10 Surface Updates"
 New-SrShortcut "$StartMenuDir\Check & Install Updates.lnk" "cmd.exe" "/c stormraven update & pause" "Check & Install StormRaven OS + Windows 10 Surface Updates"
 New-SrShortcut "$DesktopDir\Surface Touch & Pen Calibration.lnk" "cmd.exe" "/c stormraven surface & pause" "Configure Windows Surface Touch Keyboard, Pen & Auto-Rotation"
@@ -376,7 +402,7 @@ New-SrShortcut "$DesktopDir\Odin Pantheon Terminal.lnk" "cmd.exe" "/k stormraven
 New-SrShortcut "$DesktopDir\Security War Room.lnk" "cmd.exe" "/k stormraven war_room" "Heimdall CWE-77 Gate & Demogorgon Tarpit Status"
 
 $WinApps = @(
-    @{ Name="01 - StormRaven Ymir Touch HUD"; Target="msedge.exe"; Args="--app=$CloudUrl/?mode=win10-surface" },
+    @{ Name="01 - StormRaven Ymir Touch HUD"; Target=$HudTarget; Args=$HudCloudArgs },
     @{ Name="02 - Odin Pantheon Terminal"; Target="cmd.exe"; Args="/k stormraven status" },
     @{ Name="03 - Sovereign AI (Freya & Odin)"; Target="cmd.exe"; Args="/k stormraven ai" },
     @{ Name="04 - Heimdall Security & Luci Key"; Target="cmd.exe"; Args="/k stormraven luci" },
@@ -398,7 +424,11 @@ foreach ($app in $WinApps) {
     New-SrShortcut "$StartMenuDir\$($app.Name).lnk" $app.Target $app.Args $app.Name
 }
 
-Start-Process "msedge.exe" -ArgumentList "--app=$CloudUrl/?mode=win10-surface" -ErrorAction SilentlyContinue
+if ($BrowserExe) {
+    Start-Process -FilePath $BrowserExe -ArgumentList "--app=$CloudUrl/?mode=win10-surface" -ErrorAction SilentlyContinue
+} else {
+    Start-Process "$CloudUrl/?mode=win10-surface" -ErrorAction SilentlyContinue
+}
 
 Write-Host ""
 Write-Host "=======================================================================" -ForegroundColor Green
