@@ -4,7 +4,7 @@
     StormRaven OS: Infinity Protocol v3.9.0 — 64-Bit Windows 10 Surface Tablet/PC Edition Installer (No Moov)
 .DESCRIPTION
     One-command PowerShell installer for 64-bit Windows 10 (Surface Tablet/PC & Desktop — Moov-Free):
-      Invoke-WebRequest -Uri "https://echo-at-faith-s-workspace.skydive.app/install-win10.ps1" -OutFile "install-win10.ps1"; Invoke-WebRequest -Uri "https://echo-at-faith-s-workspace.skydive.app/install-win10.ps1.sha256" -OutFile "install-win10.ps1.sha256"; $exp=((Get-Content .\install-win10.ps1.sha256 -Raw).Trim() -split "\s+")[0].ToLower(); if ((Get-FileHash .\install-win10.ps1 -Algorithm SHA256).Hash.ToLower() -eq $exp) { .\install-win10.ps1 } else { throw "SHA-256 mismatch" }
+      Invoke-WebRequest -Uri "https://echo-at-faith-s-workspace.skydive.app/install-win10.ps1" -OutFile "install-win10.ps1"; Invoke-WebRequest -Uri "https://echo-at-faith-s-workspace.skydive.app/install-win10.ps1.sha256" -OutFile "install-win10.ps1.sha256"; $exp=((Get-Content .\install-win10.ps1.sha256 -Raw).Trim() -split "\s+")[0].ToLower(); if ((Get-FileHash .\install-win10.ps1 -Algorithm SHA256).Hash.ToLower() -eq $exp) { powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-win10.ps1 } else { throw "SHA-256 mismatch" }
     Installs:
       1. 64-Bit (x64) Architecture Gate (refuses 32-bit/ARM non-x64 environments cleanly)
       2. Self-contained StormRaven.Kernel.exe (65MB .NET 8 native Windows x64 binary, zero dependencies!)
@@ -55,7 +55,8 @@ if (-not (Test-Path $LuciKeyPath)) {
 }
 Write-Host "==> [1/7] Luci Sovereign Key sealed at $LuciKeyPath" -ForegroundColor Green
 
-# 3. Download or extract self-contained StormRaven x64 bundle (SHA-256 verified) and strip any Moov files
+# 3. Stop any running StormRaven.Kernel.exe before updating files, then download/extract x64 bundle (SHA-256 verified)
+Get-Process -Name "StormRaven.Kernel" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 $ZipUrl  = "$CloudUrl/iso/StormRavenOS-Win11-Full-v3.9.0-x64.zip"
 $ShaUrl  = "$ZipUrl.sha256"
 $ZipPath = "$env:TEMP\StormRavenOS-Win10-x64-Bundle.zip"
@@ -70,7 +71,7 @@ if (Test-Path $LocalBundle) {
     Copy-Item -Path "$PSScriptRoot\drivers\hp-w2558hc\*" -Destination $DriversDir -Recurse -Force -ErrorAction SilentlyContinue
 } else {
     Write-Host "==> [2/7] Downloading StormRaven OS 64-Bit x64 Core Bundle ($ZipUrl)..." -ForegroundColor Cyan
-    & curl.exe -fL --retry 3 -o $ZipPath $ZipUrl
+    & curl.exe -fsSL --retry 3 -o $ZipPath $ZipUrl
     & curl.exe -fsSL $ShaUrl -o $ShaPath
     if (Test-Path $ZipPath) {
         if (Test-Path $ShaPath) {
