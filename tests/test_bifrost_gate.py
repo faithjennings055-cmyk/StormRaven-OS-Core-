@@ -140,6 +140,7 @@ class BifrostGateContract(unittest.TestCase):
             os.path.join(ROOT, "distro", "windows11", "Install-StormRaven-Win11.ps1"),
             os.path.join(ROOT, "distro", "windows11", "Install-StormRaven-Win10.ps1"),
             os.path.join(ROOT, "distro", "windows11", "Build-StormRaven-Win11-ISO.ps1"),
+            os.path.join(ROOT, "distro", "windows11", "Build-StormRaven-Win10-Surface-ISO.ps1"),
             os.path.join(ROOT, "distro", "windows11", "stormraven-skydive.ps1"),
             os.path.join(ROOT, "addons", "stormraven-win11-moov-addon", "install-win11.ps1"),
             os.path.join(ROOT, "releases", "v3.9.0", "install-win11.ps1"),
@@ -155,6 +156,17 @@ class BifrostGateContract(unittest.TestCase):
             )
             text = raw[3:].decode("utf-8")
             self.assertNotIn("| iex", text, f"PowerShell script {p} must not contain blind '| iex' pipes (#105)")
+
+        # Ensure 64-bit Windows 10 Surface installer enforces x64 and excludes Moov commands/shortcuts
+        for win10_p in (
+            os.path.join(ROOT, "distro", "windows11", "Install-StormRaven-Win10.ps1"),
+            os.path.join(ROOT, "releases", "v3.9.0", "install-win10.ps1"),
+        ):
+            with open(win10_p, "rb") as f:
+                w10_txt = f.read()[3:].decode("utf-8")
+            self.assertIn("[Environment]::Is64BitOperatingSystem", w10_txt)
+            self.assertNotIn(":moov", w10_txt)
+            self.assertNotIn("Moov AI Banking", w10_txt)
 
     def test_void_theme_assets_present_in_chroot(self):
         chroot = os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot")
