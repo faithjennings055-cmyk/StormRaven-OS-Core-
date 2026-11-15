@@ -138,10 +138,12 @@ class BifrostGateContract(unittest.TestCase):
     def test_win11_ps1_scripts_with_non_ascii_have_utf8_bom_and_no_blind_iex(self):
         ps1_paths = [
             os.path.join(ROOT, "distro", "windows11", "Install-StormRaven-Win11.ps1"),
+            os.path.join(ROOT, "distro", "windows11", "Install-StormRaven-Win10.ps1"),
             os.path.join(ROOT, "distro", "windows11", "Build-StormRaven-Win11-ISO.ps1"),
             os.path.join(ROOT, "distro", "windows11", "stormraven-skydive.ps1"),
             os.path.join(ROOT, "addons", "stormraven-win11-moov-addon", "install-win11.ps1"),
             os.path.join(ROOT, "releases", "v3.9.0", "install-win11.ps1"),
+            os.path.join(ROOT, "releases", "v3.9.0", "install-win10.ps1"),
         ]
         for p in ps1_paths:
             self.assertTrue(os.path.isfile(p), f"Missing PowerShell script: {p}")
