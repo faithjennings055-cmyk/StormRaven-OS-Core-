@@ -313,6 +313,96 @@ class BifrostGateContract(unittest.TestCase):
             self.assertIn("9a8b7c6d-1111-2222-3333-444455556666", res_confirmed.stdout)
             self.assertIn("[STEP 1/6] DRY-RUN:", res_confirmed.stdout)
 
+    def test_issue_108_recovery_and_flashing_scripts_enforce_serial_verify_mode_and_sidecars(self):
+        import hashlib
+        import subprocess
+        import tempfile
+
+        bash_scripts = [
+            os.path.join(ROOT, "distro", "flash-usb.sh"),
+            os.path.join(ROOT, "distro", "upgrade-hp.sh"),
+            os.path.join(ROOT, "distro", "make-ventoy-usb.sh"),
+            os.path.join(ROOT, "distro", "make-surface3-usb.sh"),
+            os.path.join(ROOT, "distro", "make-win11-usb.sh"),
+            os.path.join(ROOT, "distro", "make-win10-surface-usb.sh"),
+            os.path.join(ROOT, "distro", "install-chromebook.sh"),
+            os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", "stormraven-dualboot"),
+            os.path.join(ROOT, "distro", "live-build", "config", "includes.chroot", "usr", "local", "bin", "stormraven-installer"),
+        ]
+        ps1_scripts = [
+            os.path.join(ROOT, "distro", "write-micro-sd.ps1"),
+            os.path.join(ROOT, "distro", "write-infinity-sd.ps1"),
+            os.path.join(ROOT, "distro", "make-linux-sd-surface3.ps1"),
+            os.path.join(ROOT, "distro", "Make-Surface3-USB.ps1"),
+        ]
+
+        # 1. Verify regression story (#108), --verify-mode / -VerifyMode, ERASE gate, and exact .sha256 sidecars
+        for s in bash_scripts:
+            self.assertTrue(os.path.isfile(s), f"Missing recovery script: {s}")
+            with open(s, encoding="utf-8") as fh:
+                src = fh.read()
+            self.assertIn("#108", src, f"{s} must document the Issue #108 regression story in header")
+            self.assertIn("verify-mode", src, f"{s} must implement --verify-mode")
+            self.assertIn("RESOLVED TARGET:", src, f"{s} must print RESOLVED TARGET before writing")
+            sidecar = s + ".sha256"
+            if os.path.isfile(sidecar):
+                with open(s, "rb") as sb:
+                    actual_sha = hashlib.sha256(sb.read()).hexdigest()
+                with open(sidecar, encoding="utf-8") as sc:
+                    expected_sha = sc.read().split()[0].strip()
+                self.assertEqual(actual_sha, expected_sha, f"Stale .sha256 sidecar for {s}")
+
+        for p in ps1_scripts:
+            self.assertTrue(os.path.isfile(p), f"Missing PowerShell recovery script: {p}")
+            with open(p, encoding="utf-8") as fh:
+                src = fh.read()
+            self.assertIn("#108", src, f"{p} must document the Issue #108 regression story in header")
+            self.assertIn("VerifyMode", src, f"{p} must implement -VerifyMode")
+            self.assertIn("RESOLVED TARGET", src, f"{p} must print RESOLVED TARGET before writing")
+            sidecar = p + ".sha256"
+            self.assertTrue(os.path.isfile(sidecar), f"Missing .sha256 sidecar for {p}")
+            with open(p, "rb") as pb:
+                actual_sha = hashlib.sha256(pb.read()).hexdigest()
+            with open(sidecar, encoding="utf-8") as sc:
+                expected_sha = sc.read().split()[0].strip()
+            self.assertEqual(actual_sha, expected_sha, f"Stale .sha256 sidecar for {p}")
+
+        # 2. Exercise --verify-mode interactively with fake lsblk table (matching serial resolves, unknown serial fails closed)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_lsblk = os.path.join(tmpdir, "lsblk.txt")
+            with open(fake_lsblk, "w", encoding="utf-8") as lf:
+                lf.write(
+                    "NAME SIZE MODEL SERIAL TRAN RM TYPE\n"
+                    "mmcblk0 58.2G HBG4e 0x99887766 mmc 0 disk\n"
+                    "sdb 465.8G WD5000BEVT WD-WX91A9012345 usb 0 disk\n"
+                )
+            env = os.environ.copy()
+            env["STORMRAVEN_FAKE_LSBLK_FILE"] = fake_lsblk
+
+            for s in bash_scripts:
+                ok_res = subprocess.run(
+                    ["bash", s, "--verify-mode"],
+                    input="WD-WX91A9012345\n",
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                self.assertEqual(ok_res.returncode, 0, f"--verify-mode failed on valid serial in {s}: {ok_res.stderr}")
+                self.assertIn("RESOLVED TARGET:", ok_res.stdout)
+                self.assertIn("/dev/sdb", ok_res.stdout)
+
+                bad_res = subprocess.run(
+                    ["bash", s, "--verify-mode"],
+                    input="WRONG-SERIAL-999\n",
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                self.assertNotEqual(bad_res.returncode, 0, f"--verify-mode must fail closed on unknown serial in {s}")
+                self.assertIn("Failing closed", bad_res.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

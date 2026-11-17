@@ -1,27 +1,53 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS — Safe HP &Installed-System Upgrade & Boot Recovery (v3.9.x)
+# StormRaven OS — Safe HP & Installed-System Upgrade & Boot Recovery (v3.9.x)
 # =============================================================================
-# Hardened per Issue #107 (2026-11-16 post-incident standard):
-#   1. Resolves target root/boot partition by LABEL or UUID (never drive letter
-#      or unverified mount), and fails closed if absent or running in a live RAM
-#      overlay without an explicit mounted target (--target-label / --target-uuid).
-#   2. Prints the resolved target (Device, LABEL, UUID, Mountpoint) and requires
-#      explicit confirmation ("UPGRADE") before any write (or --confirm-uuid / --yes
-#      matching the resolved target).
-#   3. Idempotent & resumable: stages downloads to a temporary file before
-#      atomic `mv -f`, backs up GRUB configs before update, and is safe to
-#      re-run after a mid-flight interrupt or power loss.
-#   4. Emits a single `[STEP N/6]` log line per destructive step (runbook-friendly
-#      for photo verification).
+# Regression story (Issue #108, 2026-11-16 Surface 3 incident; pattern source #87):
+#   A boot-repair sequence from Windows RE used 'assign letter=S' on an ambiguous
+#   disk selection in a multi-drive machine (58GB SSD + 119GB microSD + 465GB
+#   external USB all attached). Firmware 'Boot Option Restoration' auto-reset
+#   boot config and caused a 1-hour red-screen bootloop.
+#   Rule: Verify target disk by MODEL / SERIAL / LABEL / UUID / SIZE before any
+#   write, refuse live RAM overlays, support --verify-mode, and require explicit
+#   confirmation before writing.
 #
-# Usage:
-#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-hp.sh
-#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-hp.sh.sha256
-#   sha256sum -c upgrade-hp.sh.sha256
-#   sudo bash upgrade-hp.sh
+# Tested paste-ready one-liner:
+#   cd /tmp && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-hp.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/upgrade-hp.sh.sha256 && sha256sum -c upgrade-hp.sh.sha256 && sudo bash upgrade-hp.sh
 # =============================================================================
 set -euo pipefail
+
+if [ "${1:-}" = "--verify-mode" ] || [ "${1:-}" = "verify-mode" ]; then
+  echo "======================================================================="
+  echo " ✦ CORE #108 VERIFY-MODE: DETECTED DRIVES (MODEL · SERIAL · LABELS)"
+  echo "======================================================================="
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    cat "${STORMRAVEN_FAKE_LSBLK_FILE}"
+  else
+    lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM,TYPE 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM
+    echo ""
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT 2>/dev/null || true
+  fi
+  printf "Enter the SERIAL (or exact LABEL) of the target drive to verify: "
+  read -r WANTED_SERIAL
+  if [ -z "${WANTED_SERIAL}" ]; then
+    echo "CRITICAL: Empty serial/label entered. Failing closed." >&2
+    exit 1
+  fi
+  MATCHED_DEV=""
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    MATCHED_DEV="$(awk -v s="${WANTED_SERIAL}" 'NR>1 && ($4 == s || $3 == s) {print "/dev/"$1; exit}' "${STORMRAVEN_FAKE_LSBLK_FILE}" 2>/dev/null || true)"
+  else
+    MATCHED_DEV="$(lsblk -dpno NAME,SERIAL,LABEL 2>/dev/null | awk -v s="${WANTED_SERIAL}" '$2 == s || $3 == s {print $1; exit}' || true)"
+  fi
+  if [ -z "${MATCHED_DEV}" ]; then
+    echo "CRITICAL: No attached drive matches serial/label '${WANTED_SERIAL}'. Failing closed." >&2
+    exit 1
+  fi
+  echo "RESOLVED TARGET:"
+  echo "  Device         : ${MATCHED_DEV}"
+  echo "  Matched Serial : ${WANTED_SERIAL}"
+  exit 0
+fi
 
 RAW_BASE="${STORMRAVEN_RAW_BASE:-https://raw.githubusercontent.com/faithjennings055-cmyk/StormRaven-OS-Core-/main}"
 CLOUD_URL="${STORMRAVEN_CLOUD_URL:-https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app}"

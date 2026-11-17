@@ -2,13 +2,55 @@
 # =============================================================================
 # StormRaven OS: Infinity Protocol v3.9.0 — Try or Install & Rescue Suite
 # =============================================================================
-# Provides the Ubuntu-style "Try StormRaven OS" vs "Install StormRaven OS"
-# welcome experience, full bare-metal disk installer (GPT + EFI + BIOS GRUB),
-# GParted partition editor launcher, Boot Repair, and Rescue & Recovery tools.
+# Regression story (Issue #108, 2026-11-16 Surface 3 incident; pattern source #87):
+#   A boot-repair sequence from Windows RE used 'assign letter=S' on an ambiguous
+#   disk selection in a multi-drive machine (58GB SSD + 119GB microSD + 465GB
+#   external USB all attached). Firmware 'Boot Option Restoration' auto-reset
+#   boot config and caused a 1-hour red-screen bootloop.
+#   Rule: Verify target disk by MODEL / SERIAL / LABEL / UUID / SIZE before any
+#   write, refuse internal/loop disks (/dev/mmcblk0*, /dev/nvme0n1*, /dev/loop*,
+#   /dev/zram*, rootdev -s -d) unless explicitly confirmed, support --verify-mode,
+#   and require typing ERASE before touching a block device.
+#
+# Tested paste-ready one-liner:
+#   cd /tmp && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/stormraven-installer && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/stormraven-installer.sha256 && sha256sum -c stormraven-installer.sha256 && sudo bash stormraven-installer --verify-mode
 # =============================================================================
 set +e
 
 VERSION="3.9.0"
+
+if [ "${1:-}" = "--verify-mode" ] || [ "${1:-}" = "verify-mode" ]; then
+  echo "======================================================================="
+  echo " ✦ CORE #108 VERIFY-MODE: DETECTED DRIVES (MODEL · SERIAL · LABELS)"
+  echo "======================================================================="
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    cat "${STORMRAVEN_FAKE_LSBLK_FILE}"
+  else
+    lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM,TYPE 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM
+    echo ""
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT 2>/dev/null || true
+  fi
+  printf "Enter the SERIAL (or exact LABEL) of the target drive to verify: "
+  read -r WANTED_SERIAL
+  if [ -z "${WANTED_SERIAL}" ]; then
+    echo "CRITICAL: Empty serial/label entered. Failing closed." >&2
+    exit 1
+  fi
+  MATCHED_DEV=""
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    MATCHED_DEV="$(awk -v s="${WANTED_SERIAL}" 'NR>1 && ($4 == s || $3 == s) {print "/dev/"$1; exit}' "${STORMRAVEN_FAKE_LSBLK_FILE}" 2>/dev/null || true)"
+  else
+    MATCHED_DEV="$(lsblk -dpno NAME,SERIAL,LABEL 2>/dev/null | awk -v s="${WANTED_SERIAL}" '$2 == s || $3 == s {print $1; exit}' || true)"
+  fi
+  if [ -z "${MATCHED_DEV}" ]; then
+    echo "CRITICAL: No attached drive matches serial/label '${WANTED_SERIAL}'. Failing closed." >&2
+    exit 1
+  fi
+  echo "RESOLVED TARGET:"
+  echo "  Device         : ${MATCHED_DEV}"
+  echo "  Matched Serial : ${WANTED_SERIAL}"
+  exit 0
+fi
 
 if [ "${1:-}" = "--status-json" ]; then
   # Space-safe: TYPE is a single token in a fixed column; MODEL (which may contain
@@ -39,8 +81,32 @@ install_to_disk() {
   local PASSWORD_VAL="${4:-Stormraven}"
 
   if [ -z "${TARGET_DISK}" ] || [ ! -b "${TARGET_DISK}" ]; then
-    echo "[!] Error: Target block device '${TARGET_DISK}' does not exist."
+    echo "[!] Error: Target block device '${TARGET_DISK}' does not exist." >&2
     return 1
+  fi
+
+  case "${TARGET_DISK}" in
+    /dev/loop*|/dev/zram*)
+      echo "CRITICAL SAFETY STOP: Refusing to install onto virtual block device (${TARGET_DISK}). Failing closed." >&2
+      return 1
+      ;;
+  esac
+
+  echo "======================================================================="
+  echo " ✦ CORE #108 TARGET VERIFICATION BEFORE WRITE:"
+  echo "======================================================================="
+  echo "RESOLVED TARGET:"
+  echo "  Device : ${TARGET_DISK}"
+  lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM "${TARGET_DISK}" 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM "${TARGET_DISK}" 2>/dev/null || true
+  echo "  Labels : $(lsblk -lnpo LABEL,UUID "${TARGET_DISK}" 2>/dev/null | xargs || echo none)"
+  echo ""
+  if [ "${STORMRAVEN_CONFIRM:-0}" != "1" ]; then
+    printf "Type ERASE in all caps to confirm formatting %s and installing StormRaven OS: " "${TARGET_DISK}"
+    read -r INST_CONFIRM
+    if [ "${INST_CONFIRM}" != "ERASE" ]; then
+      echo "Cancelled. Nothing was written."
+      return 1
+    fi
   fi
 
   echo "======================================================================="

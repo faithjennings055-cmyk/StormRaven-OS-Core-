@@ -2,16 +2,52 @@
 # =============================================================================
 # StormRaven OS: Infinity Protocol v3.9.3 — Direct Terminal USB Drive Flasher
 # =============================================================================
-# 1. Purges any stale /casper/filesystem.squashfs or old ISO partitions on
-#    other drives/mounts so the initramfs can NEVER mount an old squashfs.
-# 2. Downloads the verified StormRaven OS v3.9.3 ISO (with STORMRAVEN_V393.ID
-#    and /casper/stormraven-v393.squashfs) and verifies its SHA-256 checksum.
-# 3. Flashes the raw hybrid ISO byte-for-byte to your USB stick via dd + sync.
+# Regression story (Issue #108, 2026-11-16 Surface 3 incident; pattern source #87):
+#   A boot-repair sequence from Windows RE used 'assign letter=S' on an ambiguous
+#   disk selection in a multi-drive machine (58GB SSD + 119GB microSD + 465GB
+#   external USB all attached). Firmware 'Boot Option Restoration' auto-reset
+#   boot config and caused a 1-hour red-screen bootloop.
+#   Rule: Verify target disk by MODEL / SERIAL / LABEL / UUID / SIZE before any
+#   write, refuse internal OS drives (/dev/mmcblk0*, /dev/nvme0n1*, /dev/loop*,
+#   /dev/zram*, rootdev -s -d), support --verify-mode, and require typing ERASE.
 #
-# One-command usage in your Ubuntu Terminal:
-#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256 && sha256sum -c flash-usb.sh.sha256 && sudo bash flash-usb.sh
+# Tested paste-ready one-liner:
+#   cd /tmp && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/flash-usb.sh.sha256 && sha256sum -c flash-usb.sh.sha256 && sudo bash flash-usb.sh
 # =============================================================================
 set -euo pipefail
+
+if [ "${1:-}" = "--verify-mode" ] || [ "${1:-}" = "verify-mode" ]; then
+  echo "======================================================================="
+  echo " ✦ CORE #108 VERIFY-MODE: DETECTED DRIVES (MODEL · SERIAL · LABELS)"
+  echo "======================================================================="
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    cat "${STORMRAVEN_FAKE_LSBLK_FILE}"
+  else
+    lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM,TYPE 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM
+    echo ""
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT 2>/dev/null || true
+  fi
+  printf "Enter the SERIAL (or exact LABEL) of the target drive to verify: "
+  read -r WANTED_SERIAL
+  if [ -z "${WANTED_SERIAL}" ]; then
+    echo "CRITICAL: Empty serial/label entered. Failing closed." >&2
+    exit 1
+  fi
+  MATCHED_DEV=""
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    MATCHED_DEV="$(awk -v s="${WANTED_SERIAL}" 'NR>1 && ($4 == s || $3 == s) {print "/dev/"$1; exit}' "${STORMRAVEN_FAKE_LSBLK_FILE}" 2>/dev/null || true)"
+  else
+    MATCHED_DEV="$(lsblk -dpno NAME,SERIAL,LABEL 2>/dev/null | awk -v s="${WANTED_SERIAL}" '$2 == s || $3 == s {print $1; exit}' || true)"
+  fi
+  if [ -z "${MATCHED_DEV}" ]; then
+    echo "CRITICAL: No attached drive matches serial/label '${WANTED_SERIAL}'. Failing closed." >&2
+    exit 1
+  fi
+  echo "RESOLVED TARGET:"
+  echo "  Device         : ${MATCHED_DEV}"
+  echo "  Matched Serial : ${WANTED_SERIAL}"
+  exit 0
+fi
 
 VERSION="3.9.0"
 ISO_FILENAME="StormRavenOS-Infinity-Protocol-v${VERSION}-amd64.iso"
@@ -183,22 +219,34 @@ if [ -z "${TARGET_DEV}" ]; then
 fi
 
 if [ ! -b "${TARGET_DEV}" ]; then
-  echo "ERROR: ${TARGET_DEV} is not a valid block device."
+  echo "ERROR: ${TARGET_DEV} is not a valid block device." >&2
   exit 1
 fi
 
-if [ "${TARGET_DEV}" = "${ROOT_DISK}" ]; then
-  echo "ERROR: Refusing to flash onto system root disk (${ROOT_DISK})!"
+CHROME_ROOT="$(rootdev -s -d 2>/dev/null || echo "")"
+if [ "${TARGET_DEV}" = "${ROOT_DISK}" ] || { [ -n "${CHROME_ROOT}" ] && [ "${TARGET_DEV}" = "${CHROME_ROOT}" ]; }; then
+  echo "ERROR: Refusing to flash onto system root disk (${TARGET_DEV})!" >&2
   exit 1
 fi
+case "${TARGET_DEV}" in
+  /dev/mmcblk0*|/dev/nvme0n1*|/dev/loop*|/dev/zram*)
+    echo "ERROR: Refusing to flash onto protected internal/virtual disk (${TARGET_DEV})!" >&2
+    exit 1
+    ;;
+esac
 
 echo "RESOLVED TARGET:"
 echo "  Device : ${TARGET_DEV}"
-echo "  Info   : $(lsblk -dno SIZE,TRAN,VENDOR,MODEL "${TARGET_DEV}" 2>/dev/null | xargs || echo unknown)"
+lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM "${TARGET_DEV}" 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM "${TARGET_DEV}" 2>/dev/null || true
 echo "  Labels : $(lsblk -lnpo LABEL,UUID "${TARGET_DEV}" 2>/dev/null | xargs || echo none)"
-if [ "${CONFIRM_FLAG}" != "1" ] && [ -r /dev/tty ]; then
-  printf "Type ERASE in capitals to confirm flashing %s: " "${TARGET_DEV}" > /dev/tty
-  read -r FLASH_CONFIRM < /dev/tty
+if [ "${CONFIRM_FLAG}" != "1" ]; then
+  if [ -r /dev/tty ]; then
+    printf "Type ERASE in capitals to confirm flashing %s: " "${TARGET_DEV}" > /dev/tty
+    read -r FLASH_CONFIRM < /dev/tty
+  else
+    printf "Type ERASE in capitals to confirm flashing %s: " "${TARGET_DEV}"
+    read -r FLASH_CONFIRM
+  fi
   if [ "${FLASH_CONFIRM}" != "ERASE" ]; then
     echo "Cancelled. Nothing was written."
     exit 1

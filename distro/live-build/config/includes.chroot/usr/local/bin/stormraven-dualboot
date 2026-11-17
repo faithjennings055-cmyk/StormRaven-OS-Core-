@@ -2,16 +2,27 @@
 # =============================================================================
 # StormRaven OS: Ymir Edition (v3.9.0) — Dual-Boot USB & Disk Builder
 # =============================================================================
-# Puts BOTH flagship StormRaven OS ISOs (Ubuntu 26.04 LTS + Custom Windows 11 25H2)
-# onto a single Dual-Boot USB stick (UEFI + Legacy BIOS), OR configures bare-metal
-# dual-boot on your internal drives with a unified StormRaven GRUB menu.
+# Regression story (Issue #108, 2026-11-16 Surface 3 incident; pattern source #87):
+#   A boot-repair sequence from Windows RE used 'assign letter=S' on an ambiguous
+#   disk selection in a multi-drive machine (58GB SSD + 119GB microSD + 465GB
+#   external USB all attached). Firmware 'Boot Option Restoration' auto-reset
+#   boot config and caused a 1-hour red-screen bootloop.
+#   Rule: Every recovery/flashing script MUST resolve and verify the target disk
+#   by MODEL / SERIAL / LABEL / UUID / SIZE before any write, refuse internal OS
+#   disks (/dev/mmcblk0*, /dev/nvme0n1*, /dev/loop*, /dev/zram*, rootdev -s -d),
+#   support --verify-mode (lists disks with labels and serials and prompts for
+#   the target serial), and require typing ERASE before touching a block device.
+#
+# Tested paste-ready one-liner:
+#   cd /tmp && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/stormraven-dualboot && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/stormraven-dualboot.sha256 && sha256sum -c stormraven-dualboot.sha256 && sudo bash stormraven-dualboot --verify-mode
 #
 # Usage:
 #   sudo stormraven-dualboot list
-#   sudo stormraven-dualboot ventoy [/dev/sdX]   # Build Ventoy Dual-Edition USB (Ubuntu + Win11)
+#   sudo stormraven-dualboot --verify-mode      # list disks + serials, prompt for serial
+#   sudo stormraven-dualboot ventoy [/dev/sdX]  # Build Ventoy Dual-Edition USB (Ubuntu + Win11)
 #   sudo stormraven-dualboot usb /dev/sdX
 #   sudo stormraven-dualboot grub-add-win11 /dev/sdXY
-#   sudo stormraven-dualboot grub-verify    # scan grub configs for stale UUIDs
+#   sudo stormraven-dualboot grub-verify        # scan grub configs for stale UUIDs
 # =============================================================================
 set -euo pipefail
 
@@ -62,14 +73,112 @@ grub_verify() {
 
 list_disks() {
   echo "======================================================================="
-  echo " ✦ DETECTED DRIVES (USB & INTERNAL)"
+  echo " ✦ DETECTED DRIVES (MODEL · SERIAL · SIZE · TRAN · RM · LABELS)"
   echo "======================================================================="
-  lsblk -d -o NAME,SIZE,TRAN,RM,TYPE,MODEL | awk 'NR==1 || $5=="disk"'
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    cat "${STORMRAVEN_FAKE_LSBLK_FILE}"
+  else
+    lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM,TYPE 2>/dev/null | awk 'NR==1 || $NF=="disk"' || \
+      lsblk -d -o NAME,SIZE,TRAN,RM,TYPE,MODEL | awk 'NR==1 || $5=="disk"'
+    echo ""
+    echo "Partition Labels & UUIDs:"
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT 2>/dev/null || true
+  fi
   echo ""
   echo "Tip: Look for RM=1 or TRAN=usb for your USB flash drive (16GB+ recommended)."
+  echo "To verify a disk by serial number interactively (Core #108):"
+  echo "  sudo stormraven-dualboot --verify-mode"
   echo "To build a Dual-Boot USB (Ubuntu 26.04 + Custom Windows 11 on one stick):"
   echo "  sudo stormraven-dualboot usb /dev/sdX"
   echo "======================================================================="
+}
+
+# Core #108 verify-mode: lists disks with labels & serials, asks user to type the serial of intended target
+verify_mode_select() {
+  list_disks
+  printf "Enter the SERIAL (or exact LABEL) of the target drive to verify: "
+  local wanted_serial=""
+  read -r wanted_serial
+  if [ -z "${wanted_serial}" ]; then
+    echo "CRITICAL: Empty serial/label entered. Failing closed." >&2
+    return 1
+  fi
+  local matched_dev=""
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    matched_dev="$(awk -v s="${wanted_serial}" 'NR>1 && ($4 == s || $3 == s) {print "/dev/"$1; exit}' "${STORMRAVEN_FAKE_LSBLK_FILE}" 2>/dev/null || true)"
+  else
+    matched_dev="$(lsblk -dpno NAME,SERIAL,LABEL 2>/dev/null | awk -v s="${wanted_serial}" '$2 == s || $3 == s {print $1; exit}' || true)"
+    if [ -z "${matched_dev}" ]; then
+      local part_match
+      part_match="$(blkid -L "${wanted_serial}" 2>/dev/null || true)"
+      if [ -n "${part_match}" ] && [ -b "${part_match}" ]; then
+        local pk
+        pk="$(lsblk -no PKNAME "${part_match}" 2>/dev/null | head -n 1 || true)"
+        matched_dev="${pk:+/dev/${pk}}"
+        matched_dev="${matched_dev:-${part_match}}"
+      fi
+    fi
+  fi
+  if [ -z "${matched_dev}" ]; then
+    echo "CRITICAL: No attached drive matches serial/label '${wanted_serial}'. Failing closed." >&2
+    return 1
+  fi
+  echo "RESOLVED TARGET:"
+  echo "  Device         : ${matched_dev}"
+  echo "  Matched Serial : ${wanted_serial}"
+  if [ -b "${matched_dev}" ]; then
+    lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM "${matched_dev}" 2>/dev/null || true
+  fi
+  return 0
+}
+
+# Core #108 hardware guard before any destructive disk/partition write
+enforce_core108_guard() {
+  local dev="$1"
+  if [ -z "${dev}" ]; then
+    echo "CRITICAL: No target device specified. Failing closed." >&2
+    exit 1
+  fi
+  local root_src root_disk=""
+  root_src="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
+  if [ -n "${root_src}" ]; then
+    local pk
+    pk="$(lsblk -no PKNAME "${root_src}" 2>/dev/null | head -n 1 || true)"
+    root_disk="${pk:+/dev/${pk}}"
+    root_disk="${root_disk:-${root_src}}"
+  fi
+  local chrome_root=""
+  if command -v rootdev >/dev/null 2>&1; then
+    chrome_root="$(rootdev -s -d 2>/dev/null || true)"
+  fi
+  if { [ -n "${root_disk}" ] && [[ "${dev}" == "${root_disk}"* ]]; } || \
+     { [ -n "${chrome_root}" ] && [[ "${dev}" == "${chrome_root}"* ]]; }; then
+    echo "CRITICAL SAFETY STOP: ${dev} is the active OS boot drive (${root_disk:-${chrome_root}})! Failing closed." >&2
+    exit 1
+  fi
+  case "${dev}" in
+    /dev/mmcblk0*|/dev/nvme0n1*|/dev/loop*|/dev/zram*)
+      echo "CRITICAL SAFETY STOP: Refusing to overwrite protected internal/virtual block device (${dev}). Failing closed." >&2
+      exit 1
+      ;;
+  esac
+  echo "======================================================================="
+  echo " ✦ CORE #108 TARGET VERIFICATION BEFORE WRITE:"
+  echo "======================================================================="
+  echo "RESOLVED TARGET:"
+  echo "  Device : ${dev}"
+  lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM "${dev}" 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM "${dev}" 2>/dev/null || true
+  echo "  Labels : $(lsblk -lnpo LABEL,UUID "${dev}" 2>/dev/null | xargs || echo none)"
+  echo ""
+  if [ "${STORMRAVEN_CONFIRM:-0}" != "1" ]; then
+    printf "Type ERASE in all caps to confirm writing to %s (anything else cancels): " "${dev}"
+    local confirm_val=""
+    read -r confirm_val
+    if [ "${confirm_val}" != "ERASE" ]; then
+      echo "Cancelled. Nothing was written."
+      exit 1
+    fi
+  fi
 }
 
 download_and_verify_isos() {
@@ -91,18 +200,12 @@ download_and_verify_isos() {
 build_dualboot_usb() {
   local TARGET_DEV="${1:-}"
   if [ -z "${TARGET_DEV}" ] || [ ! -b "${TARGET_DEV}" ]; then
-    echo "ERROR: Please pass a valid block device (e.g., sudo stormraven-dualboot usb /dev/sdb)"
+    echo "ERROR: Please pass a valid block device (e.g., sudo stormraven-dualboot usb /dev/sdb)" >&2
     list_disks
     exit 1
   fi
 
-  # Safety check: refuse to wipe the currently mounted root disk
-  local ROOT_SRC
-  ROOT_SRC="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
-  if [ -n "${ROOT_SRC}" ] && [[ "${ROOT_SRC}" == "${TARGET_DEV}"* ]]; then
-    echo "CRITICAL SAFETY STOP: ${TARGET_DEV} is your active root drive (${ROOT_SRC})! Refusing to overwrite."
-    exit 1
-  fi
+  enforce_core108_guard "${TARGET_DEV}"
 
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -qq || true
@@ -271,12 +374,14 @@ GRUBCFG
 stage_internal_dualboot() {
   local TARGET_PART="${1:-}"
   if [ -z "${TARGET_PART}" ] || [ ! -b "${TARGET_PART}" ]; then
-    echo "Usage: sudo stormraven-dualboot disk-part /dev/sdXY"
-    echo "Formats the target partition as NTFS, extracts the Custom Windows 11 Ymir ISO onto it,"
-    echo "and adds 'StormRaven OS — Custom Windows 11 (25H2) Ymir Edition' to your HP GRUB boot menu!"
+    echo "Usage: sudo stormraven-dualboot disk-part /dev/sdXY" >&2
+    echo "Formats the target partition as NTFS, extracts the Custom Windows 11 Ymir ISO onto it," >&2
+    echo "and adds 'StormRaven OS — Custom Windows 11 (25H2) Ymir Edition' to your HP GRUB boot menu!" >&2
     lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT
     exit 1
   fi
+
+  enforce_core108_guard "${TARGET_PART}"
 
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -qq || true
@@ -420,6 +525,9 @@ case "${1:-list}" in
     ;;
   grub-verify|verify)
     grub_verify
+    ;;
+  --verify-mode|verify-mode)
+    verify_mode_select
     ;;
   list|disks|status)
     list_disks

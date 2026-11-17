@@ -2,30 +2,55 @@
 # =============================================================================
 # StormRaven OS: Infinity Protocol v3.9.0 — Ventoy Dual-Edition USB Builder
 # =============================================================================
-# Formats a USB flash drive with official Ventoy v1.1.18 (GPT + UEFI + Legacy
-# BIOS + exFAT data partition labeled `STORMRAVEN`) and preloads BOTH versions
-# of StormRaven OS onto the stick:
+# Regression story (Issue #108, 2026-11-16 Surface 3 incident; pattern source #87):
+#   A boot-repair sequence from Windows RE used 'assign letter=S' on an ambiguous
+#   disk selection in a multi-drive machine (58GB SSD + 119GB microSD + 465GB
+#   external USB all attached). Firmware 'Boot Option Restoration' auto-reset
+#   boot config and caused a 1-hour red-screen bootloop.
+#   Rule: Verify target disk by MODEL / SERIAL / LABEL / UUID / SIZE before any
+#   write, refuse internal OS drives (/dev/mmcblk0*, /dev/nvme0n1*, /dev/loop*,
+#   /dev/zram*, rootdev -s -d), support --verify-mode, and require typing ERASE.
 #
-#   1. `/ISO/StormRavenOS-Ubuntu-v3.9.0-amd64.iso` (1.6 GB)
-#      - Full Ubuntu Edition + Ymir/Void Desktop + Moov AI (NACHA/X9.37/SQLite)
-#        + Linux 7.0 HWE + GParted/TestDisk Boot Rescue Suite
-#   2. `/ISO/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso`
-#      - Bootable StormRaven OS Windows 11 Ymir Edition + Moov AI Live/Installer ISO
-#      - ALSO includes any custom 6.8 GB Microsoft Windows 11 25H2 ISO if cached!
-#   3. `/StormRaven-Win11-Full/` + `/ventoy/ventoy.json` + `/ventoy/autounattend-win11.xml`
-#      - Ventoy Auto-Installation & Hardware Check Bypass (`VTOY_WIN11_BYPASS_CHECK=1`,
-#        `VTOY_WIN11_BYPASS_NRO=1`) + Custom StormRaven Dark Cryo-Glass Ventoy Theme!
-#      - Dropping ANY official Microsoft `Win11*.iso` into `/ISO/` on this USB
-#        automatically bypasses TPM 2.0 / CPU / RAM checks and auto-installs
-#        StormRaven OS Windows 11 Edition + Moov AI offline from the USB drive!
+# Tested paste-ready one-liner:
+#   cd /tmp && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh
 #
-# One-command usage on HP Pro 3500:
-#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh
-#
-# Or pass your USB device explicitly:
-#   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh /dev/sdX
+# Or pass your USB device or --verify-mode explicitly:
+#   cd /tmp && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/make-ventoy-usb.sh.sha256 && sha256sum -c make-ventoy-usb.sh.sha256 && sudo bash make-ventoy-usb.sh --verify-mode
 # =============================================================================
 set -euo pipefail
+
+if [ "${1:-}" = "--verify-mode" ] || [ "${1:-}" = "verify-mode" ]; then
+  echo "======================================================================="
+  echo " ✦ CORE #108 VERIFY-MODE: DETECTED DRIVES (MODEL · SERIAL · LABELS)"
+  echo "======================================================================="
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    cat "${STORMRAVEN_FAKE_LSBLK_FILE}"
+  else
+    lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM,TYPE 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM
+    echo ""
+    lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT 2>/dev/null || true
+  fi
+  printf "Enter the SERIAL (or exact LABEL) of the target drive to verify: "
+  read -r WANTED_SERIAL
+  if [ -z "${WANTED_SERIAL}" ]; then
+    echo "CRITICAL: Empty serial/label entered. Failing closed." >&2
+    exit 1
+  fi
+  MATCHED_DEV=""
+  if [ -n "${STORMRAVEN_FAKE_LSBLK_FILE:-}" ] && [ -f "${STORMRAVEN_FAKE_LSBLK_FILE}" ]; then
+    MATCHED_DEV="$(awk -v s="${WANTED_SERIAL}" 'NR>1 && ($4 == s || $3 == s) {print "/dev/"$1; exit}' "${STORMRAVEN_FAKE_LSBLK_FILE}" 2>/dev/null || true)"
+  else
+    MATCHED_DEV="$(lsblk -dpno NAME,SERIAL,LABEL 2>/dev/null | awk -v s="${WANTED_SERIAL}" '$2 == s || $3 == s {print $1; exit}' || true)"
+  fi
+  if [ -z "${MATCHED_DEV}" ]; then
+    echo "CRITICAL: No attached drive matches serial/label '${WANTED_SERIAL}'. Failing closed." >&2
+    exit 1
+  fi
+  echo "RESOLVED TARGET:"
+  echo "  Device         : ${MATCHED_DEV}"
+  echo "  Matched Serial : ${WANTED_SERIAL}"
+  exit 0
+fi
 
 CLOUD_URL="${STORMRAVEN_GATEWAY_URL:-https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app}"
 VENTOY_VER="1.1.18"
@@ -322,12 +347,36 @@ if [ -z "${TARGET_DEV}" ]; then
 fi
 
 if [ ! -b "${TARGET_DEV}" ]; then
-  echo "ERROR: ${TARGET_DEV} is not a valid block device."
+  echo "ERROR: ${TARGET_DEV} is not a valid block device." >&2
   exit 1
 fi
-if [ "${TARGET_DEV}" = "${ROOT_DISK}" ]; then
-  echo "CRITICAL SAFETY STOP: Refusing to format your system root disk (${ROOT_DISK})!"
+CHROME_ROOT="$(rootdev -s -d 2>/dev/null || echo "")"
+if [ "${TARGET_DEV}" = "${ROOT_DISK}" ] || { [ -n "${CHROME_ROOT}" ] && [ "${TARGET_DEV}" = "${CHROME_ROOT}" ]; }; then
+  echo "CRITICAL SAFETY STOP: Refusing to format your system root disk (${TARGET_DEV})!" >&2
   exit 1
+fi
+case "${TARGET_DEV}" in
+  /dev/mmcblk0*|/dev/nvme0n1*|/dev/loop*|/dev/zram*)
+    echo "CRITICAL SAFETY STOP: Refusing to overwrite internal/virtual block device (${TARGET_DEV})!" >&2
+    exit 1
+    ;;
+esac
+
+echo "======================================================================="
+echo " ✦ CORE #108 TARGET VERIFICATION BEFORE WRITE:"
+echo "======================================================================="
+echo "RESOLVED TARGET:"
+echo "  Device : ${TARGET_DEV}"
+lsblk -d -o NAME,SIZE,MODEL,SERIAL,TRAN,RM "${TARGET_DEV}" 2>/dev/null || lsblk -d -o NAME,SIZE,MODEL,TRAN,RM "${TARGET_DEV}" 2>/dev/null || true
+echo "  Labels : $(lsblk -lnpo LABEL,UUID "${TARGET_DEV}" 2>/dev/null | xargs || echo none)"
+echo ""
+if [ "${STORMRAVEN_CONFIRM:-0}" != "1" ]; then
+  printf "Type ERASE in all caps to confirm formatting %s with Ventoy (anything else cancels): " "${TARGET_DEV}"
+  read -r VTOY_CONFIRM
+  if [ "${VTOY_CONFIRM}" != "ERASE" ]; then
+    echo "Cancelled. Nothing was written."
+    exit 1
+  fi
 fi
 
 echo "==> [5/6] Installing Ventoy v${VENTOY_VER} (GPT + UEFI + Legacy BIOS) onto ${TARGET_DEV}..."
