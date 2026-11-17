@@ -95,8 +95,54 @@ for part in $(lsblk -lnpo NAME,TYPE | awk '$2=="part"{print $1}'); do
 done
 rmdir /mnt/.sr-check 2>/dev/null || true
 
-# 3. Detect removable USB drives
-TARGET_DEV="${1:-${USB_DEV:-}}"
+# 3. Detect removable USB drives (or resolve by LABEL/UUID per Issue #107)
+TARGET_LABEL="${STORMRAVEN_TARGET_LABEL:-}"
+TARGET_UUID="${STORMRAVEN_TARGET_UUID:-}"
+CONFIRM_FLAG="${STORMRAVEN_CONFIRM:-0}"
+TARGET_DEV=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --target-label)
+      TARGET_LABEL="${2:-}"
+      shift 2
+      ;;
+    --target-uuid)
+      TARGET_UUID="${2:-}"
+      shift 2
+      ;;
+    --yes|-y)
+      CONFIRM_FLAG=1
+      shift
+      ;;
+    *)
+      TARGET_DEV="$1"
+      shift
+      ;;
+  esac
+done
+
+if [ -n "${TARGET_UUID}" ]; then
+  PART_DEV="$(blkid -U "${TARGET_UUID}" 2>/dev/null || true)"
+  if [ -z "${PART_DEV}" ] || [ ! -b "${PART_DEV}" ]; then
+    echo "CRITICAL: Target UUID '${TARGET_UUID}' not found on any attached device. Failing closed." >&2
+    exit 1
+  fi
+  PK="$(lsblk -no PKNAME "${PART_DEV}" 2>/dev/null | head -n 1 || true)"
+  TARGET_DEV="${PK:+/dev/${PK}}"
+  TARGET_DEV="${TARGET_DEV:-${PART_DEV}}"
+elif [ -n "${TARGET_LABEL}" ]; then
+  PART_DEV="$(blkid -L "${TARGET_LABEL}" 2>/dev/null || true)"
+  if [ -z "${PART_DEV}" ] || [ ! -b "${PART_DEV}" ]; then
+    echo "CRITICAL: Target LABEL '${TARGET_LABEL}' not found on any attached device. Failing closed." >&2
+    exit 1
+  fi
+  PK="$(lsblk -no PKNAME "${PART_DEV}" 2>/dev/null | head -n 1 || true)"
+  TARGET_DEV="${PK:+/dev/${PK}}"
+  TARGET_DEV="${TARGET_DEV:-${PART_DEV}}"
+fi
+
+TARGET_DEV="${TARGET_DEV:-${USB_DEV:-}}"
 if [ -z "${TARGET_DEV}" ]; then
   echo "==> [3/4] Detecting connected USB flash drives..."
   mapfile -t USB_CANDIDATES < <(
@@ -144,6 +190,19 @@ fi
 if [ "${TARGET_DEV}" = "${ROOT_DISK}" ]; then
   echo "ERROR: Refusing to flash onto system root disk (${ROOT_DISK})!"
   exit 1
+fi
+
+echo "RESOLVED TARGET:"
+echo "  Device : ${TARGET_DEV}"
+echo "  Info   : $(lsblk -dno SIZE,TRAN,VENDOR,MODEL "${TARGET_DEV}" 2>/dev/null | xargs || echo unknown)"
+echo "  Labels : $(lsblk -lnpo LABEL,UUID "${TARGET_DEV}" 2>/dev/null | xargs || echo none)"
+if [ "${CONFIRM_FLAG}" != "1" ] && [ -r /dev/tty ]; then
+  printf "Type ERASE in capitals to confirm flashing %s: " "${TARGET_DEV}" > /dev/tty
+  read -r FLASH_CONFIRM < /dev/tty
+  if [ "${FLASH_CONFIRM}" != "ERASE" ]; then
+    echo "Cancelled. Nothing was written."
+    exit 1
+  fi
 fi
 
 echo "==> [4/4] Unmounting and wiping old partition signatures on ${TARGET_DEV}..."

@@ -231,6 +231,88 @@ class BifrostGateContract(unittest.TestCase):
             checked_profiles += 1
         self.assertGreaterEqual(checked_profiles, 6, "Expected at least 6 validated .mobileconfig/.mdm profiles")
 
+    def test_upgrade_hp_and_recovery_scripts_verify_target_and_fail_closed(self):
+        import subprocess
+        import tempfile
+
+        upgrade_hp = os.path.join(ROOT, "distro", "upgrade-hp.sh")
+        flash_usb = os.path.join(ROOT, "distro", "flash-usb.sh")
+        retro_doc = os.path.join(ROOT, "docs", "RETRO_2026_11_16_BOOT_RECOVERY.md")
+
+        self.assertTrue(os.path.isfile(upgrade_hp), "distro/upgrade-hp.sh must exist (#107)")
+        self.assertTrue(os.path.isfile(flash_usb), "distro/flash-usb.sh must exist (#107)")
+        self.assertTrue(os.path.isfile(retro_doc), "docs/RETRO_2026_11_16_BOOT_RECOVERY.md must exist (#107)")
+
+        with open(upgrade_hp, encoding="utf-8") as uf:
+            uhp_src = uf.read()
+        self.assertIn("RESOLVED TARGET:", uhp_src)
+        self.assertIn("atomic_fetch_and_install", uhp_src)
+        self.assertIn("[STEP 1/6]", uhp_src)
+        self.assertIn("grub-verify", uhp_src)
+
+        with open(flash_usb, encoding="utf-8") as ff:
+            fusb_src = ff.read()
+        self.assertIn("--target-label", fusb_src)
+        self.assertIn("--target-uuid", fusb_src)
+        self.assertIn("RESOLVED TARGET:", fusb_src)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_blkid = os.path.join(tmpdir, "blkid.tab")
+            with open(fake_blkid, "w", encoding="utf-8") as bf:
+                bf.write("/dev/sda2 9a8b7c6d-1111-2222-3333-444455556666 STORMRAVEN_ROOT /mnt/hp-root\n")
+
+            env = os.environ.copy()
+            env["STORMRAVEN_FAKE_BLKID_FILE"] = fake_blkid
+
+            # 1. Absent LABEL must fail closed (non-zero exit, refuses write)
+            res_missing_label = subprocess.run(
+                ["bash", upgrade_hp, "--target-label", "NONEXISTENT_LABEL", "--dry-run"],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            self.assertNotEqual(res_missing_label.returncode, 0, "upgrade-hp.sh must fail closed when target label is absent")
+            self.assertIn("Failing closed", res_missing_label.stderr)
+
+            # 2. Absent UUID must fail closed
+            res_missing_uuid = subprocess.run(
+                ["bash", upgrade_hp, "--target-uuid", "00000000-0000-0000-0000-000000000000", "--dry-run"],
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            self.assertNotEqual(res_missing_uuid.returncode, 0, "upgrade-hp.sh must fail closed when target UUID is absent")
+            self.assertIn("Failing closed", res_missing_uuid.stderr)
+
+            # 3. Present LABEL without confirmation must refuse write when user enters anything other than UPGRADE
+            res_unconfirmed = subprocess.run(
+                ["bash", upgrade_hp, "--target-label", "STORMRAVEN_ROOT", "--dry-run"],
+                input="no\n",
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            self.assertNotEqual(res_unconfirmed.returncode, 0, "upgrade-hp.sh must refuse write when confirmation is declined")
+            self.assertIn("RESOLVED TARGET:", res_unconfirmed.stdout)
+            self.assertIn("Cancelled. Nothing was written.", res_unconfirmed.stdout)
+
+            # 4. Present LABEL + explicit UPGRADE confirmation prints RESOLVED TARGET and succeeds in dry-run
+            res_confirmed = subprocess.run(
+                ["bash", upgrade_hp, "--target-label", "STORMRAVEN_ROOT", "--dry-run"],
+                input="UPGRADE\n",
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            self.assertEqual(res_confirmed.returncode, 0, f"Expected 0 on confirmed target, got: {res_confirmed.stderr}")
+            self.assertIn("RESOLVED TARGET:", res_confirmed.stdout)
+            self.assertIn("9a8b7c6d-1111-2222-3333-444455556666", res_confirmed.stdout)
+            self.assertIn("[STEP 1/6] DRY-RUN:", res_confirmed.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
