@@ -434,7 +434,7 @@ class BifrostGateContract(unittest.TestCase):
 
 
     def test_hp_storage_setup_enforces_serial_resolution_and_grub_uuid_gate(self):
-        script = REPO_ROOT / "distro/live-build/config/includes.chroot/usr/local/bin/stormraven-hp-storage-setup"
+        script = ROOT / "distro/live-build/config/includes.chroot/usr/local/bin/stormraven-hp-storage-setup"
         content = script.read_text(encoding="utf-8")
         self.assertIn("--dry-run", content)
         self.assertIn("resolve_disk_by_model", content)

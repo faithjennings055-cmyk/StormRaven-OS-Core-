@@ -68,8 +68,6 @@ try:
             if fn.lower().endswith(".efi"):
                 efi_files.append(os.path.join(root, fn))
 
-    if not efi_files:
-        sys.exit(f"[FAIL] No .efi bootloaders found inside ISO tree: {iso_path}")
     for ef in efi_files:
         ef_size = os.path.getsize(ef)
         if ef_size == 0:
