@@ -35,7 +35,7 @@ if [ "$DRY_RUN" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
 fi
 
 WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/file/win11"
-WIN11_SHA_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso.sha256"
+WIN11_SHA_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Windows11-25H2-x64.iso.sha256"
 
 resolve_disk_by_model() {
   local pattern="$1"
@@ -130,7 +130,11 @@ chmod -R 775 /mnt/vault
 # -----------------------------------------------------------------------------
 WIN11_ISO="/mnt/vault/isos/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
 WIN11_ISO_SHA="$(curl -fsSL "$WIN11_SHA_URL" 2>/dev/null | awk '{print $1}')"
-WIN11_ISO_SHA="${WIN11_ISO_SHA:-339aba84ac60b291c3fb80df86d2a430a0aba5b9f592693738fa89e9d4c5fc6a}"
+# No hardcoded fallback: a stale constant silently "verifies" an old build.
+if ! printf '%s' "$WIN11_ISO_SHA" | grep -qE '^[0-9a-f]{64}$'; then
+  echo "CRITICAL SAFETY STOP: could not fetch the published SHA-256 for Windows 11 from $WIN11_SHA_URL. Refusing to download or partition without a verifiable checksum." >&2
+  exit 1
+fi
 
 echo "==> [2/4] Staging Custom Windows 11 Ymir ISO via range-capable endpoint (${WIN11_ISO_URL})..."
 if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then

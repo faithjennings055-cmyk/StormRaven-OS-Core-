@@ -26,16 +26,33 @@
 # =============================================================================
 set -euo pipefail
 
-UBUNTU_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-ubuntu-24.04-amd64.iso"
-UBUNTU_ISO_SHA="$(curl -fsSL "${UBUNTU_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
-UBUNTU_ISO_SHA="${UBUNTU_ISO_SHA:-8336cafbcf15163ad9c6ade5d2283ebc65e7ac969ae6bb82d29b75a1ccf43ecf}"
-WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
-WIN11_ISO_SHA="$(curl -fsSL "${WIN11_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
-WIN11_ISO_SHA="${WIN11_ISO_SHA:-6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157}"
+# Downloads use the STABLE edition endpoints (/file/<edition>), which are
+# rename-proof: the server resolves the current canonical filename itself. A
+# rebuild that renames an artifact can never turn these into dead links.
+UBUNTU_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/file/ubuntu"
+UBUNTU_SHA_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Ubuntu-26.04-amd64.iso.sha256"
+WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/file/win11"
+WIN11_SHA_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Windows11-25H2-x64.iso.sha256"
+
+# NEVER fall back to a hardcoded checksum. A constant drifts the moment an
+# artifact is rebuilt, and a stale constant silently "verifies" an old build.
+# If the published sidecar cannot be fetched, refuse to proceed.
+fetch_published_sha() {
+  local label="$1" url="$2" out
+  out="$(curl -fsSL "$url" 2>/dev/null | awk '{print $1}')"
+  if ! printf '%s' "$out" | grep -qE '^[0-9a-f]{64}$'; then
+    echo "CRITICAL SAFETY STOP: could not fetch the published SHA-256 for ${label} from ${url}. Refusing to proceed without a verifiable checksum." >&2
+    exit 1
+  fi
+  printf '%s' "$out"
+}
+
+UBUNTU_ISO_SHA="$(fetch_published_sha 'Ubuntu 26.04' "$UBUNTU_SHA_URL")"
+WIN11_ISO_SHA="$(fetch_published_sha 'Windows 11 25H2' "$WIN11_SHA_URL")"
 
 CACHE_DIR="/var/tmp/stormraven-dualboot-cache"
-UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-ubuntu-24.04-amd64.iso"
-WIN11_ISO="${CACHE_DIR}/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
+UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-Ubuntu-26.04-amd64.iso"
+WIN11_ISO="${CACHE_DIR}/StormRavenOS-Windows11-25H2-x64.iso"
 
 
 # --- UUID sanity: every UUID written to grub config must exist on disk ---
@@ -186,13 +203,23 @@ download_and_verify_isos() {
 
   echo "==> [1/5] Checking & verifying StormRaven OS Ubuntu 26.04 Ymir ISO (1.7 GB)..."
   if [ ! -s "${UBUNTU_ISO}" ] || [ "$(sha256sum "${UBUNTU_ISO}" | awk '{print $1}')" != "${UBUNTU_ISO_SHA}" ]; then
-    curl -fL --retry 3 -o "${UBUNTU_ISO}" "${UBUNTU_ISO_URL}"
+    rm -f "${UBUNTU_ISO}.part"
+    curl -fL --retry 3 -C - -o "${UBUNTU_ISO}.part" "${UBUNTU_ISO_URL}"
+    # Only publish the file once the bytes verify: a partial download never
+    # occupies the final name.
+    echo "${UBUNTU_ISO_SHA}  ${UBUNTU_ISO}.part" | sha256sum -c -
+    mv -f "${UBUNTU_ISO}.part" "${UBUNTU_ISO}"
   fi
   echo "${UBUNTU_ISO_SHA}  ${UBUNTU_ISO}" | sha256sum -c -
 
   echo "==> [2/5] Checking & verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
   if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
-    curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+    rm -f "${WIN11_ISO}.part"
+    curl -fL --retry 3 -C - -o "${WIN11_ISO}.part" "${WIN11_ISO_URL}"
+    # Only publish the file once the bytes verify: a partial download never
+    # occupies the final name.
+    echo "${WIN11_ISO_SHA}  ${WIN11_ISO}.part" | sha256sum -c -
+    mv -f "${WIN11_ISO}.part" "${WIN11_ISO}"
   fi
   echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
 }
@@ -390,7 +417,10 @@ stage_internal_dualboot() {
   echo "==> Verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
   mkdir -p "${CACHE_DIR}"
   if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
-    curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+    rm -f "${WIN11_ISO}.part"
+    curl -fL --retry 3 -C - -o "${WIN11_ISO}.part" "${WIN11_ISO_URL}"
+    echo "${WIN11_ISO_SHA}  ${WIN11_ISO}.part" | sha256sum -c -
+    mv -f "${WIN11_ISO}.part" "${WIN11_ISO}"
   fi
   echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
 
