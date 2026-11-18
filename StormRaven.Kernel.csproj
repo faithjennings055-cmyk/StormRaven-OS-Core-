@@ -15,6 +15,8 @@
   <!-- The nested StormRavenOS/ folder is a stray duplicate of this project's
        sources; exclude it so its types don't collide with the real ones. -->
   <ItemGroup>
+    <Compile Remove="archive/**" />
+    <Compile Remove="installers/**" />
     <Compile Remove="StormRavenOS/**" />
     <!-- StormRaven.Mobile is a separate MAUI app; it is not compiled with the kernel
          (requires the MAUI workload). Exclude its sources from the kernel build. -->

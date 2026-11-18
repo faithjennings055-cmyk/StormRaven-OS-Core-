@@ -120,7 +120,7 @@ class DemogorgonAndHardeningContract(unittest.TestCase):
         self.assertIn("summary", st["demogorgon"])
 
     def test_bifrost_has_no_hardcoded_secrets_or_vault_dump(self):
-        for rel in (("StormRaven.Python", "bifrost.py"), ("Python", "bifrost.py"), ("StormRaven.Python", "stormraven_local_gateway.py")):
+        for rel in (("StormRaven.Python", "bifrost.py"), ("archive", "Python", "bifrost.py"), ("StormRaven.Python", "stormraven_local_gateway.py")):
             fpath = os.path.join(ROOT, *rel)
             with open(fpath, encoding="utf-8") as f:
                 src = f.read()

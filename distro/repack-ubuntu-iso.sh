@@ -146,7 +146,13 @@ mkdir -p "${WORK_DIR}/iso/live" "${WORK_DIR}/iso/.disk"
 ln -sf ../casper/stormraven-v393.squashfs "${WORK_DIR}/iso/live/filesystem.squashfs"
 echo "StormRaven OS 24.04/26.04 LTS - Infinity Protocol Incremental Layered Release amd64 (${STAMP})" > "${WORK_DIR}/iso/.disk/info"
 
-grub-mkrescue -o "${OUTPUT_ISO}" "${WORK_DIR}/iso" -- -volid "STORMRAVEN_V393" 2>/dev/null
+if command -v grub-mkstandalone >/dev/null 2>&1 && [ -d /usr/lib/grub/i386-efi ]; then
+  mkdir -p "${WORK_DIR}/iso/EFI/BOOT" "${WORK_DIR}/iso/EFI/boot"
+  grub-mkstandalone -O i386-efi -o "${WORK_DIR}/iso/EFI/BOOT/BOOTIA32.EFI" "boot/grub/grub.cfg=${WORK_DIR}/iso/boot/grub/grub.cfg" 2>/dev/null || true
+  cp -f "${WORK_DIR}/iso/EFI/BOOT/BOOTIA32.EFI" "${WORK_DIR}/iso/EFI/boot/BOOTIA32.EFI" 2>/dev/null || true
+  cp -f "${WORK_DIR}/iso/EFI/BOOT/BOOTIA32.EFI" "${WORK_DIR}/iso/EFI/boot/bootia32.efi" 2>/dev/null || true
+fi
+grub-mkrescue -o "${OUTPUT_ISO}" "${WORK_DIR}/iso" -- -volid "STORMRAVEN_2604" 2>/dev/null
 ISO_SHA="$(sha256sum "${OUTPUT_ISO}" | awk '{print $1}')"
 echo "${ISO_SHA}  $(basename "${OUTPUT_ISO}")" > "${OUTPUT_ISO}.sha256"
 $SUDO rm -rf "${WORK_DIR}"

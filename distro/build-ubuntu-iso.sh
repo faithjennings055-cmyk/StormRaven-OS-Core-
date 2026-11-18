@@ -18,7 +18,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 WORK_DIR="${WORK_DIR:-/var/tmp/stormraven-ubuntu-build}"
 CHROOT_DIR="${WORK_DIR}/chroot"
 ISO_STAGING="${WORK_DIR}/iso"
-OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso}"
+OUTPUT_ISO="${OUTPUT_ISO:-${REPO_ROOT}/StormRavenOS-Ubuntu-26.04-amd64.iso}"
 UBUNTU_SUITE="resolute"
 UBUNTU_MIRROR="${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}"
 UBUNTU_SECURITY_MIRROR="${UBUNTU_SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu/}"
@@ -752,10 +752,19 @@ EARLY
     cp -f "${ISO_STAGING}/EFI/BOOT/grubx64.efi" "${ISO_STAGING}/EFI/BOOT/BOOTX64.EFI"
   fi
 fi
+  if [ -d /usr/lib/grub/i386-efi ]; then
+    grub-mkstandalone \
+      -O i386-efi \
+      -o "${ISO_STAGING}/EFI/BOOT/BOOTIA32.EFI" \
+      "boot/grub/grub.cfg=${ISO_STAGING}/boot/grub/grub.cfg" || true
+    mkdir -p "${ISO_STAGING}/EFI/boot"
+    cp -f "${ISO_STAGING}/EFI/BOOT/BOOTIA32.EFI" "${ISO_STAGING}/EFI/boot/bootia32.efi" 2>/dev/null || true
+    cp -f "${ISO_STAGING}/EFI/BOOT/BOOTIA32.EFI" "${ISO_STAGING}/EFI/boot/BOOTIA32.EFI" 2>/dev/null || true
+  fi
 cp -f "${ISO_STAGING}/boot/grub/grub.cfg" "${ISO_STAGING}/EFI/BOOT/grub.cfg"
 
 echo "==> [7/7] Building hybrid BIOS/UEFI bootable ISO: ${OUTPUT_ISO}..."
-grub-mkrescue -o "${OUTPUT_ISO}" "${ISO_STAGING}" -- -volid "STORMRAVEN_2404"
+grub-mkrescue -o "${OUTPUT_ISO}" "${ISO_STAGING}" -- -volid "STORMRAVEN_2604"
 ISO_SHA="$(sha256sum "${OUTPUT_ISO}" | awk '{print $1}')"
 echo "${ISO_SHA}  $(basename "${OUTPUT_ISO}")" > "${OUTPUT_ISO}.sha256"
 

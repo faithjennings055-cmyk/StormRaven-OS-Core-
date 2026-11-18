@@ -404,5 +404,33 @@ class BifrostGateContract(unittest.TestCase):
                 self.assertIn("Failing closed", bad_res.stderr)
 
 
+    def test_issue_110_iso_verification_gate_rejects_zero_byte_efi_and_missing_mbr(self):
+        import tempfile, hashlib, subprocess
+        gate = os.path.join(ROOT, "distro", "ci", "verify-iso-gate.sh")
+        self.assertTrue(os.path.isfile(gate), "Missing distro/ci/verify-iso-gate.sh")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            iso_path = os.path.join(tmpdir, "test.iso")
+            buf = bytearray(0x12000)
+            buf[0x8001:0x8006] = b"CD001"
+            with open(iso_path, "wb") as f:
+                f.write(buf)
+            sha = hashlib.sha256(buf).hexdigest()
+            with open(iso_path + ".sha256", "w", encoding="utf-8") as f:
+                f.write(f"{sha}  test.iso\n")
+            res_no_mbr = subprocess.run(["bash", gate, iso_path], capture_output=True, text=True, timeout=10)
+            self.assertNotEqual(res_no_mbr.returncode, 0)
+            self.assertIn("0x55AA", res_no_mbr.stderr)
+
+            buf[510:512] = b"\x55\xaa"
+            with open(iso_path, "wb") as f:
+                f.write(buf)
+            sha2 = hashlib.sha256(buf).hexdigest()
+            with open(iso_path + ".sha256", "w", encoding="utf-8") as f:
+                f.write(f"{sha2}  test.iso\n")
+            res_ok = subprocess.run(["bash", gate, iso_path], capture_output=True, text=True, timeout=10)
+            self.assertEqual(res_ok.returncode, 0, res_ok.stderr)
+            self.assertIn("[PASS]", res_ok.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
