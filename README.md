@@ -10,11 +10,11 @@
 
 There are exactly three choices. Pick the one that matches your computer.
 
-| | For | Size |
-|---|---|---|
-| **Ubuntu Edition** | Laptops and desktops, 4GB+ RAM | ~1.7 GB |
-| **Windows 11 Edition** | PCs that need Windows, or dual-boot | ~6.8 GB |
-| **Tiny Edition** | Surface 3 and 32-bit UEFI tablets | ~470 MB |
+| | For | Size | Flash Note |
+|---|---|---|---|
+| **Ubuntu Edition** (`Ubuntu 26.04 LTS · amd64`) | Laptops and desktops, 4GB+ RAM | ~1.7 GB | Rufus, balenaEtcher, or `dd` |
+| **Windows 11 Edition** (`Windows 11 25H2 · x64`) | PCs that need Windows, or dual-boot | ~6.8 GB | **Rufus or balenaEtcher only** (no raw `dd`) |
+| **Tiny Edition** (`32-bit UEFI / i386`) | Older 32-bit PCs and 32-bit UEFI tablets *(Surface 3 uses Micro SD payload `#106`)* | ~470 MB | **Rufus or balenaEtcher** (do not unzip onto stick) |
 
 ## 💾 Put it on a USB stick
 
@@ -22,7 +22,7 @@ You need one empty USB stick, 8GB or bigger. **Everything on the stick will be e
 
 1. **Windows** — install [Rufus](https://rufus.ie), open it, choose your stick, click **SELECT** and pick the downloaded file, click **START**.
 2. **Mac** — install [balenaEtcher](https://etcher.balena.io), click **Flash from file**, pick the downloaded file and your stick, click **Flash**.
-3. **Linux** — `lsblk` to find your stick, then `sudo dd if=THE-FILE.iso of=/dev/sdX bs=4M status=progress`
+3. **Linux (Ubuntu & Tiny Editions only)** — `lsblk` to find your stick, then `sudo dd if=THE-FILE.iso of=/dev/sdX bs=4M status=progress` *(do not use `dd` for the Windows 11 ISO — it has no MBR/GPT partition table of its own; use Rufus, balenaEtcher, or `distro/make-ventoy-usb.sh`)*.
 4. **Boot it** — restart with the stick plugged in and tap the boot-menu key as it powers on: **F12**, **F9** or **Esc** on most PCs, or **hold Volume-Down** on a Surface. Choose the USB stick by name.
 
 Booting the stick runs the live system only. It does not touch your files until you choose to install.
@@ -32,7 +32,7 @@ Booting the stick runs the live system only. It does not touch your files until 
 Every release has a `.sha256` file next to it. Compare it before you flash:
 
 ```bash
-sha256sum StormRavenOS-*.iso          # Linux / Mac
+sha256sum StormRavenOS-*.iso                   # Linux / Mac
 certutil -hashfile StormRavenOS-*.iso SHA256   # Windows
 ```
 
@@ -43,26 +43,12 @@ The output must match the checksum shown on the download page exactly.
 - **WireGuard VPN** built in, with a kill switch
 - **Virtual machines** — KVM/QEMU and virt-manager preinstalled
 - **Forensic tools** for disk and memory acquisition, with chain-of-custody hashing
-- **A command gate** (Heimdall) that checks every system command before it runs
-- **A tarpit** (Demogorgon) that catches intruders and holds them
-- **A phone app** that can actually control the machine
-
-The OS speaks Norse mythology in its interface, but the code underneath is ordinary, auditable Linux.
-
-## 🛠 Building it yourself
-
-```bash
-sudo ./distro/build-ubuntu-iso.sh     # produces StormRavenOS-*.iso + .sha256
-```
-
-Requires Debian/Ubuntu x86_64 with `debootstrap`, `squashfs-tools`, `xorriso`, and `grub-pc-bin`.
+- **Full desktop** — browser, office suite, terminal, file manager, media player
+- **Local health service** on `http://localhost:8787/health`
 
 ## 📚 More
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the system is put together
-- [SECURITY.md](SECURITY.md) — reporting a vulnerability
-- [TERMS_AND_COPYRIGHT.md](TERMS_AND_COPYRIGHT.md) — licensing
-
-## ⚠️ Before you install
-
-This is beta software. Back up anything important first, and expect rough edges — the project is under active development and the download links change as builds land.
+- [Architecture & design notes](docs/ARCHITECTURE.md)
+- [Building the ISOs from source](distro/README.md)
+- [Security & vulnerability reporting](SECURITY.md)
+- [License & copyright](TERMS_AND_COPYRIGHT.md)
