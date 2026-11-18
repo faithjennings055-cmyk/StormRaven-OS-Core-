@@ -47,8 +47,8 @@ fetch_published_sha() {
   printf '%s' "$out"
 }
 
-UBUNTU_ISO_SHA="$(fetch_published_sha 'Ubuntu 26.04' "$UBUNTU_SHA_URL")"
-WIN11_ISO_SHA="$(fetch_published_sha 'Windows 11 25H2' "$WIN11_SHA_URL")"
+UBUNTU_ISO_SHA=""
+WIN11_ISO_SHA=""
 
 CACHE_DIR="/var/tmp/stormraven-dualboot-cache"
 UBUNTU_ISO="${CACHE_DIR}/StormRavenOS-Ubuntu-26.04-amd64.iso"
@@ -200,6 +200,8 @@ enforce_core108_guard() {
 
 download_and_verify_isos() {
   mkdir -p "${CACHE_DIR}"
+  UBUNTU_ISO_SHA="$(fetch_published_sha 'Ubuntu 26.04' "$UBUNTU_SHA_URL")"
+  WIN11_ISO_SHA="$(fetch_published_sha 'Windows 11 25H2' "$WIN11_SHA_URL")"
 
   echo "==> [1/5] Checking & verifying StormRaven OS Ubuntu 26.04 Ymir ISO (1.7 GB)..."
   if [ ! -s "${UBUNTU_ISO}" ] || [ "$(sha256sum "${UBUNTU_ISO}" | awk '{print $1}')" != "${UBUNTU_ISO_SHA}" ]; then
@@ -416,6 +418,7 @@ stage_internal_dualboot() {
 
   echo "==> Verifying StormRaven OS Custom Windows 11 Ymir ISO (6.8 GB)..."
   mkdir -p "${CACHE_DIR}"
+  WIN11_ISO_SHA="$(fetch_published_sha 'Windows 11 25H2' "$WIN11_SHA_URL")"
   if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
     rm -f "${WIN11_ISO}.part"
     curl -fL --retry 3 -C - -o "${WIN11_ISO}.part" "${WIN11_ISO_URL}"
