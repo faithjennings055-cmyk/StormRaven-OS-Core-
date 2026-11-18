@@ -1,41 +1,68 @@
-# StormRaven OS Infinity Protocol (Ubuntu 24.04 LTS "Noble Numbat" & Mobile Edition)
+# StormRaven OS
 
-StormRaven OS is a hybrid C# + Python operating environment and Ubuntu 24.04 LTS (`noble`) live distribution with full mobile support across iOS, Android, and Linux mobile devices.
+**StormRaven OS is a hardened, privacy-focused operating system you can run from a USB stick — built on Ubuntu 26.04 LTS, with a companion Windows 11 edition.**
 
-## Mobile & Live Endpoints
+---
 
-- **Live Mobile PWA + Cloud Bifrost Gateway:** [`https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/`](https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/)
-  - Open directly in **Safari (iOS)** or **Chrome/Edge (Android)** — connects automatically to the live `StormRaven.Kernel` (`sr.bridge.mobile.v1`) and Odin Python Pantheon with zero setup required.
-  - Tap **Share → Add to Home Screen** on iPhone or **Install App** on Android for a full-screen standalone mobile OS interface.
-- **1-Command Ubuntu 24.04 LTS Mobile Installer (Android Termux / Linux Mobile):**
-  ```bash
-  curl -fsSL https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-mobile.sh | bash
-  ```
-  See [`distro/mobile/README.md`](distro/mobile/README.md) for full details.
+## ⬇️ Download
 
-## Architectural Bedrock (Infinity Protocol)
+**Everything is on one page: https://echo-at-faith-s-workspace-2.skydive.app/download**
 
-1. **Ubuntu 24.04 LTS ("Noble Numbat") Live Distro (`distro/`)**
-   - Reproducible ISO builder (`distro/build-ubuntu-iso.sh`) using `debootstrap noble`, Ubuntu 6.8 generic kernel, `casper` live boot, and `grub-mkrescue`.
-   - Bakes `/opt/stormraven/StormRaven.Kernel` (`stormraven-kernel.service` on port `:8787`), `/opt/stormraven/python/odin.py`, `/opt/stormraven/webapp/`, and `/usr/local/bin/stormraven` into the rootfs.
-2. **Native C# Kernel & Bifrost Mobile Bridge (`Ipc/BifrostGateway.cs`, `StormRaven.Kernel.Portable/`)**
-   - Deterministic `ContextBus`, `EdgeTabsProvider`, `DecisionEngine`, and SQLite `StormRavenDb`.
-   - Exposes REST + WebSocket (`GET /health`, `GET /state`, `GET /tabs`, `POST /tabs`, `GET /decisions`, `POST /decisions/evaluate`, `POST /commands`, `GET /signals`, `WS /ws`).
-3. **Odin Python Pantheon (`Python/`, `StormRaven.Python/`, `/opt/stormraven/python/`)**
-   - Modules: `Odin` (Leviathan Core v5.0), `Thor` (telemetry & execution), `Freya` (autonomous mind), `Heimdall` (security guard), `Bifrost` (intent translation), `Luci`, `Solomon`, `Heketa`, `Lynn`, `Saga`, `Shadow Log`, `Void Viz`, `Ragnarok`, `Deadman`.
-4. **Mobile Applications (`webapp/`, `StormRaven.Mobile/`, `ios/StormRavenCompanion/`, `distro/mobile/`)**
-   - `webapp/`: Installable Mobile PWA with Status, Tabs, Decisions, Odin Pantheon, and Console views.
-   - `StormRaven.Mobile/`: Cross-platform `.NET 8 MAUI` app (`net8.0-ios;net8.0-android`) running `StormRaven.Kernel.Portable` on-device via `KernelHostedService` + remote Bifrost gateway sync.
-   - `ios/StormRavenCompanion/`: Native SwiftUI iOS 17+ companion app supporting LAN HTTP and Cloud HTTPS Bifrost gateways.
-\n## Durable Build Artifact Mirror & Provenance Recovery (#95)
+There are exactly three choices. Pick the one that matches your computer.
 
-All release artifacts and their `.sha256` sidecars follow a dual-layer durability and provenance standard:
+| | For | Size |
+|---|---|---|
+| **Ubuntu Edition** | Laptops and desktops, 4GB+ RAM | ~1.7 GB |
+| **Windows 11 Edition** | PCs that need Windows, or dual-boot | ~6.8 GB |
+| **Tiny Edition** | Surface 3 and 32-bit UEFI tablets | ~470 MB |
 
-1. **Automatic Post-Build Mirror (`~/Documents/`):**
-   - Both `distro/build-ubuntu-iso.sh` and `distro/build-win11-iso.sh` automatically mirror the built ISO and its `.sha256` sidecar to persistent storage (`${STORMRAVEN_ARTIFACT_MIRROR_DIR:-~/Documents}`) immediately after packaging.
-   - On cold boot, the gateway (`webserver.sh`) hydrates `/tmp/iso/` asynchronously in the background and falls back directly to `~/Documents/<filename>` so downloads never block or 404.
-2. **In-Repo Cryptographic Provenance (`distro/PROVENANCE.json`):**
-   - `distro/PROVENANCE.json` records the authoritative SHA-256 digests and builder recipes for `StormRavenOS-ubuntu-24.04-amd64.iso` / `StormRavenOS-Infinity-Protocol-v3.9.0-amd64.iso`, `StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso`, `StormRavenOS-Win11-Full-v3.9.0-x64.zip`, `stormraven-os_3.9.0_amd64.deb`, and `stormraven-os_3.9.0_amd64.snap`.
-   - **Recovery Procedure:** Restore from the persistent `~/Documents/` mirror if present (`sha256sum -c <artifact>.sha256`); otherwise run `sudo bash distro/build-ubuntu-iso.sh` or `sudo bash distro/build-win11-iso.sh` and verify the resulting digest against `distro/PROVENANCE.json`.
+## 💾 Put it on a USB stick
 
-## Current Milestone: Bedrock Complete\n- Ymir Ring 0 Core: IMPLEMENTED\n- Buddy/SLAB Allocator: LIVE\n- Zero-Trust Gatekeeper: LIVE\n- Neural-Symbolic Scheduler: LIVE\n- Phase: Transitioning to Visuals & GUI Layer
+You need one empty USB stick, 8GB or bigger. **Everything on the stick will be erased.**
+
+1. **Windows** — install [Rufus](https://rufus.ie), open it, choose your stick, click **SELECT** and pick the downloaded file, click **START**.
+2. **Mac** — install [balenaEtcher](https://etcher.balena.io), click **Flash from file**, pick the downloaded file and your stick, click **Flash**.
+3. **Linux** — `lsblk` to find your stick, then `sudo dd if=THE-FILE.iso of=/dev/sdX bs=4M status=progress`
+4. **Boot it** — restart with the stick plugged in and tap the boot-menu key as it powers on: **F12**, **F9** or **Esc** on most PCs, or **hold Volume-Down** on a Surface. Choose the USB stick by name.
+
+Booting the stick runs the live system only. It does not touch your files until you choose to install.
+
+## ✅ Verify your download
+
+Every release has a `.sha256` file next to it. Compare it before you flash:
+
+```bash
+sha256sum StormRavenOS-*.iso          # Linux / Mac
+certutil -hashfile StormRavenOS-*.iso SHA256   # Windows
+```
+
+The output must match the checksum shown on the download page exactly.
+
+## 🔐 What's inside
+
+- **WireGuard VPN** built in, with a kill switch
+- **Virtual machines** — KVM/QEMU and virt-manager preinstalled
+- **Forensic tools** for disk and memory acquisition, with chain-of-custody hashing
+- **A command gate** (Heimdall) that checks every system command before it runs
+- **A tarpit** (Demogorgon) that catches intruders and holds them
+- **A phone app** that can actually control the machine
+
+The OS speaks Norse mythology in its interface, but the code underneath is ordinary, auditable Linux.
+
+## 🛠 Building it yourself
+
+```bash
+sudo ./distro/build-ubuntu-iso.sh     # produces StormRavenOS-*.iso + .sha256
+```
+
+Requires Debian/Ubuntu x86_64 with `debootstrap`, `squashfs-tools`, `xorriso`, and `grub-pc-bin`.
+
+## 📚 More
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the system is put together
+- [SECURITY.md](SECURITY.md) — reporting a vulnerability
+- [TERMS_AND_COPYRIGHT.md](TERMS_AND_COPYRIGHT.md) — licensing
+
+## ⚠️ Before you install
+
+This is beta software. Back up anything important first, and expect rough edges — the project is under active development and the download links change as builds land.
