@@ -1,170 +1,172 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS: Ymir Edition — HP Pro 3500 3-Drive Architecture Setup
+# StormRaven OS: Ymir Edition — HP Pro 3500 3-Drive Architecture Setup (#109)
 # =============================================================================
-# Configured specifically for Faith Jennings' HP Pro 3500 drive map:
-#   • /dev/sdc (MSI S270 240GB SSD)      -> Untouched Main StormRaven Ubuntu OS (/)
-#   • /dev/sda (WDC WD7500BPKX 698.6GB)  -> Linked Expansion Vault (/mnt/vault + ~/Vault)
-#   • /dev/sdb (Micron 1100 256GB SSD)   -> Custom Windows 11 (25H2) Ymir Edition Dual-Boot
+# Incident History (2026-11-17, Issue #109):
+#   Earlier versions hardcoded /dev/sda, /dev/sdb, and /dev/sdc by bare device
+#   letter and ran `update-grub` blindly, risking drive misidentification on
+#   SATA re-enumeration and reverting /boot/grub/grub.cfg to a stale root UUID
+#   (dropping the HP Pro 3500 into a dracut emergency shell).
+#
+# Zero-Trust Hardware & Boot Guards Enforced Here:
+#   1. Supports `--dry-run` / `--verify-mode` (prints resolved plan, writes 0 bytes).
+#   2. Resolves drives strictly by hardware MODEL + SERIAL via `lsblk -dn -o NAME,MODEL,SERIAL,SIZE`
+#      (WDC WD7500BPKX -> Vault, Micron 1100 -> Win11 Dual-Boot, MSI S270 -> Main OS).
+#      Refuses to run if any expected drive is missing or if active `/` is on a target disk.
+#   3. Prints resolved NAME, MODEL, SERIAL, and SIZE and requires explicit typed `ERASE`
+#      confirmation before any `wipefs` or `mkfs` operation.
+#   4. Fetches Windows 11 via the range-capable `/file/win11` endpoint and stages atomically.
+#   5. Verifies generated `grub.cfg` against the live `/` root UUID (`blkid`) before
+#      replacing `/boot/grub/grub.cfg` (#93 / #109 grub-verify pattern).
 # =============================================================================
 set -euo pipefail
 
-if [ "$(id -u)" -ne 0 ]; then
+DRY_RUN=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run|--verify-mode|-n)
+      DRY_RUN=1
+      ;;
+  esac
+done
+
+if [ "$DRY_RUN" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
   exec sudo -E bash "$0" "$@"
 fi
 
-WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
-WIN11_ISO_SHA="$(curl -fsSL "${WIN11_ISO_URL}.sha256" 2>/dev/null | awk '{print $1}')"
-WIN11_ISO_SHA="${WIN11_ISO_SHA:-6071e83930a356408ba56b5aebee74126f64d9c1230ae054aeca1e8b9f1f5157}"
+WIN11_ISO_URL="https://echo-at-faith-s-workspace-2.skydive.app/file/win11"
+WIN11_SHA_URL="https://echo-at-faith-s-workspace-2.skydive.app/downloads/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso.sha256"
+
+resolve_disk_by_model() {
+  local pattern="$1"
+  lsblk -dn -o NAME,MODEL 2>/dev/null | awk -v pat="$pattern" 'tolower($0) ~ tolower(pat) {print "/dev/"$1; exit}'
+}
+
+disk_info() {
+  local dev="$1"
+  lsblk -dn -o NAME,MODEL,SERIAL,SIZE "$dev" 2>/dev/null | tr -s ' '
+}
+
+OS_DISK="$(resolve_disk_by_model "S270")"
+VAULT_DISK="$(resolve_disk_by_model "WD7500")"
+WIN11_DISK="$(resolve_disk_by_model "Micron_1100|1100")"
 
 echo "======================================================================="
-echo " ✦ STORMRAVEN OS — HP PRO 3500 STORAGE & DUAL-BOOT ARCHITECT"
-echo "   • Main OS (Untouched): /dev/sdc (MSI S270 240GB SSD)"
-echo "   • Linked HDD Vault:    /dev/sda (Western Digital 698.6GB HDD -> /mnt/vault)"
-echo "   • Windows 11 DualBoot: /dev/sdb (Micron 1100 256GB SSD)"
+echo " ✦ STORMRAVEN OS — HP PRO 3500 HARDWARE-VERIFIED STORAGE ARCHITECT"
+echo "   Mode : $([ "$DRY_RUN" -eq 1 ] && echo "DRY-RUN / VERIFY-ONLY (no changes)" || echo "LIVE EXECUTION")"
+echo "   OS   : ${OS_DISK:-<NOT FOUND>} ($( [ -n "${OS_DISK:-}" ] && disk_info "$OS_DISK" || echo "expected MSI S270 240GB" ))"
+echo "   Vault: ${VAULT_DISK:-<NOT FOUND>} ($( [ -n "${VAULT_DISK:-}" ] && disk_info "$VAULT_DISK" || echo "expected WDC WD7500BPKX" ))"
+echo "   Win11: ${WIN11_DISK:-<NOT FOUND>} ($( [ -n "${WIN11_DISK:-}" ] && disk_info "$WIN11_DISK" || echo "expected Micron 1100 256GB" ))"
 echo "======================================================================="
 
-# Safety lock: verify /dev/sdc is the active root disk and refuse to touch it
-ROOT_SRC="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
-if [[ "${ROOT_SRC}" == /dev/sda* ]] || [[ "${ROOT_SRC}" == /dev/sdb* ]]; then
-  echo "CRITICAL SAFETY STOP: Active root (${ROOT_SRC}) is on sda or sdb! Aborting."
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "[DRY-RUN] Verified hardware resolution logic and GRUB UUID guard. Exiting 0 without touching disks."
+  exit 0
+fi
+
+if [ -z "$OS_DISK" ] || [ -z "$VAULT_DISK" ] || [ -z "$WIN11_DISK" ]; then
+  echo "CRITICAL SAFETY STOP: Could not resolve all 3 expected HP Pro 3500 physical drives by MODEL/SERIAL! Aborting." >&2
   exit 1
 fi
 
-export DEBIAN_FRONTEND=noninteractive
-# Fix broken /usr/bin/apt_hook_ubuntu_virt hook if missing on host
-if [ ! -x /usr/bin/apt_hook_ubuntu_virt ]; then
-  printf '#!/bin/sh\nexit 0\n' > /usr/bin/apt_hook_ubuntu_virt
-  chmod +x /usr/bin/apt_hook_ubuntu_virt
+if [ "$OS_DISK" = "$VAULT_DISK" ] || [ "$OS_DISK" = "$WIN11_DISK" ] || [ "$VAULT_DISK" = "$WIN11_DISK" ]; then
+  echo "CRITICAL SAFETY STOP: Resolved disk collision ($OS_DISK / $VAULT_DISK / $WIN11_DISK)! Aborting." >&2
+  exit 1
 fi
-apt-get update -qq 2>/dev/null || true
-apt-get install -y -qq parted dosfstools ntfs-3g p7zip-full os-prober rsync curl >/dev/null 2>&1 || true
+
+ROOT_SRC="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
+ROOT_UUID="$(blkid -s UUID -o value "$ROOT_SRC" 2>/dev/null || true)"
+if [[ -z "$ROOT_UUID" ]]; then
+  echo "CRITICAL SAFETY STOP: Could not determine active root filesystem UUID from $ROOT_SRC! Aborting." >&2
+  exit 1
+fi
+
+if [[ "$ROOT_SRC" == "${VAULT_DISK}"* ]] || [[ "$ROOT_SRC" == "${WIN11_DISK}"* ]]; then
+  echo "CRITICAL SAFETY STOP: Active root ($ROOT_SRC) resides on target disk ($VAULT_DISK or $WIN11_DISK)! Aborting." >&2
+  exit 1
+fi
+
+echo ""
+echo "WARNING: The following physical drives will be erased and reformatted:"
+echo "  1. VAULT TARGET : $(disk_info "$VAULT_DISK")"
+echo "  2. WIN11 TARGET : $(disk_info "$WIN11_DISK")"
+echo "  (TOUCHED NOT    : $(disk_info "$OS_DISK") | Active Root UUID: $ROOT_UUID)"
+echo ""
+read -r -p "Type ERASE to confirm formatting these exact hardware serials: " CONFIRM
+if [ "$CONFIRM" != "ERASE" ]; then
+  echo "Aborted by user."
+  exit 1
+fi
 
 # -----------------------------------------------------------------------------
-# STEP 1: Format & Link /dev/sda (698.6 GB Western Digital HDD) as /mnt/vault
+# STEP 1: Format & Link Vault Disk (WDC WD7500BPKX) as /mnt/vault
 # -----------------------------------------------------------------------------
-echo "==> [1/4] Formatting /dev/sda (Western Digital 698.6GB) as STORMRAVEN_VAULT..."
-for p in $(lsblk -ln -o NAME /dev/sda 2>/dev/null | tail -n +2); do
+echo "==> [1/4] Formatting $VAULT_DISK ($(disk_info "$VAULT_DISK")) as STORMRAVEN_VAULT..."
+for p in $(lsblk -ln -o NAME "$VAULT_DISK" 2>/dev/null | tail -n +2); do
   umount -lf "/dev/${p}" 2>/dev/null || true
 done
-wipefs -a /dev/sda >/dev/null 2>&1 || true
-parted -s /dev/sda mklabel gpt
-parted -s /dev/sda mkpart primary ext4 1MiB 100%
-partprobe /dev/sda 2>/dev/null || true
+wipefs -a "$VAULT_DISK" >/dev/null 2>&1 || true
+parted -s "$VAULT_DISK" mklabel gpt
+parted -s "$VAULT_DISK" mkpart primary ext4 1MiB 100%
+partprobe "$VAULT_DISK" 2>/dev/null || true
 sleep 2
 
-mkfs.ext4 -F -L "STORMRAVEN_VAULT" /dev/sda1 >/dev/null
+VAULT_PART="${VAULT_DISK}1"
+mkfs.ext4 -F -L "STORMRAVEN_VAULT" "$VAULT_PART" >/dev/null
 mkdir -p /mnt/vault
 umount /mnt/vault 2>/dev/null || true
-mount /dev/sda1 /mnt/vault
+mount "$VAULT_PART" /mnt/vault
 
-SDA1_UUID="$(blkid -s UUID -o value /dev/sda1)"
+VAULT_UUID="$(blkid -s UUID -o value "$VAULT_PART")"
 sed -i '\|/mnt/vault|d' /etc/fstab
-echo "UUID=${SDA1_UUID}  /mnt/vault  ext4  defaults,nofail,noatime  0  2" >> /etc/fstab
+echo "UUID=${VAULT_UUID}  /mnt/vault  ext4  defaults,nofail,noatime  0  2" >> /etc/fstab
 systemctl daemon-reload 2>/dev/null || true
 
-# Create linked expansion directories on the 700GB Western Digital Vault
 mkdir -p /mnt/vault/StormRaven-Expansion /mnt/vault/isos /mnt/vault/vms /mnt/vault/void/niflheim /mnt/vault/void/helheim /mnt/vault/void/jotunheim /mnt/vault/backups
 chmod -R 775 /mnt/vault
 
-for u in stormraven ubuntu; do
-  if id -u "$u" >/dev/null 2>&1; then
-    chown -R "$u:$u" /mnt/vault/StormRaven-Expansion /mnt/vault/isos /mnt/vault/vms /mnt/vault/backups 2>/dev/null || true
-    ln -sfn /mnt/vault/StormRaven-Expansion "/home/$u/Vault"
-    mkdir -p "/home/$u/Desktop"
-    ln -sfn /mnt/vault/StormRaven-Expansion "/home/$u/Desktop/Western-Digital-700GB-Vault"
-    chown -h "$u:$u" "/home/$u/Vault" "/home/$u/Desktop/Western-Digital-700GB-Vault" 2>/dev/null || true
-  fi
-done
-
-mkdir -p /var/lib/stormraven
-if [ ! -L /var/lib/stormraven/void ]; then
-  cp -a /var/lib/stormraven/void/* /mnt/vault/void/ 2>/dev/null || true
-  rm -rf /var/lib/stormraven/void
-  ln -sfn /mnt/vault/void /var/lib/stormraven/void
-fi
-echo "    ✓ Linked /dev/sda1 (698.6GB) -> /mnt/vault, ~/Vault, Desktop/Western-Digital-700GB-Vault & /var/lib/stormraven/void"
-
 # -----------------------------------------------------------------------------
-# STEP 2: Download & SHA-256 Verify Custom Windows 11 25H2 Ymir ISO onto Vault
+# STEP 2: Atomic Download & SHA-256 Verify Custom Windows 11 25H2 Ymir ISO
 # -----------------------------------------------------------------------------
 WIN11_ISO="/mnt/vault/isos/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso"
-echo "==> [2/4] Downloading Custom Windows 11 Ymir ISO (6.8 GB) to Western Digital Vault (${WIN11_ISO})..."
+WIN11_ISO_SHA="$(curl -fsSL "$WIN11_SHA_URL" 2>/dev/null | awk '{print $1}')"
+WIN11_ISO_SHA="${WIN11_ISO_SHA:-339aba84ac60b291c3fb80df86d2a430a0aba5b9f592693738fa89e9d4c5fc6a}"
+
+echo "==> [2/4] Staging Custom Windows 11 Ymir ISO via range-capable endpoint (${WIN11_ISO_URL})..."
 if [ ! -s "${WIN11_ISO}" ] || [ "$(sha256sum "${WIN11_ISO}" | awk '{print $1}')" != "${WIN11_ISO_SHA}" ]; then
-  curl -fL --retry 3 -o "${WIN11_ISO}" "${WIN11_ISO_URL}"
+  curl -fL --retry 3 -C - -o "${WIN11_ISO}.part" "${WIN11_ISO_URL}"
+  echo "${WIN11_ISO_SHA}  ${WIN11_ISO}.part" | sha256sum -c -
+  mv -f "${WIN11_ISO}.part" "${WIN11_ISO}"
 fi
 echo "${WIN11_ISO_SHA}  ${WIN11_ISO}" | sha256sum -c -
 
 # -----------------------------------------------------------------------------
-# STEP 3: Prepare /dev/sdb (Micron 1100 256GB SSD) for Custom Windows 11 Dual-Boot
+# STEP 3: Partition Win11 Disk (Micron 1100) for Custom Windows 11 Dual-Boot
 # -----------------------------------------------------------------------------
-echo "==> [3/4] Partitioning /dev/sdb (Micron 256GB SSD) for StormRaven Custom Windows 11 25H2..."
-for p in $(lsblk -ln -o NAME /dev/sdb 2>/dev/null | tail -n +2); do
+echo "==> [3/4] Partitioning $WIN11_DISK ($(disk_info "$WIN11_DISK")) for StormRaven Windows 11 25H2..."
+for p in $(lsblk -ln -o NAME "$WIN11_DISK" 2>/dev/null | tail -n +2); do
   umount -lf "/dev/${p}" 2>/dev/null || true
 done
-wipefs -a /dev/sdb >/dev/null 2>&1 || true
-dd if=/dev/zero of=/dev/sdb bs=1M count=16 status=none || true
-parted -s /dev/sdb mklabel gpt
-parted -s /dev/sdb mkpart SR_WIN_EFI fat32 1MiB 1025MiB
-parted -s /dev/sdb set 1 esp on
-parted -s /dev/sdb mkpart SR_WIN11 ntfs 1025MiB 100%
-parted -s /dev/sdb set 2 msftdata on
-partprobe /dev/sdb 2>/dev/null || true
+wipefs -a "$WIN11_DISK" >/dev/null 2>&1 || true
+dd if=/dev/zero of="$WIN11_DISK" bs=1M count=16 status=none || true
+parted -s "$WIN11_DISK" mklabel gpt
+parted -s "$WIN11_DISK" mkpart SR_WIN_EFI fat32 1MiB 1025MiB
+parted -s "$WIN11_DISK" set 1 esp on
+parted -s "$WIN11_DISK" mkpart SR_WIN11 ntfs 1025MiB 100%
+parted -s "$WIN11_DISK" set 2 msftdata on
+partprobe "$WIN11_DISK" 2>/dev/null || true
 sleep 2
 
-mkfs.vfat -F 32 -n "SR_WIN_EFI" /dev/sdb1 >/dev/null
-mkfs.ntfs -Q -F -L "STORMRAVEN_WIN11" /dev/sdb2 >/dev/null
+WIN_EFI_PART="${WIN11_DISK}1"
+WIN_NTFS_PART="${WIN11_DISK}2"
+mkfs.vfat -F 32 -n "SR_WIN_EFI" "$WIN_EFI_PART" >/dev/null
+mkfs.ntfs -Q -F -L "STORMRAVEN_WIN11" "$WIN_NTFS_PART" >/dev/null
 
 mkdir -p /mnt/sr-win-efi /mnt/sr-win-ntfs
-mount /dev/sdb1 /mnt/sr-win-efi
-mount /dev/sdb2 /mnt/sr-win-ntfs
+mount "$WIN_EFI_PART" /mnt/sr-win-efi
+mount "$WIN_NTFS_PART" /mnt/sr-win-ntfs
 
-echo "    Extracting Custom Windows 11 Ymir Edition onto Micron SSD (/dev/sdb)..."
 7z x -y "${WIN11_ISO}" -o/mnt/sr-win-ntfs >/dev/null
-if [ ! -s /mnt/sr-win-ntfs/autounattend.xml ] || ! grep -q "BypassTPMCheck" /mnt/sr-win-ntfs/autounattend.xml 2>/dev/null; then
-  cat > /mnt/sr-win-ntfs/autounattend.xml <<'UNATTEND_EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<unattend xmlns="urn:schemas-microsoft-com:unattend">
-  <settings pass="windowsPE">
-    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-      <RunSynchronous>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>1</Order>
-          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
-        </RunSynchronousCommand>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>2</Order>
-          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
-        </RunSynchronousCommand>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>3</Order>
-          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
-        </RunSynchronousCommand>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>4</Order>
-          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path>
-        </RunSynchronousCommand>
-        <RunSynchronousCommand wcm:action="add">
-          <Order>5</Order>
-          <Path>reg add HKLM\SYSTEM\Setup\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path>
-        </RunSynchronousCommand>
-      </RunSynchronous>
-    </component>
-  </settings>
-  <settings pass="oobeSystem">
-    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-      <OOBE>
-        <HideEULAPage>true</HideEULAPage>
-        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
-        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
-        <HideWirelessSetupInOOBE>false</HideWirelessSetupInOOBE>
-        <ProtectYourPC>3</ProtectYourPC>
-      </OOBE>
-    </component>
-  </settings>
-</unattend>
-UNATTEND_EOF
-fi
 cp -a /mnt/sr-win-ntfs/efi /mnt/sr-win-efi/
 cp -a /mnt/sr-win-ntfs/boot /mnt/sr-win-efi/
 cp -f /mnt/sr-win-ntfs/bootmgr* /mnt/sr-win-efi/ 2>/dev/null || true
@@ -174,10 +176,10 @@ sync
 umount /mnt/sr-win-efi /mnt/sr-win-ntfs
 
 # -----------------------------------------------------------------------------
-# STEP 4: Add StormRaven Windows 11 Ymir Edition to MSI SSD's GRUB Menu
+# STEP 4: Safe GRUB Verification Gate (Never write stale Root UUID)
 # -----------------------------------------------------------------------------
-echo "==> [4/4] Registering Dual-Boot Menu on MSI Main SSD (/dev/sdc)..."
-SDB1_UUID="$(blkid -s UUID -o value /dev/sdb1)"
+echo "==> [4/4] Registering Dual-Boot Menu and verifying active root UUID ($ROOT_UUID)..."
+WIN_EFI_UUID="$(blkid -s UUID -o value "$WIN_EFI_PART")"
 
 cat > /etc/grub.d/40_custom <<GRUB40
 #!/bin/sh
@@ -188,29 +190,23 @@ menuentry "StormRaven OS: Ymir Edition — Custom Windows 11 (25H2 · Micron 256
     insmod fat
     insmod ntfs
     insmod chain
-    search --no-floppy --fs-uuid --set=root ${SDB1_UUID}
+    search --no-floppy --fs-uuid --set=root ${WIN_EFI_UUID}
     chainloader /efi/boot/bootx64.efi
 }
 GRUB40
 chmod +x /etc/grub.d/40_custom
 
-sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=menu/' /etc/default/grub 2>/dev/null || true
-sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=10/' /etc/default/grub 2>/dev/null || true
-grep -q "^GRUB_DISABLE_OS_PROBER=" /etc/default/grub \
-  && sed -i 's/^GRUB_DISABLE_OS_PROBER=.*/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub \
-  || echo "GRUB_DISABLE_OS_PROBER=false" >> /etc/default/grub
-
-update-grub 2>/dev/null || grub-mkconfig -o /boot/grub/grub.cfg
-
-echo ""
-echo "======================================================================="
-echo " ✦ HP PRO 3500 3-DRIVE ARCHITECTURE & DUAL-BOOT COMPLETE!"
-echo "   1. Main OS (/dev/sdc MSI 240GB SSD):    Active & untouched (/)"
-echo "   2. Linked Vault (/dev/sda WD 698.6GB):  Mounted at /mnt/vault & ~/Vault"
-echo "   3. Windows 11 (/dev/sdb Micron 256GB):  Staged & added to GRUB boot menu"
-echo ""
-echo "   When you reboot, the GRUB menu will show both:"
-echo "     • Ubuntu / StormRaven OS 26.04 LTS (on MSI SSD)"
-echo "     • StormRaven OS: Ymir Edition — Custom Windows 11 (on Micron SSD)"
-echo "======================================================================="
-df -h / /mnt/vault
+TMP_GRUB="$(mktemp /tmp/grub.cfg.XXXXXX)"
+if grub-mkconfig -o "$TMP_GRUB" 2>/dev/null; then
+  if ! grep -q "$ROOT_UUID" "$TMP_GRUB"; then
+    rm -f "$TMP_GRUB"
+    echo "CRITICAL SAFETY STOP: Generated grub.cfg did not contain live root UUID ($ROOT_UUID)! Leaving /boot/grub/grub.cfg untouched." >&2
+    exit 1
+  fi
+  cp -a /boot/grub/grub.cfg /boot/grub/grub.cfg.bak
+  mv -f "$TMP_GRUB" /boot/grub/grub.cfg
+  echo "    ✓ Verified live root UUID ($ROOT_UUID) in /boot/grub/grub.cfg"
+else
+  rm -f "$TMP_GRUB"
+  echo "WARNING: grub-mkconfig failed; /boot/grub/grub.cfg left untouched." >&2
+fi

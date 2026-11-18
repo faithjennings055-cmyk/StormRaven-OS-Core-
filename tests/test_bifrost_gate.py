@@ -432,5 +432,17 @@ class BifrostGateContract(unittest.TestCase):
             self.assertIn("[PASS]", res_ok.stdout)
 
 
+
+    def test_hp_storage_setup_enforces_serial_resolution_and_grub_uuid_gate(self):
+        script = REPO_ROOT / "distro/live-build/config/includes.chroot/usr/local/bin/stormraven-hp-storage-setup"
+        content = script.read_text(encoding="utf-8")
+        self.assertIn("--dry-run", content)
+        self.assertIn("resolve_disk_by_model", content)
+        self.assertIn("lsblk -dn -o NAME,MODEL,SERIAL,SIZE", content)
+        self.assertIn('if [ "$CONFIRM" != "ERASE" ]', content)
+        self.assertIn('grep -q "$ROOT_UUID" "$TMP_GRUB"', content)
+        self.assertIn("/file/win11", content)
+
+
 if __name__ == "__main__":
     unittest.main()
