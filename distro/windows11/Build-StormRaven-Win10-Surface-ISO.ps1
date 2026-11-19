@@ -1,7 +1,7 @@
 ﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    StormRaven OS: Infinity Protocol v3.9.0 — Custom 64-Bit Windows 10 Surface Tablet/PC ISO Builder (No Moov)
+    StormRaven OS: Infinity Protocol v3.9.0 — Custom 64-Bit Windows 10 Surface Tablet/PC ISO Builder (No Sovereign)
 .DESCRIPTION
     Builds a true custom Windows 11 ISO using official Microsoft Windows Dev / Assessment & Deployment Kit (ADK) tools:
       1. Compiles self-contained native Windows x64 `StormRaven.Kernel.exe` via `dotnet publish`
@@ -42,7 +42,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "=======================================================================" -ForegroundColor Cyan
-Write-Host " ✦ STORMRAVEN OS v3.9.0 — CUSTOM 64-BIT WINDOWS 10 SURFACE WIM / ISO BUILDER (NO MOOV) (ADK/DISM)" -ForegroundColor Cyan
+Write-Host " ✦ STORMRAVEN OS v3.9.0 — CUSTOM 64-BIT WINDOWS 10 SURFACE WIM / ISO BUILDER (ADK/DISM)" -ForegroundColor Cyan
 Write-Host "=======================================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path $SourceIso)) {
@@ -153,8 +153,8 @@ try {
         Copy-Item -Path "$RepoRoot\distro\wallpapers\*" -Destination $OfflineWebapp -Recurse -Force
     }
 
-    # Strip all Moov modules/assets for the Moov-free 64-bit Windows 10 Surface Edition
-    Remove-Item -Path "$OfflinePython\*moov*", "$OfflineWebapp\*moov*" -Force -ErrorAction SilentlyContinue
+    # Strip all Sovereign modules/assets for the Sovereign-free 64-bit Windows 10 Surface Edition
+    Remove-Item -Path "$OfflinePython\*Sovereign*", "$OfflineWebapp\*Sovereign*" -Force -ErrorAction SilentlyContinue
 
     # Copy Installer & Autounattend scripts into the offline image
     Copy-Item -Path "$PSScriptRoot\Install-StormRaven-Win10.ps1" -Destination "$OfflineSrRoot\Install-StormRaven-Win10.ps1" -Force

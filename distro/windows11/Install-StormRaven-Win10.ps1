@@ -1,18 +1,18 @@
 ﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    StormRaven OS: Infinity Protocol v3.9.0 — 64-Bit Windows 10 Surface Tablet/PC Edition Installer (No Moov)
+    StormRaven OS: Infinity Protocol v3.9.0 — 64-Bit Windows 10 Surface Tablet/PC Edition Installer (No Sovereign)
 .DESCRIPTION
-    One-command PowerShell installer for 64-bit Windows 10 (Surface Tablet/PC & Desktop — Moov-Free):
+    One-command PowerShell installer for 64-bit Windows 10 (Surface Tablet/PC & Desktop — Sovereign-Free):
       Invoke-WebRequest -Uri "https://echo-at-faith-s-workspace.skydive.app/install-win10.ps1" -OutFile "install-win10.ps1"; Invoke-WebRequest -Uri "https://echo-at-faith-s-workspace.skydive.app/install-win10.ps1.sha256" -OutFile "install-win10.ps1.sha256"; $exp=((Get-Content .\install-win10.ps1.sha256 -Raw).Trim() -split "\s+")[0].ToLower(); if ((Get-FileHash .\install-win10.ps1 -Algorithm SHA256).Hash.ToLower() -eq $exp) { powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-win10.ps1 } else { throw "SHA-256 mismatch" }
     Installs:
       1. 64-Bit (x64) Architecture Gate (refuses 32-bit/ARM non-x64 environments cleanly)
       2. Self-contained StormRaven.Kernel.exe (65MB .NET 8 native Windows x64 binary, zero dependencies!)
       3. Bifrost HTTP/WS Gateway (:8787) + Local UI Server (:3887) + Windows Scheduled Task auto-start
-      4. Odin Python Pantheon (Odin, Thor, Freya, Heimdall, Luci, Solomon, Heketa, Lynn — zero Moov modules)
+      4. Odin Python Pantheon (Odin, Thor, Freya, Heimdall, Luci, Solomon, Heketa, Lynn — zero Sovereign modules)
       5. Runic Command CLI (`stormraven`, `fehu`, `algiz`, `isa`, `raido`, `sr-install`) in C:\Windows\System32
       6. Ymir Edition Windows 10 Dark Cryo-Glass Theme + Surface Touch & Pen Tablet Profile + Frost Giant Wallpaper
-      7. All 36 StormRaven OS Native Desktop Apps & Start Menu Shortcuts (Moov-free)
+      7. All 36 StormRaven OS Native Desktop Apps & Start Menu Shortcuts (Sovereign-free)
       8. Microsoft Surface PixelSense Touch/Pen Calibration + HP w2558hc / W2072a Display Profile
 #>
 $ErrorActionPreference = "Continue"
@@ -36,14 +36,14 @@ $StartMenuDir   = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StormR
 
 Write-Host "=======================================================================" -ForegroundColor Cyan
 Write-Host " ✦ STORMRAVEN OS v3.9.0 — 64-BIT WINDOWS 10 SURFACE TABLET/PC EDITION" -ForegroundColor Cyan
-Write-Host "   Infinity Protocol (x64) · Surface Touch/Pen · Ymir HUD · No Moov" -ForegroundColor Cyan
+Write-Host "   Infinity Protocol (x64) · Surface Touch/Pen · Ymir HUD · No Sovereign" -ForegroundColor Cyan
 Write-Host "=======================================================================" -ForegroundColor Cyan
 
-# 1. Create directory structure & purge any legacy Moov artifacts
+# 1. Create directory structure & purge any legacy Sovereign artifacts
 New-Item -ItemType Directory -Force -Path $StormRavenRoot, $BinDir, $PythonDir, $WebappDir, $DriversDir, $SurfaceDir, "$VoidDir\helheim", "$VoidDir\niflheim", "$VoidDir\muspelheim", $AllAppsDir, $StartMenuDir | Out-Null
 [Environment]::SetEnvironmentVariable("STORMRAVEN_VOID_DIR", $VoidDir, "Machine")
 [Environment]::SetEnvironmentVariable("STORMRAVEN_DB", "$StormRavenRoot\kernel.db", "Machine")
-[Environment]::SetEnvironmentVariable("STORMRAVEN_EDITION", "Win10-x64-Surface-Infinity-NoMoov", "Machine")
+[Environment]::SetEnvironmentVariable("STORMRAVEN_EDITION", "Win10-x64-Surface-Infinity-NoSovereign", "Machine")
 
 # 2. Seal Luci Cryptographic Key
 $LuciKeyPath = "$StormRavenRoot\Luci.key"
@@ -96,8 +96,8 @@ if (Test-Path $LocalBundle) {
     }
 }
 
-# Explicitly remove all Moov files, modules, and shortcuts (Moov-free build)
-Remove-Item -Path "$PythonDir\*moov*", "$WebappDir\*moov*", "$DesktopDir\*Moov*.lnk", "$StartMenuDir\*Moov*.lnk", "$AllAppsDir\*Moov*.lnk" -Force -ErrorAction SilentlyContinue
+# Explicitly remove all Sovereign files, modules, and shortcuts (Sovereign-free build)
+Remove-Item -Path "$PythonDir\*Sovereign*", "$WebappDir\*Sovereign*", "$DesktopDir\*Sovereign*.lnk", "$StartMenuDir\*Sovereign*.lnk", "$AllAppsDir\*Sovereign*.lnk" -Force -ErrorAction SilentlyContinue
 
 # 4. Apply Microsoft Surface Tablet/PC Touch, Pen, Rotation & Power Profile + Display Profile
 Write-Host "==> [3/7] Applying Windows Surface Tablet/PC Touch, Pen, Rotation & Display Profile..." -ForegroundColor Cyan
@@ -139,7 +139,7 @@ if (Test-Path "$WebappDir\ymir-bg.jpg") {
     RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
 }
 
-# 6. Install `stormraven`, `fehu`, `algiz`, `isa`, `raido`, `freya`, and `sr-install` CLIs in C:\Windows\System32 (No Moov)
+# 6. Install `stormraven`, `fehu`, `algiz`, `isa`, `raido`, `freya`, and `sr-install` CLIs in C:\Windows\System32 (No Sovereign)
 Write-Host "==> [5/7] Installing StormRaven CLI & Runic Gatekeeper (stormraven, fehu, algiz, isa, raido, freya)..." -ForegroundColor Cyan
 $CliContent = @"
 @echo off
@@ -167,7 +167,7 @@ exit /b 0
 
 :status
 echo === [Hlidskjalf] StormRaven OS: Infinity Protocol v3.9.0 (Windows 10 64-Bit Surface Edition) ===
-echo Edition:  StormRaven OS for Windows 10 x64 (Surface Tablet/PC · Ymir Edition · No Moov)
+echo Edition:  StormRaven OS for Windows 10 x64 (Surface Tablet/PC · Ymir Edition · No Sovereign)
 echo Kernel:   $BinDir\StormRaven.Kernel.exe (:8787 Bifrost Gateway)
 echo Luci Key: AUTHORIZED ($LuciKeyPath)
 echo Hardware: 64-Bit (x64) Surface Touch/Pen ^& PixelSense Ready
@@ -363,8 +363,8 @@ if (Test-Path "$BinDir\StormRaven.Kernel.exe") {
     Register-ScheduledTask -TaskName "StormRavenKernel" -Action $Action -Trigger $Trigger -Principal $Principal -Description "StormRaven OS Kernel & Bifrost Gateway (:8787) [Windows 10 x64 Surface Edition]" -Force | Out-Null
 }
 
-# 8. Create Desktop & Start Menu Shortcuts for StormRaven OS + Surface & Core Apps (No Moov)
-Write-Host "==> [7/7] Creating Windows 10 x64 Surface Desktop & Start Menu App Shortcuts (Moov-Free)..." -ForegroundColor Cyan
+# 8. Create Desktop & Start Menu Shortcuts for StormRaven OS + Surface & Core Apps (No Sovereign)
+Write-Host "==> [7/7] Creating Windows 10 x64 Surface Desktop & Start Menu App Shortcuts (Sovereign-Free)..." -ForegroundColor Cyan
 $WshShell = New-Object -ComObject WScript.Shell
 
 function New-SrShortcut($Path, $Target, $ArgsStr, $Desc) {
@@ -434,7 +434,7 @@ if ($BrowserExe) {
 Write-Host ""
 Write-Host "=======================================================================" -ForegroundColor Green
 Write-Host " ✦ STORMRAVEN OS v3.9.0 (WINDOWS 10 64-BIT SURFACE EDITION) IS LIVE!" -ForegroundColor Green
-Write-Host "   • Architecture:   64-Bit (x64) Windows 10 Surface Tablet/PC (No Moov)" -ForegroundColor White
+Write-Host "   • Architecture:   64-Bit (x64) Windows 10 Surface Tablet/PC (No Sovereign)" -ForegroundColor White
 Write-Host "   • Native Kernel:  Running on http://127.0.0.1:8787 (Auto-starts at logon)" -ForegroundColor White
 Write-Host "   • Surface Touch:  Touch Keyboard Auto-Invoke, Pen & Rotation Active" -ForegroundColor White
 Write-Host "   • CLI & Runes:    stormraven status | fehu | algiz | isa | raido | freya" -ForegroundColor White

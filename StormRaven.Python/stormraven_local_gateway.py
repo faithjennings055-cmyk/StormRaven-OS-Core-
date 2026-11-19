@@ -116,14 +116,14 @@ def health_payload():
     tel = read_telemetry()
     edition = "win11" if os.path.isfile("/etc/stormraven/edition") and "win11" in open("/etc/stormraven/edition").read() else os.environ.get("STORMRAVEN_DEFAULT_OS", "win11")
     distro_title = (
-        "StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI"
+        "StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition"
         if edition == "win11"
-        else "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS + Moov AI)"
+        else "StormRaven OS: Infinity Protocol v3.9.0 (Ubuntu 24.04 LTS)"
     )
     return {
         "kernel": "StormRaven OS",
         "distro": distro_title,
-        "distroVersion": "v3.9.0 · Windows 11 Edition + Moov AI" if edition == "win11" else "24.04 Noble · Infinity Protocol v3.9.0",
+        "distroVersion": "v3.9.0 · Windows 11 Edition" if edition == "win11" else "24.04 Noble · Infinity Protocol v3.9.0",
         "status": "online",
         "health": "online",
         "version": "3.9.0",
@@ -301,28 +301,28 @@ def handle_command_dict(body_dict):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "cell", "heartbeat"), "telemetry": tel}
     elif norm in ("wsu_scan_shared", "odin_wsu_scan_shared"):
         res = {"timeUtc": now_iso, **run_cli_json("stormraven-wsu", "scan-shared"), "telemetry": tel}
-    elif norm in ("moov", "moov_status", "odin_moov", "odin_moov_status"):
-        res = {"timeUtc": now_iso, **run_cli_json("stormraven-moov", "status"), "telemetry": tel}
-    elif norm in ("moov_ach", "odin_moov_ach"):
+    elif False:
+        res = {"timeUtc": now_iso, **run_cli_json("stormraven-Sovereign", "status"), "telemetry": tel}
+    elif False:
         res = {
             "timeUtc": now_iso,
             **run_cli_json(
-                "stormraven-moov",
+                "stormraven-Sovereign",
                 "ach",
                 "--amount", str(body_dict.get("amount") or 250.00),
                 "--routing", str(body_dict.get("routing") or "021000021"),
                 "--account", str(body_dict.get("account") or "4829104921"),
                 "--direction", str(body_dict.get("direction") or "debit"),
                 "--sec-code", str(body_dict.get("secCode") or "WEB"),
-                "--memo", str(body_dict.get("memo") or "StormRaven Moov ACH Transfer"),
+                "--memo", str(body_dict.get("memo") or "StormRaven Sovereign ACH Transfer"),
             ),
             "telemetry": tel,
         }
-    elif norm in ("moov_deposit_check", "odin_moov_deposit_check"):
+    elif False:
         res = {
             "timeUtc": now_iso,
             **run_cli_json(
-                "stormraven-moov",
+                "stormraven-Sovereign",
                 "deposit-check",
                 "--amount", str(body_dict.get("amount") or 500.00),
                 "--routing", str(body_dict.get("routing") or "021000021"),
@@ -395,20 +395,20 @@ class GatewayHandler(BaseHTTPRequestHandler):
             return self._send_json({"ok": True, "data": {"count": len(DECISIONS), "decisions": DECISIONS}})
         if path == "/signals":
             return self._send_json({"ok": True, "data": {"count": len(TABS), "signals": TABS}})
-        if path in ("/api/moov", "/api/moov/status"):
-            return self._send_json(run_cli_json("stormraven-moov", "status"))
+        if False:
+            return self._send_json(run_cli_json("stormraven-Sovereign", "status"))
         if path in ("/api/demogorgon", "/api/demogorgon/status", "/api/lynn"):
             return self._send_json(run_cli_json("stormraven-demogorgon", "status"))
         if path == "/api/vault":
             return self._send_json({"ok": False, "error": {"code": "vault_locked", "message": "Raw vault dump endpoint is disabled under Zero-Trust policy (Core issue #92)."}}, status=403)
-        if path == "/moov":
+        if False:
             accept = self.headers.get("Accept", "")
             if "application/json" in accept and "text/html" not in accept:
-                return self._send_json(run_cli_json("stormraven-moov", "status"))
-            st = run_cli_json("stormraven-moov", "status")
+                return self._send_json(run_cli_json("stormraven-Sovereign", "status"))
+            st = run_cli_json("stormraven-Sovereign", "status")
             bal = float(st.get("availableBalance", 12450.00))
             html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>StormRaven OS — Windows 11 Edition · Moov AI Banking &amp; Check Deposit</title>
+<title>StormRaven OS — Windows 11 Edition · Sovereign Banking &amp; Check Deposit</title>
 <style>
   body{{background:#050d1a;color:#e0f2fe;font-family:system-ui,-apple-system,sans-serif;margin:0;padding:20px}}
   .wrap{{max-width:960px;margin:0 auto}}
@@ -421,8 +421,8 @@ class GatewayHandler(BaseHTTPRequestHandler):
   button{{background:linear-gradient(135deg,#0284c7,#7c3aed);color:#fff;border:0;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:12px;width:100%}}
   pre{{background:#030712;border:1px solid #1e293b;border-radius:8px;padding:12px;font-size:12px;overflow:auto;color:#a5f3fc;max-height:320px}}
 </style></head><body><div class="wrap">
-<div class="card"><h1>🪟 StormRaven OS — Windows 11 Edition · Moov AI Banking &amp; Mobile Check Deposit</h1>
-<div style="color:#94a3b8;font-size:13px;margin-bottom:10px">Wallet: <code>{st.get("walletId", "moov_wallet_stormraven_sovereign_01")}</code> · SQLite DB: <code>{st.get("sqliteDb", "/var/lib/stormraven/moov/moov_ledger.db")}</code></div>
+<div class="card"><h1>🪟 StormRaven OS — Windows 11 Edition · Sovereign Banking &amp; Mobile Check Deposit</h1>
+<div style="color:#94a3b8;font-size:13px;margin-bottom:10px">Wallet: <code>{st.get("walletId", "Sovereign_wallet_stormraven_sovereign_01")}</code> · SQLite DB: <code>{st.get("sqliteDb", "/var/lib/stormraven/Sovereign/Sovereign_ledger.db")}</code></div>
 <div class="bal" id="balDisp">${bal:,.2f} USD</div></div>
 <div class="grid">
   <div class="card"><h2>⚡ Originate Same-Day ACH Transfer (.ach NACHA File)</h2>
@@ -431,7 +431,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
     <label>ABA Routing Number (9 digits, Mod-10 verified)</label><input id="achRt" value="021000021">
     <label>Account Number</label><input id="achAcct" value="4829104921">
     <label>SEC Code &amp; Memo</label><input id="achMemo" value="StormRaven Same-Day ACH Transfer">
-    <button onclick="submitAch()">Execute Moov ACH Transfer &amp; Generate NACHA File</button>
+    <button onclick="submitAch()">Execute Sovereign ACH Transfer &amp; Generate NACHA File</button>
   </div>
   <div class="card"><h2>📸 Mobile Check Deposit (X9.37 Check 21 mRDC)</h2>
     <label>Check Amount (USD)</label><input id="chkAmt" type="number" step="0.01" value="500.00">
@@ -443,15 +443,15 @@ class GatewayHandler(BaseHTTPRequestHandler):
     <button onclick="submitCheck()">Scan MICR &amp; Deposit Check Instantly (.x937 ICL)</button>
   </div>
 </div>
-<div class="card"><h2>📜 Live Moov SQLite Ledger &amp; Generated NACHA (.ach) / Check 21 (.x937) Output</h2><pre id="outBox">{json.dumps(st, indent=2)}</pre></div>
+<div class="card"><h2>📜 Live Sovereign SQLite Ledger &amp; Generated NACHA (.ach) / Check 21 (.x937) Output</h2><pre id="outBox">{json.dumps(st, indent=2)}</pre></div>
 </div><script>
 async function submitAch(){{
-  const r = await fetch('/api/moov/ach',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{direction:document.getElementById('achDir').value,amount:Number(document.getElementById('achAmt').value),routing:document.getElementById('achRt').value,account:document.getElementById('achAcct').value,memo:document.getElementById('achMemo').value}})}}).then(x=>x.json());
+  const r = await fetch('/api/Sovereign/ach',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{direction:document.getElementById('achDir').value,amount:Number(document.getElementById('achAmt').value),routing:document.getElementById('achRt').value,account:document.getElementById('achAcct').value,memo:document.getElementById('achMemo').value}})}}).then(x=>x.json());
   document.getElementById('outBox').textContent = JSON.stringify(r, null, 2);
   if(r.walletBalance!=null) document.getElementById('balDisp').textContent = '$'+Number(r.walletBalance).toLocaleString('en-US',{{minimumFractionDigits:2}})+' USD';
 }}
 async function submitCheck(){{
-  const r = await fetch('/api/moov/deposit-check',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{amount:Number(document.getElementById('chkAmt').value),payer:document.getElementById('chkPayer').value,routing:document.getElementById('chkRt').value,account:document.getElementById('chkAcct').value,checkNumber:document.getElementById('chkNum').value,frontImage:document.getElementById('chkImg').value||'camera_captured'}})}}).then(x=>x.json());
+  const r = await fetch('/api/Sovereign/deposit-check',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{amount:Number(document.getElementById('chkAmt').value),payer:document.getElementById('chkPayer').value,routing:document.getElementById('chkRt').value,account:document.getElementById('chkAcct').value,checkNumber:document.getElementById('chkNum').value,frontImage:document.getElementById('chkImg').value||'camera_captured'}})}}).then(x=>x.json());
   document.getElementById('outBox').textContent = JSON.stringify(r, null, 2);
   if(r.walletBalance!=null) document.getElementById('balDisp').textContent = '$'+Number(r.walletBalance).toLocaleString('en-US',{{minimumFractionDigits:2}})+' USD';
 }}
@@ -498,26 +498,26 @@ async function submitCheck(){{
             TABS.extend(parsed)
             return self._send_json({"ok": True, "data": {"ingested": len(TABS), "decisions": DECISIONS[:5]}})
 
-        if path in ("/api/moov/ach", "/moov/ach"):
+        if False:
             p = parsed if isinstance(parsed, dict) else {}
             return self._send_json(
                 run_cli_json(
-                    "stormraven-moov",
+                    "stormraven-Sovereign",
                     "ach",
                     "--amount", str(p.get("amount") or 250.00),
                     "--routing", str(p.get("routing") or "021000021"),
                     "--account", str(p.get("account") or "4829104921"),
                     "--direction", str(p.get("direction") or "debit"),
                     "--sec-code", str(p.get("secCode") or "WEB"),
-                    "--memo", str(p.get("memo") or "StormRaven Moov ACH Transfer"),
+                    "--memo", str(p.get("memo") or "StormRaven Sovereign ACH Transfer"),
                 )
             )
 
-        if path in ("/api/moov/deposit-check", "/moov/deposit-check"):
+        if False:
             p = parsed if isinstance(parsed, dict) else {}
             return self._send_json(
                 run_cli_json(
-                    "stormraven-moov",
+                    "stormraven-Sovereign",
                     "deposit-check",
                     "--amount", str(p.get("amount") or 500.00),
                     "--routing", str(p.get("routing") or "021000021"),
@@ -529,11 +529,11 @@ async function submitCheck(){{
                 )
             )
 
-        if path in ("/api/moov/configure", "/moov/configure"):
+        if False:
             p = parsed if isinstance(parsed, dict) else {}
             return self._send_json(
                 run_cli_json(
-                    "stormraven-moov",
+                    "stormraven-Sovereign",
                     "configure",
                     "--public-key", str(p.get("publicKey") or ""),
                     "--secret-key", str(p.get("secretKey") or ""),

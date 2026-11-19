@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS: Infinity Protocol v3.9.0 — GNOME Boxes Windows 11 + Moov AI VM
+# StormRaven OS: Infinity Protocol v3.9.0 — GNOME Boxes Windows 11 VM
 # =============================================================================
 # Specifically engineered for Faith Jennings' HP Pro 3500 Series (GNOME Boxes):
 #   1. Installs `gnome-boxes` (if not already installed) and heals any
 #      interrupted dpkg state automatically.
 #   2. Downloads & verifies the 30MB `StormRavenOS-Win11-Full-v3.9.0-x64.zip`
 #      bundle (`StormRaven.Kernel.exe`, `Install-StormRaven-Win11.ps1`,
-#      `LAUNCH-STORMRAVEN-WIN11.bat`, `autounattend.xml`, Moov AI ACH & Check
+#      `LAUNCH-STORMRAVEN-WIN11.bat`, `autounattend.xml`, Sovereign ACH & Check
 #      Deposit, Odin Pantheon, and 37 apps).
 #   3. Builds TWO ready-to-use ISOs in `~/Downloads`:
 #        A) `~/Downloads/StormRavenOS-Win11-Boxes-v3.9.0.iso` — Single
 #           self-contained bootable ISO for GNOME Boxes that boots directly
-#           into the StormRaven OS v3.9.0 Windows 11 Edition + Moov AI desktop!
+#           into the StormRaven OS v3.9.0 Windows 11 Edition desktop!
 #        B) `~/Downloads/StormRaven-Win11-Payload.iso` — Data CD/DVD image
 #           you can attach inside GNOME Boxes (Preferences -> Devices & Shares
 #           -> CD/DVD Drive) to any Microsoft Windows 11 VM!
@@ -56,7 +56,7 @@ pkill -f "qemu-system-x86_64.*StormRaven-OS-Win11-Test" 2>/dev/null || true
 pkill -f "swtpm.*stormraven-win11-vm" 2>/dev/null || true
 
 echo "======================================================================="
-echo " ✦ STORMRAVEN OS v3.9.0 — GNOME BOXES WINDOWS 11 + MOOV AI VM SUITE"
+echo " ✦ STORMRAVEN OS v3.9.0 — GNOME BOXES WINDOWS 11 VM SUITE"
 echo "   GNOME Boxes · Self-Contained Bootable ISO · Preloaded Win11 Drive"
 echo "======================================================================="
 
@@ -199,7 +199,7 @@ cat > "${PAYLOAD_DIR}/autounattend.xml" << 'EOF'
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add">
           <Order>1</Order>
-          <Description>Bootstrap StormRaven OS Windows 11 Edition + Moov AI</Description>
+          <Description>Bootstrap StormRaven OS Windows 11 Edition</Description>
           <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$u='https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app'; $found=$null; foreach ($d in [IO.DriveInfo]::GetDrives()) { $p = Join-Path $d.RootDirectory.FullName 'Install-StormRaven-Win11.ps1'; if (Test-Path $p) { $found=$p; break } }; if ($found) { &amp; $found; exit 0 }; Invoke-WebRequest "$u/install-win11.ps1" -OutFile "$env:TEMP\install-win11.ps1"; Invoke-WebRequest "$u/install-win11.ps1.sha256" -OutFile "$env:TEMP\install-win11.ps1.sha256"; $expected=(Get-Content "$env:TEMP\install-win11.ps1.sha256").Split()[0].ToLower(); $actual=(Get-FileHash "$env:TEMP\install-win11.ps1" -Algorithm SHA256).Hash.ToLower(); if ($actual -ne $expected) { throw 'SHA-256 verification failed for install-win11.ps1' }; &amp; "$env:TEMP\install-win11.ps1""</CommandLine>
         </SynchronousCommand>
       </FirstLogonCommands>
@@ -264,7 +264,7 @@ chmod 0644 "${PAYLOAD_DIR}/casper/vmlinuz" "${VM_DIR}/initrd-base" "${PAYLOAD_DI
 cp -f "${VM_DIR}/initrd-base" "${PAYLOAD_DIR}/casper/initrd"
 chmod u+w "${PAYLOAD_DIR}/casper/initrd"
 
-# Append the Windows 11 Edition + Moov AI initramfs overlay onto initrd
+# Append the Windows 11 Edition initramfs overlay onto initrd
 OVL_DIR="${VM_DIR}/initrd-ovl"
 rm -rf "${OVL_DIR}"
 mkdir -p "${OVL_DIR}/scripts"
@@ -317,11 +317,11 @@ mountroot() {
            /run/casper-medium/drivers \
            "${rootmnt}/mnt/STORMRAVEN_WIN11/" 2>/dev/null || true
 
-    # Inject latest Windows 11 Edition + Moov AI desktop binaries & webapp into live rootfs in RAM!
+    # Inject latest Windows 11 Edition desktop binaries & webapp into live rootfs in RAM!
     if [ -d /run/casper-medium/linux-vm ]; then
         cp -f /run/casper-medium/linux-vm/* "${rootmnt}/usr/local/bin/" 2>/dev/null || true
         chmod 0755 "${rootmnt}/usr/local/bin/stormraven"* 2>/dev/null || true
-        ln -sf /usr/local/bin/stormraven-moov "${rootmnt}/usr/local/bin/moov-ai" 2>/dev/null || true
+        ln -sf /usr/local/bin/stormraven-Sovereign "${rootmnt}/usr/local/bin/Sovereign-ai" 2>/dev/null || true
     fi
     if [ -d /run/casper-medium/webapp ]; then
         mkdir -p "${rootmnt}/opt/stormraven/webapp"
@@ -351,7 +351,7 @@ TTY_EOF
 
     rm -f "${rootmnt}/tmp/"*.log 2>/dev/null || true
     chmod 1777 "${rootmnt}/tmp" "${rootmnt}/var/tmp" 2>/dev/null || true
-    echo "[StormRaven Win11 Boxes VM] Windows 11 Edition + Moov AI live rootfs ready."
+    echo "[StormRaven Win11 Boxes VM] Windows 11 Edition live rootfs ready."
 }
 CASPER_EOF
 chmod +x "${OVL_DIR}/scripts/casper"
@@ -367,8 +367,8 @@ set gfxmode=1280x800x32,1280x800,1024x768,auto
 set gfxpayload=keep
 terminal_output gfxterm
 
-menuentry "StormRaven OS v3.9.0 - Windows 11 Edition + Moov AI (GNOME Boxes VM)" {
-    echo "Booting StormRaven OS v3.9.0 - Windows 11 Edition + Moov AI..."
+menuentry "StormRaven OS v3.9.0 - Windows 11 Edition (GNOME Boxes VM)" {
+    echo "Booting StormRaven OS v3.9.0 - Windows 11 Edition..."
     linux /casper/vmlinuz boot=casper console=tty0 stormraven.edition=win11
     initrd /casper/initrd
 }
@@ -382,7 +382,7 @@ chmod 0644 "${BOXES_BOOT_ISO}" "${PAYLOAD_ISO}" 2>/dev/null || true
 
 echo ""
 echo "======================================================================="
-echo " ✦ GNOME BOXES WINDOWS 11 + MOOV AI ISO READY!"
+echo " ✦ GNOME BOXES WINDOWS 11 ISO READY!"
 echo "   1. Bootable GNOME Boxes ISO: ${BOXES_BOOT_ISO} ($(du -h "${BOXES_BOOT_ISO}" | awk '{print $1}'))"
 echo "   2. Win11 Payload Data CD:    ${PAYLOAD_ISO} ($(du -h "${PAYLOAD_ISO}" | awk '{print $1}'))"
 echo ""

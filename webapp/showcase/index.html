@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StormRaven OS: Ymir Edition v3.9.0 — Dual-OS Sovereign Operating System</title>
-  <meta name="description" content="StormRaven OS: Ymir Edition v3.9.0 — Dual-OS Sovereign Operating System with Ubuntu 26.04 LTS Resolute (1.7 GB) and Custom Windows 11 25H2 (6.8 GB), Ymir Ring-0 Rust Core, .NET 10 Bifrost Kernel, Heimdall One-Way Data Diode, and Moov AI Banking Engine." />
+  <meta name="description" content="StormRaven OS: Ymir Edition v3.9.0 — Dual-OS Sovereign Operating System with Ubuntu 26.04 LTS Resolute (1.7 GB) and Custom Windows 11 25H2 (6.8 GB), Ymir Ring-0 Rust Core, .NET 10 Bifrost Kernel, Heimdall One-Way Data Diode." />
   <link rel="icon" href="/icons/icon-192.png" />
   <style>
     :root {
@@ -457,22 +457,22 @@
       font-weight: 600;
     }
 
-    /* Interactive Moov AI Live Demo Section */
-    .moov-showcase {
+    /* Interactive Sovereign Live Demo Section */
+    .Sovereign-showcase {
       background: linear-gradient(145deg, rgba(8, 25, 52, 0.88), rgba(19, 10, 42, 0.88));
       border: 1px solid rgba(56, 189, 248, 0.45);
       border-radius: 16px;
       padding: 28px;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
     }
-    .moov-grid {
+    .Sovereign-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1.1fr;
       gap: 18px;
       margin-top: 18px;
     }
     @media (max-width: 1024px) {
-      .moov-grid { grid-template-columns: 1fr; }
+      .Sovereign-grid { grid-template-columns: 1fr; }
     }
     .form-box {
       background: rgba(3, 8, 20, 0.82);
@@ -497,7 +497,7 @@
       border-radius: 8px;
       font-size: 14px;
     }
-    .moov-out {
+    .Sovereign-out {
       background: #02050c;
       border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 12px;
@@ -538,7 +538,7 @@
       <div class="nav-links">
         <a href="#dual-os">Dual-OS Flagships</a>
         <a href="#install">Verified Installers</a>
-        <a href="#moov">Moov AI Banking</a>
+        <a href="#Sovereign">Sovereign Banking</a>
         <a href="#architecture">Zero-Trust Core</a>
         <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta" target="_blank">1,000-Slot Beta</a>
         <a href="/?os=win11" class="nav-pill">🪟 Launch Ymir HUD</a>
@@ -579,7 +579,7 @@
           Founded August 21, 2011 by <strong>Dr. Justin Jennings (Mr. Stormraven)</strong> and dedicated to <strong>Christina Faith Page/Jennings</strong>.
           Full subsystem parity across both sovereign desktop flagships: <strong>Ymir Ring-0 Rust Core</strong>, <strong>.NET 10 Bifrost Kernel</strong>,
           <strong>Odin Python Pantheon</strong>, <strong>Heimdall One-Way Data Diode</strong>, and built-in
-          <strong>Moov AI NACHA Same-Day ACH &amp; X9.37 Check 21 Mobile Check Deposit</strong>.
+          <strong>Sovereign NACHA Same-Day ACH &amp; X9.37 Check 21 Mobile Check Deposit</strong>.
         </p>
         <div class="cta-row">
           <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta" class="btn btn-primary">⚡ Join 1,000-Slot Worldwide Beta</a>
@@ -595,12 +595,12 @@
       <!-- Live Telemetry Panel -->
       <div class="telemetry-panel">
         <div class="tel-header">
-          <span class="tel-title">⚡ Live Bifrost Kernel, Beta Diode &amp; Moov Telemetry</span>
+          <span class="tel-title">⚡ Live Bifrost Kernel, Beta Diode &amp; Sovereign Telemetry</span>
           <span style="font-size:12px;color:var(--green);font-weight:700" id="liveBadge">● HEIMDALL DIODE SEALED</span>
         </div>
         <div class="metrics-grid">
           <div class="metric-box">
-            <div class="metric-label">Moov AI Treasury Wallet</div>
+            <div class="metric-label">Sovereign Treasury Wallet</div>
             <div class="metric-val green" id="heroWallet">$12,450.00</div>
           </div>
           <div class="metric-box">
@@ -672,7 +672,7 @@
             </p>
             <ul class="os-spec-list">
               <li>Self-contained <code>StormRaven.Kernel.exe</code> (:8787 Bifrost HTTP/WebSocket + Named Pipe IPC)</li>
-              <li>Bundled offline Windows x64 Python 3.12 runtime for the 19-deity Odin Pantheon &amp; Moov AI Banking Engine</li>
+              <li>Bundled offline Windows x64 Python 3.12 runtime for the 19-deity Odin Pantheon</li>
               <li>Native <code>C:\Windows\System32\stormraven-*.cmd</code> shims: UsoClient + Winget Update Engine, Hyper-V/WHPX, Firewall Kill-Switch &amp; SHA-256 Forensics</li>
               <li>Ymir Cryo-Glass dark theme, aurora/frost-giant backdrop &amp; winged raven-skull crest baked into default WIM profile</li>
             </ul>
@@ -698,8 +698,8 @@
       <div class="cmd-grid">
         <div class="cmd-card">
           <div>
-            <h3>🪟 Ubuntu Host → Ymir Edition + Win11 Layout + Moov AI</h3>
-            <p style="margin-top:6px">Downloads the installer and its <code>.sha256</code> sidecar, verifies cryptographic integrity via <code>sha256sum -c</code>, and deploys the Ymir Cryo-Glass HUD and Moov AI engine.</p>
+            <h3>🪟 Ubuntu Host → Ymir Edition + Win11 Layout</h3>
+            <p style="margin-top:6px">Downloads the installer and its <code>.sha256</code> sidecar, verifies cryptographic integrity via <code>sha256sum -c</code>, and deploys the Ymir Cryo-Glass HUD.</p>
           </div>
           <div class="code-strip">
             <code id="cmdWin11Sh">curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh &amp;&amp; curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh.sha256 &amp;&amp; sha256sum -c install-win11.sh.sha256 &amp;&amp; sudo bash install-win11.sh</code>
@@ -740,24 +740,24 @@
       </div>
     </section>
 
-    <!-- Interactive Moov AI Banking & Mobile Check Deposit Showcase -->
-    <section class="section" id="moov">
-      <div class="moov-showcase">
+    <!-- Interactive Sovereign Banking & Mobile Check Deposit Showcase -->
+    <section class="section" id="Sovereign">
+      <div class="Sovereign-showcase">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
           <div>
             <div class="eyebrow">Built-In Sovereign Financial Engine</div>
-            <h2 class="section-title">🏦 Moov AI — Same-Day ACH &amp; Mobile Check Deposit (mRDC)</h2>
+            <h2 class="section-title">🏦 Sovereign — Same-Day ACH &amp; Mobile Check Deposit (mRDC)</h2>
             <p style="color:var(--text-muted);font-size:14px;margin-top:4px">
               Test live ACH transfers (generates spec-compliant 94-character NACHA <code>.ach</code> files with ABA Mod-10 verification) and Check 21 Mobile Check Deposits (<code>.x937</code> Image Cash Letters) right from this page.
             </p>
           </div>
           <div style="text-align:right">
             <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase">Live Treasury Balance</div>
-            <div style="font-size:28px;font-weight:900;color:var(--green)" id="moovBalanceDisp">$12,450.00 USD</div>
+            <div style="font-size:28px;font-weight:900;color:var(--green)" id="SovereignBalanceDisp">$12,450.00 USD</div>
           </div>
         </div>
 
-        <div class="moov-grid">
+        <div class="Sovereign-grid">
           <!-- ACH Form -->
           <div class="form-box">
             <h4>⚡ Originate Same-Day ACH (.ach NACHA)</h4>
@@ -800,7 +800,7 @@
           <!-- Live Output -->
           <div class="form-box">
             <h4>📜 Live NACHA / X9.37 &amp; SQLite Ledger Receipt</h4>
-            <pre class="moov-out" id="moovOutBox">Loading live Moov AI SQLite ledger...</pre>
+            <pre class="Sovereign-out" id="SovereignOutBox">Loading live Sovereign SQLite ledger...</pre>
           </div>
         </div>
       </div>
@@ -814,10 +814,10 @@
       </div>
       <div class="shots-grid">
         <div class="shot-card">
-          <img src="/stormraven-win11-vm-live.png" alt="StormRaven OS v3.9.0 Windows 11 Ymir Edition + Moov AI Desktop" />
+          <img src="/stormraven-win11-vm-live.png" alt="StormRaven OS v3.9.0 Windows 11 Ymir Edition Desktop" />
           <div class="shot-meta">
             <h3>🪟 StormRaven OS v3.9.0 — Custom Windows 11 (25H2) Ymir Edition</h3>
-            <p>Native Command Center + 3-Panel Ymir Cryo-Glass HUD running Moov AI Same-Day ACH, X9.37 Mobile Check Deposit, Odin Pantheon Shell, and the Windows 11 Kernel suite.</p>
+            <p>Native Command Center + 3-Panel Ymir Cryo-Glass HUD running Sovereign Same-Day ACH, X9.37 Mobile Check Deposit, Odin Pantheon Shell, and the Windows 11 Kernel suite.</p>
           </div>
         </div>
         <div class="shot-card">
@@ -872,12 +872,12 @@
 
         <div class="pillar-card">
           <div class="pillar-icon">🏦</div>
-          <h3>Moov AI Financial Engine</h3>
+          <h3>Sovereign Financial Engine</h3>
           <p>Built-in Same-Day ACH (<code>.ach</code> 94-char NACHA generator), ABA Mod-10 checksum verification, and X9.37 Check 21 Mobile Check Deposit (<code>.x937</code> ICL).</p>
           <div class="tag-row">
             <span class="tag">NACHA .ach</span>
             <span class="tag">Check 21 .x937</span>
-            <span class="tag">Moov.io API</span>
+            <span class="tag">Sovereign API</span>
           </div>
         </div>
 
@@ -914,7 +914,7 @@
       <div style="display:flex;gap:16px;flex-wrap:wrap">
         <a href="https://echo-at-faith-s-workspace-2.skydive.app/beta">1,000-Slot Beta Portal</a>
         <a href="/?os=win11">Web OS HUD</a>
-        <a href="/moov">Moov AI Portal</a>
+        <a href="/Sovereign">Sovereign Portal</a>
         <a href="/StormRaven_OS_Federal_Technical_Dossier.pdf" target="_blank">Federal Dossier</a>
       </div>
     </div>
@@ -949,13 +949,13 @@
         }
       } catch (e) {}
       try {
-        const m = await fetch('/api/moov').then(r => r.json());
+        const m = await fetch('/api/Sovereign').then(r => r.json());
         if (m.availableBalance != null) {
           const fmt = '$' + Number(m.availableBalance).toLocaleString('en-US', { minimumFractionDigits: 2 });
           document.getElementById('heroWallet').textContent = fmt;
-          document.getElementById('moovBalanceDisp').textContent = fmt + ' USD';
+          document.getElementById('SovereignBalanceDisp').textContent = fmt + ' USD';
         }
-        document.getElementById('moovOutBox').textContent = JSON.stringify(m, null, 2);
+        document.getElementById('SovereignOutBox').textContent = JSON.stringify(m, null, 2);
       } catch (e) {}
     }
 
@@ -967,16 +967,16 @@
         account: document.getElementById('wAchAcct').value,
         memo: document.getElementById('wAchMemo').value,
       };
-      const res = await fetch('/api/moov/ach', {
+      const res = await fetch('/api/Sovereign/ach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       }).then(r => r.json());
-      document.getElementById('moovOutBox').textContent = JSON.stringify(res, null, 2);
+      document.getElementById('SovereignOutBox').textContent = JSON.stringify(res, null, 2);
       if (res.walletBalance != null) {
         const fmt = '$' + Number(res.walletBalance).toLocaleString('en-US', { minimumFractionDigits: 2 });
         document.getElementById('heroWallet').textContent = fmt;
-        document.getElementById('moovBalanceDisp').textContent = fmt + ' USD';
+        document.getElementById('SovereignBalanceDisp').textContent = fmt + ' USD';
       }
     }
 
@@ -988,16 +988,16 @@
         account: document.getElementById('wChkAcct').value,
         checkNumber: document.getElementById('wChkNum').value,
       };
-      const res = await fetch('/api/moov/deposit-check', {
+      const res = await fetch('/api/Sovereign/deposit-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       }).then(r => r.json());
-      document.getElementById('moovOutBox').textContent = JSON.stringify(res, null, 2);
+      document.getElementById('SovereignOutBox').textContent = JSON.stringify(res, null, 2);
       if (res.walletBalance != null) {
         const fmt = '$' + Number(res.walletBalance).toLocaleString('en-US', { minimumFractionDigits: 2 });
         document.getElementById('heroWallet').textContent = fmt;
-        document.getElementById('moovBalanceDisp').textContent = fmt + ' USD';
+        document.getElementById('SovereignBalanceDisp').textContent = fmt + ' USD';
       }
     }
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI Command Center
+StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition Command Center
 Pure GTK3 X11 desktop application (zero WebKit/QtWebEngine/EGL subprocesses).
-Includes full interactive Moov AI Same-Day ACH (.ach NACHA) & Mobile Check Deposit (.x937 mRDC)
+Includes full interactive Sovereign Same-Day ACH (.ach NACHA) & Mobile Check Deposit (.x937 mRDC)
 with live SQLite ledger balance updates and ABA Mod-10 routing verification.
 """
 import json
@@ -125,7 +125,7 @@ notebook tab:checked {
 class StormRavenCommandCenter(Gtk.Window):
     def __init__(self):
         super().__init__(
-            title="StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI"
+            title="StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition"
         )
         self.set_default_size(960, 640)
         self.set_position(Gtk.WindowPosition.CENTER)
@@ -145,12 +145,12 @@ class StormRavenCommandCenter(Gtk.Window):
         hdr.get_style_context().add_class("header-bar")
         title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         lbl_title = Gtk.Label(
-            label="🪟 STORMRAVEN OS · INFINITY PROTOCOL v3.9.0 — WINDOWS 11 EDITION + MOOV AI"
+            label="🪟 STORMRAVEN OS · INFINITY PROTOCOL v3.9.0 — WINDOWS 11 EDITION"
         )
         lbl_title.set_xalign(0)
         lbl_title.get_style_context().add_class("title-lg")
         self.lbl_sub = Gtk.Label(
-            label="Bifrost Gateway (:8787) · Windows 11 Edition UI (:3887) · Moov AI NACHA ACH & X9.37 Check Deposit ACTIVE"
+            label="Bifrost Gateway (:8787) · Windows 11 Edition UI (:3887) · Sovereign NACHA ACH & X9.37 Check Deposit ACTIVE"
         )
         self.lbl_sub.set_xalign(0)
         self.lbl_sub.get_style_context().add_class("subtitle")
@@ -158,7 +158,7 @@ class StormRavenCommandCenter(Gtk.Window):
         title_box.pack_start(self.lbl_sub, False, False, 0)
         hdr.pack_start(title_box, True, True, 0)
 
-        self.lbl_top_bal = Gtk.Label(label="● MOOV WALLET: $12,450.00 USD")
+        self.lbl_top_bal = Gtk.Label(label="● SOVEREIGN VAULT: $12,450.00 USD")
         self.lbl_top_bal.get_style_context().add_class("status-ok")
         hdr.pack_end(self.lbl_top_bal, False, False, 8)
         root.pack_start(hdr, False, False, 0)
@@ -175,10 +175,10 @@ class StormRavenCommandCenter(Gtk.Window):
         b_h = Gtk.Label()
         b_h.set_xalign(0)
         b_h.set_markup(
-            "<b>StormRaven OS v3.9.0 — Windows 11 Edition + Moov AI (Installed on HP Pro 3500)</b>"
+            "<b>StormRaven OS v3.9.0 — Windows 11 Edition (Installed on HP Pro 3500)</b>"
         )
         b_p = Gtk.Label(
-            label="Moov AI Same-Day ACH (.ach NACHA) · X9.37 Check 21 Mobile Check Deposit (.x937 ICL) · 37 Native Apps · Ymir Cryo-Glass UI"
+            label="Sovereign Same-Day ACH (.ach NACHA) · X9.37 Check 21 Mobile Check Deposit (.x937 ICL) · 37 Native Apps · Ymir Cryo-Glass UI"
         )
         b_p.set_xalign(0)
         b_p.get_style_context().add_class("subtitle")
@@ -186,10 +186,10 @@ class StormRavenCommandCenter(Gtk.Window):
         b_txt.pack_start(b_p, False, False, 0)
         banner.pack_start(b_txt, True, True, 0)
 
-        btn_moov_tab = Gtk.Button(label="🏦 Open Moov AI Banking & Check Deposit")
-        btn_moov_tab.get_style_context().add_class("cta-btn")
-        btn_moov_tab.connect("clicked", lambda *_: self.nb.set_current_page(1))
-        banner.pack_end(btn_moov_tab, False, False, 0)
+        btn_Sovereign_tab = Gtk.Button(label="🏦 Open Sovereign Banking & Check Deposit")
+        btn_Sovereign_tab.get_style_context().add_class("cta-btn")
+        btn_Sovereign_tab.connect("clicked", lambda *_: self.nb.set_current_page(1))
+        banner.pack_end(btn_Sovereign_tab, False, False, 0)
 
         btn_web = Gtk.Button(label="🪟 Open Win11 Web OS (:3887)")
         btn_web.get_style_context().add_class("sec-btn")
@@ -229,15 +229,15 @@ class StormRavenCommandCenter(Gtk.Window):
         grid.set_column_homogeneous(True)
 
         apps = [
-            ("🏦 Moov AI Banking & Check Deposit", "__TAB__:1"),
-            ("📸 Instant $500 Check Deposit", "__ACTION__:moov_check"),
-            ("⚡ Instant $250 ACH Transfer", "__ACTION__:moov_ach"),
+            ("🏦 Sovereign Banking & Check Deposit", "__TAB__:1"),
+            ("📸 Instant $500 Check Deposit", "__ACTION__:Sovereign_check"),
+            ("⚡ Instant $250 ACH Transfer", "__ACTION__:Sovereign_ach"),
             ("🔄 Check & Install Updates", "__ACTION__:update"),
             ("🔀 Switch Ubuntu / Win11 Layout", "__ACTION__:layout_toggle"),
             ("🪟 Win11 Cryo-Glass Web OS", "google-chrome --no-sandbox --app=http://127.0.0.1:3887/?os=win11 2>/dev/null || netsurf-gtk http://127.0.0.1:3887/"),
-            ("🌐 Moov AI Web Portal (:3887/moov)", "google-chrome --no-sandbox --app=http://127.0.0.1:3887/moov 2>/dev/null || netsurf-gtk http://127.0.0.1:3887/moov"),
+            ("🌐 Sovereign Web Portal (:3887/Sovereign)", "google-chrome --no-sandbox --app=http://127.0.0.1:3887/Sovereign 2>/dev/null || netsurf-gtk http://127.0.0.1:3887/Sovereign"),
             ("📁 Fafnir File Explorer (Win11 Bundle)", "pcmanfm /opt/stormraven/win11"),
-            ("❯_ Odin Pantheon & Moov Shell", "lxterminal -T 'Odin Pantheon & Moov AI' -e '/bin/bash -c \"stormraven status; stormraven moov status; exec /bin/bash -i\"'"),
+            ("❯_ Odin Pantheon & Sovereign Shell", "lxterminal -T 'Odin Pantheon
             ("🖴 GParted Partitioner", "sudo gparted"),
             ("🛡 Heimdall Zero-Trust Audit", "__ACTION__:audit"),
             ("🔒 WireGuard VPN + KillSwitch", "lxterminal -T 'StormRaven VPN' -e '/bin/bash -c \"stormraven-vpn status; read -p Press_Enter...\"'"),
@@ -261,16 +261,16 @@ class StormRavenCommandCenter(Gtk.Window):
         out_card.get_style_context().add_class("card-box")
         out_hdr = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         out_lbl = Gtk.Label(
-            label="Live StormRaven OS Windows 11 Edition & Moov AI SQLite Ledger Output"
+            label="Live StormRaven OS Windows 11 Edition
         )
         out_lbl.set_xalign(0)
         out_hdr.pack_start(out_lbl, True, True, 0)
 
         for act_label, act_cmd in [
             ("⚡ Kernel Telemetry", "telemetry"),
-            ("📸 Deposit $500 Check", "moov_check"),
-            ("💸 $250 ACH Transfer", "moov_ach"),
-            ("🏦 Moov Ledger Status", "win11_verify"),
+            ("📸 Deposit $500 Check", "Sovereign_check"),
+            ("💸 $250 ACH Transfer", "Sovereign_ach"),
+            ("🏦 Sovereign Ledger Status", "win11_verify"),
         ]:
             b = Gtk.Button(label=act_label)
             b.get_style_context().add_class("sec-btn")
@@ -295,15 +295,15 @@ class StormRavenCommandCenter(Gtk.Window):
         )
 
         # =====================================================================
-        # TAB 2: Interactive Moov AI Banking & Mobile Check Deposit (ACH / mRDC)
+        # TAB 2: Interactive Sovereign Banking & Mobile Check Deposit (ACH / mRDC)
         # =====================================================================
-        moov_scroll = Gtk.ScrolledWindow()
-        moov_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        moov_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        moov_vbox.set_margin_top(12)
-        moov_vbox.set_margin_bottom(12)
-        moov_vbox.set_margin_start(12)
-        moov_vbox.set_margin_end(12)
+        Sovereign_scroll = Gtk.ScrolledWindow()
+        Sovereign_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        Sovereign_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        Sovereign_vbox.set_margin_top(12)
+        Sovereign_vbox.set_margin_bottom(12)
+        Sovereign_vbox.set_margin_start(12)
+        Sovereign_vbox.set_margin_end(12)
 
         forms_hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         forms_hbox.set_homogeneous(True)
@@ -353,34 +353,34 @@ class StormRavenCommandCenter(Gtk.Window):
         chk_card.pack_start(btn_exec_chk, False, False, 4)
         forms_hbox.pack_start(chk_card, True, True, 0)
 
-        moov_vbox.pack_start(forms_hbox, False, False, 0)
+        Sovereign_vbox.pack_start(forms_hbox, False, False, 0)
 
         # Bottom Ledger & File Output in Tab 2
-        moov_out_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        moov_out_card.get_style_context().add_class("card-box")
-        moov_out_lbl = Gtk.Label(
-            label="Moov AI Transaction Receipt, SQLite Ledger & Generated NACHA (.ach) / Check 21 (.x937) File"
+        Sovereign_out_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        Sovereign_out_card.get_style_context().add_class("card-box")
+        Sovereign_out_lbl = Gtk.Label(
+            label="Sovereign Transaction Receipt, SQLite Ledger & Generated NACHA (.ach) / Check 21 (.x937) File"
         )
-        moov_out_lbl.set_xalign(0)
-        moov_out_card.pack_start(moov_out_lbl, False, False, 0)
+        Sovereign_out_lbl.set_xalign(0)
+        Sovereign_out_card.pack_start(Sovereign_out_lbl, False, False, 0)
 
-        self.moov_txt_view = Gtk.TextView()
-        self.moov_txt_view.set_editable(False)
-        self.moov_txt_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
-        self.moov_txt_buf = self.moov_txt_view.get_buffer()
-        moov_txt_scroll = Gtk.ScrolledWindow()
-        moov_txt_scroll.set_min_content_height(175)
-        moov_txt_scroll.add(self.moov_txt_view)
-        moov_out_card.pack_start(moov_txt_scroll, True, True, 0)
+        self.Sovereign_txt_view = Gtk.TextView()
+        self.Sovereign_txt_view.set_editable(False)
+        self.Sovereign_txt_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.Sovereign_txt_buf = self.Sovereign_txt_view.get_buffer()
+        Sovereign_txt_scroll = Gtk.ScrolledWindow()
+        Sovereign_txt_scroll.set_min_content_height(175)
+        Sovereign_txt_scroll.add(self.Sovereign_txt_view)
+        Sovereign_out_card.pack_start(Sovereign_txt_scroll, True, True, 0)
 
-        moov_vbox.pack_start(moov_out_card, True, True, 0)
-        moov_scroll.add(moov_vbox)
+        Sovereign_vbox.pack_start(Sovereign_out_card, True, True, 0)
+        Sovereign_scroll.add(Sovereign_vbox)
         self.nb.append_page(
-            moov_scroll, Gtk.Label(label="🏦 Moov AI Banking & Check Deposit (ACH / mRDC)")
+            Sovereign_scroll, Gtk.Label(label="🏦 Sovereign Banking & Check Deposit (ACH / mRDC)")
         )
 
-        # If launched with /moov in URL, open directly on Tab 2
-        if any("/moov" in arg for arg in sys.argv[1:]):
+        # If launched with /Sovereign in URL, open directly on Tab 2
+        if any("/Sovereign" in arg for arg in sys.argv[1:]):
             self.nb.set_current_page(1)
 
         self.run_Quick_action("win11_verify")
@@ -406,7 +406,7 @@ class StormRavenCommandCenter(Gtk.Window):
             obj = json.loads(raw_str)
             bal = obj.get("walletBalance", obj.get("availableBalance"))
             if bal is not None:
-                self.lbl_top_bal.set_text(f"● MOOV WALLET: ${float(bal):,.2f} USD")
+                self.lbl_top_bal.set_text(f"● SOVEREIGN VAULT: ${float(bal):,.2f} USD")
         except Exception:
             pass
 
@@ -421,7 +421,7 @@ class StormRavenCommandCenter(Gtk.Window):
             try:
                 out = subprocess.check_output(
                     [
-                        "python3", "/usr/local/bin/stormraven-moov", "ach",
+                        "python3", "/usr/local/bin/stormraven-Sovereign", "ach",
                         "--direction", direction,
                         "--amount", amt,
                         "--routing", rt,
@@ -438,7 +438,7 @@ class StormRavenCommandCenter(Gtk.Window):
                     out += open(nacha_path, "r", encoding="utf-8").read()
             except Exception as e:
                 out = f"ACH Error: {e}"
-            GLib.idle_add(self.moov_txt_buf.set_text, out)
+            GLib.idle_add(self.Sovereign_txt_buf.set_text, out)
             GLib.idle_add(self.txt_buf.set_text, out)
 
         threading.Thread(target=worker, daemon=True).start()
@@ -454,7 +454,7 @@ class StormRavenCommandCenter(Gtk.Window):
             try:
                 out = subprocess.check_output(
                     [
-                        "python3", "/usr/local/bin/stormraven-moov", "deposit-check",
+                        "python3", "/usr/local/bin/stormraven-Sovereign", "deposit-check",
                         "--amount", amt,
                         "--payer", payer,
                         "--routing", rt,
@@ -471,7 +471,7 @@ class StormRavenCommandCenter(Gtk.Window):
                     out += open(x937_path, "r", encoding="utf-8").read()
             except Exception as e:
                 out = f"Check Deposit Error: {e}"
-            GLib.idle_add(self.moov_txt_buf.set_text, out)
+            GLib.idle_add(self.Sovereign_txt_buf.set_text, out)
             GLib.idle_add(self.txt_buf.set_text, out)
 
         threading.Thread(target=worker, daemon=True).start()
@@ -480,12 +480,12 @@ class StormRavenCommandCenter(Gtk.Window):
         def worker():
             try:
                 if action == "win11_verify":
-                    moov_out = subprocess.check_output(
-                        ["python3", "/usr/local/bin/stormraven-moov", "status"], text=True, timeout=4
+                    Sovereign_out = subprocess.check_output(
+                        ["python3", "/usr/local/bin/stormraven-Sovereign", "status"], text=True, timeout=4
                     )
-                    self._update_balance_from_json(moov_out)
+                    self._update_balance_from_json(Sovereign_out)
                     lines = [
-                        "=== STORMRAVEN OS v3.9.0 — WINDOWS 11 EDITION + MOOV AI (ACTIVE ON HP PRO 3500) ===",
+                        "=== STORMRAVEN OS v3.9.0 — WINDOWS 11 EDITION (ACTIVE ON HP PRO 3500) ===",
                     ]
                     for wdir in ("/opt/stormraven/win11", "/mnt/STORMRAVEN_WIN11"):
                         kpath = os.path.join(wdir, "bin", "StormRaven.Kernel.exe")
@@ -493,13 +493,13 @@ class StormRavenCommandCenter(Gtk.Window):
                             sz = os.path.getsize(kpath) / (1024 * 1024)
                             lines.append(f"✓ Windows 11 Edition Bundle Installed: {wdir} (StormRaven.Kernel.exe {sz:.1f} MB)")
                             break
-                    lines.append("\n=== MOOV AI FINANCIAL & MOBILE CHECK DEPOSIT ENGINE (SQLITE + NACHA/X9.37) ===")
-                    lines.append(moov_out.strip())
+                    lines.append("\n=== SOVEREIGN TELEMETRY ENGINE ===")
+                    lines.append(Sovereign_out.strip())
                     out = "\n".join(lines)
-                elif action == "moov_check":
+                elif action == "Sovereign_check":
                     out = subprocess.check_output(
                         [
-                            "python3", "/usr/local/bin/stormraven-moov", "deposit-check",
+                            "python3", "/usr/local/bin/stormraven-Sovereign", "deposit-check",
                             "--amount", "500.00", "--routing", "021000021",
                             "--account", "981240112", "--check-number", "1042",
                             "--payer", "Faith Jennings Sovereign Treasury"
@@ -507,10 +507,10 @@ class StormRavenCommandCenter(Gtk.Window):
                         text=True, timeout=4
                     )
                     self._update_balance_from_json(out)
-                elif action == "moov_ach":
+                elif action == "Sovereign_ach":
                     out = subprocess.check_output(
                         [
-                            "python3", "/usr/local/bin/stormraven-moov", "ach",
+                            "python3", "/usr/local/bin/stormraven-Sovereign", "ach",
                             "--amount", "250.00", "--routing", "021000021",
                             "--account", "4829104921", "--direction", "debit",
                             "--memo", "StormRaven Windows 11 Edition Same-Day ACH"
@@ -529,9 +529,9 @@ class StormRavenCommandCenter(Gtk.Window):
                         data = json.loads(r.read().decode())
                     out = json.dumps(data.get("data", data), indent=2)
             except Exception as exc:
-                out = f"StormRaven OS v3.9.0 Windows 11 Edition + Moov AI Status: ONLINE\n({exc})"
+                out = f"StormRaven OS v3.9.0 Windows 11 Edition Status: ONLINE\n({exc})"
             GLib.idle_add(self.txt_buf.set_text, out)
-            GLib.idle_add(self.moov_txt_buf.set_text, out)
+            GLib.idle_add(self.Sovereign_txt_buf.set_text, out)
 
         threading.Thread(target=worker, daemon=True).start()
 

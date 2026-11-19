@@ -135,9 +135,9 @@ if /I "%~1"=="realms" goto realms
 if /I "%~1"=="odin" goto odin
 if /I "%~1"=="demogorgon" goto demogorgon
 if /I "%~1"=="lynn" goto demogorgon
-if /I "%~1"=="moov" goto moov
-if /I "%~1"=="ach" goto moov_ach
-if /I "%~1"=="deposit-check" goto moov_check
+if /I "%~1"=="Sovereign" goto Sovereign
+if /I "%~1"=="ach" goto Sovereign_ach
+if /I "%~1"=="deposit-check" goto Sovereign_check
 if /I "%~1"=="desktop" goto desktop
 if /I "%~1"=="hp" goto hp
 curl.exe -fsS "%GW%/%~1" 2>nul || curl.exe -fsS "$CloudUrl/%~1"
@@ -206,35 +206,35 @@ if exist "$StormRavenRoot\python-win64\python.exe" (
 )
 exit /b 0
 
-:moov
+:Sovereign
 if exist "$StormRavenRoot\python-win64\python.exe" (
-    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\stormraven_moov.py" %2 %3 %4 %5 %6 %7 %8 %9
-) else if exist "$PythonDir\stormraven_moov.py" (
-    python "$PythonDir\stormraven_moov.py" %2 %3 %4 %5 %6 %7 %8 %9
+    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\stormraven_Sovereign.py" %2 %3 %4 %5 %6 %7 %8 %9
+) else if exist "$PythonDir\stormraven_Sovereign.py" (
+    python "$PythonDir\stormraven_Sovereign.py" %2 %3 %4 %5 %6 %7 %8 %9
 ) else (
-    curl.exe -fsS "$CloudUrl/api/moov"
+    curl.exe -fsS "$CloudUrl/api/Sovereign"
     echo.
 )
 exit /b 0
 
-:moov_ach
+:Sovereign_ach
 if exist "$StormRavenRoot\python-win64\python.exe" (
-    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\stormraven_moov.py" ach %2 %3 %4 %5 %6 %7 %8 %9
-) else if exist "$PythonDir\stormraven_moov.py" (
-    python "$PythonDir\stormraven_moov.py" ach %2 %3 %4 %5 %6 %7 %8 %9
+    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\stormraven_Sovereign.py" ach %2 %3 %4 %5 %6 %7 %8 %9
+) else if exist "$PythonDir\stormraven_Sovereign.py" (
+    python "$PythonDir\stormraven_Sovereign.py" ach %2 %3 %4 %5 %6 %7 %8 %9
 ) else (
-    curl.exe -fsS -X POST "$CloudUrl/api/moov/ach" -H "Content-Type: application/json" -d "{\"amount\":250.00,\"direction\":\"debit\"}"
+    curl.exe -fsS -X POST "$CloudUrl/api/Sovereign/ach" -H "Content-Type: application/json" -d "{\"amount\":250.00,\"direction\":\"debit\"}"
     echo.
 )
 exit /b 0
 
-:moov_check
+:Sovereign_check
 if exist "$StormRavenRoot\python-win64\python.exe" (
-    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\stormraven_moov.py" deposit-check %2 %3 %4 %5 %6 %7 %8 %9
-) else if exist "$PythonDir\stormraven_moov.py" (
-    python "$PythonDir\stormraven_moov.py" deposit-check %2 %3 %4 %5 %6 %7 %8 %9
+    "$StormRavenRoot\python-win64\python.exe" "$PythonDir\stormraven_Sovereign.py" deposit-check %2 %3 %4 %5 %6 %7 %8 %9
+) else if exist "$PythonDir\stormraven_Sovereign.py" (
+    python "$PythonDir\stormraven_Sovereign.py" deposit-check %2 %3 %4 %5 %6 %7 %8 %9
 ) else (
-    curl.exe -fsS -X POST "$CloudUrl/api/moov/deposit-check" -H "Content-Type: application/json" -d "{\"amount\":500.00,\"payer\":\"Sovereign Client\"}"
+    curl.exe -fsS -X POST "$CloudUrl/api/Sovereign/deposit-check" -H "Content-Type: application/json" -d "{\"amount\":500.00,\"payer\":\"Sovereign Client\"}"
     echo.
 )
 exit /b 0
@@ -362,13 +362,13 @@ New-SrShortcut "$DesktopDir\StormRaven OS (Windows 11 Edition).lnk" "msedge.exe"
 New-SrShortcut "$StartMenuDir\StormRaven OS (Windows 11 Edition).lnk" "msedge.exe" "--app=http://127.0.0.1:8787/?mode=win11" "StormRaven OS Ymir HUD & 37-App Command Center"
 New-SrShortcut "$DesktopDir\Check & Install Updates.lnk" "cmd.exe" "/c stormraven update & pause" "Check & Install StormRaven OS + Windows 11 Updates"
 New-SrShortcut "$StartMenuDir\Check & Install Updates.lnk" "cmd.exe" "/c stormraven update & pause" "Check & Install StormRaven OS + Windows 11 Updates"
-New-SrShortcut "$DesktopDir\Moov AI Banking & Check Deposit.lnk" "msedge.exe" "--app=$CloudUrl/moov" "Moov AI Same-Day ACH Transfers & Mobile Check Deposit (mRDC)"
-New-SrShortcut "$StartMenuDir\Moov AI Banking & Check Deposit.lnk" "msedge.exe" "--app=$CloudUrl/moov" "Moov AI Same-Day ACH Transfers & Mobile Check Deposit (mRDC)"
+New-SrShortcut "$DesktopDir\Sovereign Banking & Check Deposit.lnk" "msedge.exe" "--app=$CloudUrl/Sovereign" "Sovereign Same-Day ACH Transfers & Mobile Check Deposit (mRDC)"
+New-SrShortcut "$StartMenuDir\Sovereign Banking & Check Deposit.lnk" "msedge.exe" "--app=$CloudUrl/Sovereign" "Sovereign Same-Day ACH Transfers & Mobile Check Deposit (mRDC)"
 New-SrShortcut "$DesktopDir\Odin Pantheon Terminal.lnk" "cmd.exe" "/k stormraven status" "StormRaven Odin Pantheon & Void Shell"
 New-SrShortcut "$DesktopDir\HP w2558hc Display Setup.lnk" "cmd.exe" "/c stormraven hp & pause" "Configure HP w2558hc 1920x1200@60Hz WUXGA Profile"
 
 $WinApps = @(
-    @{ Name="00 - Moov AI Banking & Check Deposit"; Target="msedge.exe"; Args="--app=$CloudUrl/moov" },
+    @{ Name="00 - Sovereign Banking & Check Deposit"; Target="msedge.exe"; Args="--app=$CloudUrl/Sovereign" },
     @{ Name="01 - StormRaven All 37 Apps"; Target="msedge.exe"; Args="--app=$CloudUrl/?mode=win11" },
     @{ Name="02 - Odin Pantheon Terminal"; Target="cmd.exe"; Args="/k stormraven status" },
     @{ Name="03 - Sovereign AI (Freya & Odin)"; Target="cmd.exe"; Args="/k stormraven ai" },

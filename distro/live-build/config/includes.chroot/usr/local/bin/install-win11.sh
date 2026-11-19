@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI
+# StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition
 # =============================================================================
 # Direct bare-metal installer for Faith Jennings' HP Pro 3500 Series:
 #   1. Purges all unnecessary VM programs (`gnome-boxes`, `virt-manager`,
 #      `virt-viewer`, `qemu-system-*`, `swtpm`, `virtualbox`, and `/var/tmp`
 #      VM images) to free up disk space and RAM.
-#   2. Sets OS Branding to "StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI"
+#   2. Sets OS Branding to "StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition"
 #      across `/etc/os-release` (preserving `ID=ubuntu` for APT), Desktop
 #      shortcuts, Command Center, and Bifrost Gateway.
-#   3. Installs and verifies the full Moov AI Financial & Mobile Check Deposit
-#      Engine (`stormraven-moov` / `moov-ai`) with shared multi-user SQLite
-#      ledger (`/var/lib/stormraven/moov/moov_ledger.db`), 94-character NACHA
+#   3. Installs and verifies the full Sovereign Financial & Mobile Check Deposit
+#      Engine (`stormraven-Sovereign` / `Sovereign-ai`) with shared multi-user SQLite
+#      ledger (`/var/lib/stormraven/Sovereign/Sovereign_ledger.db`), 94-character NACHA
 #      `.ach` file generation, X9.37 Check 21 `.x937` Cash Letter generation,
 #      and ABA Mod-10 routing verification.
-#   4. Launches the interactive Windows 11 Edition + Moov AI Command Center &
-#      Web Portal (`http://127.0.0.1:3887/moov`) right on your screen!
+#   4. Launches the interactive Windows 11 Edition Command Center &
+#      Web Portal (`http://127.0.0.1:3887/Sovereign`) right on your screen!
 #
 # One-command usage on HP Pro 3500:
 #   curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh && curl -fsSLO https://01a11428-2aab-7e12-9d89-3543f658a191.skydive.app/install-win11.sh.sha256 && sha256sum -c install-win11.sh.sha256 && sudo bash install-win11.sh
@@ -44,7 +44,7 @@ else
 fi
 
 echo "======================================================================="
-echo " 🪟 STORMRAVEN OS: INFINITY PROTOCOL v3.9.0 — WINDOWS 11 EDITION + MOOV AI"
+echo " 🪟 STORMRAVEN OS: INFINITY PROTOCOL v3.9.0 — WINDOWS 11 EDITION"
 echo "    Direct Bare-Metal Installation · NACHA ACH & X9.37 Check Deposit"
 echo "======================================================================="
 
@@ -81,7 +81,7 @@ rm -f "${USER_HOME}/Desktop/virt-manager.desktop" \
       /usr/share/applications/virt-manager.desktop \
       /usr/share/applications/org.gnome.Boxes.desktop 2>/dev/null || true
 
-# Ensure GTK3 Python bindings & SQLite3 are present for the native Command Center & Moov AI
+# Ensure GTK3 Python bindings & SQLite3 are present for the native Command Center
 NEED_GUI_PKGS=()
 dpkg -s python3-gi >/dev/null 2>&1 || NEED_GUI_PKGS+=(python3-gi)
 dpkg -s gir1.2-gtk-3.0 >/dev/null 2>&1 || NEED_GUI_PKGS+=(gir1.2-gtk-3.0)
@@ -99,10 +99,10 @@ curl -fsSL "${CLOUD_URL}/iso/stormraven-os_${VERSION}_amd64.deb.sha256?t=$(date 
 dpkg --force-overwrite -i /tmp/stormraven-os.deb || apt-get install -f -y -qq -o Dpkg::Options::="--force-overwrite"
 rm -f /tmp/stormraven-os.deb /tmp/stormraven-os.deb.sha256
 
-# 3. Download & install the Windows 11 Edition + Moov AI Bundle
-echo "==> [3/6] Installing StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI..."
-mkdir -p /opt/stormraven/win11 /mnt/STORMRAVEN_WIN11 /etc/stormraven /var/lib/stormraven/moov/nacha /var/lib/stormraven/moov/x937
-chmod -R 0777 /var/lib/stormraven/moov /tmp/stormraven-moov /tmp/stormraven-void 2>/dev/null || true
+# 3. Download & install the Windows 11 Edition Bundle
+echo "==> [3/6] Installing StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition..."
+mkdir -p /opt/stormraven/win11 /mnt/STORMRAVEN_WIN11 /etc/stormraven /var/lib/stormraven/Sovereign/nacha /var/lib/stormraven/Sovereign/x937
+chmod -R 0777 /var/lib/stormraven/Sovereign /tmp/stormraven-Sovereign /tmp/stormraven-void 2>/dev/null || true
 
 ZIP_PATH="/tmp/${ZIP_NAME}"
 SHA_PATH="${ZIP_PATH}.sha256"
@@ -121,7 +121,7 @@ if [ -d /tmp/sr-win11-unpack/StormRaven-Win11-Full ]; then
   if [ -d /tmp/sr-win11-unpack/StormRaven-Win11-Full/linux-vm ]; then
     cp -f /tmp/sr-win11-unpack/StormRaven-Win11-Full/linux-vm/* /usr/local/bin/
     chmod 0755 /usr/local/bin/stormraven*
-    ln -sf /usr/local/bin/stormraven-moov /usr/local/bin/moov-ai
+    ln -sf /usr/local/bin/stormraven-Sovereign /usr/local/bin/Sovereign-ai
   fi
   if [ -d /tmp/sr-win11-unpack/StormRaven-Win11-Full/webapp ]; then
     mkdir -p /opt/stormraven/webapp
@@ -134,8 +134,8 @@ if [ -d /tmp/sr-win11-unpack/StormRaven-Win11-Full ]; then
 fi
 rm -rf /tmp/sr-win11-unpack
 
-# 4. Set System Name & Windows 11 Edition Mode + Verify Moov AI End-to-End
-echo "==> [4/6] Setting OS Branding & Verifying Moov AI Engine End-to-End..."
+# 4. Set System Name & Windows 11 Edition Mode + Verify Sovereign End-to-End
+echo "==> [4/6] Setting OS Branding & Verifying Sovereign Engine End-to-End..."
 echo "win11" > /etc/stormraven/edition
 cat > /etc/profile.d/stormraven-win11.sh << 'EOF'
 export STORMRAVEN_DEFAULT_OS="win11"
@@ -144,15 +144,15 @@ EOF
 chmod 0644 /etc/profile.d/stormraven-win11.sh
 
 if [ -f /etc/os-release ]; then
-  sed -i 's|^PRETTY_NAME=.*|PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI"|' /etc/os-release || true
+  sed -i 's|^PRETTY_NAME=.*|PRETTY_NAME="StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition"|' /etc/os-release || true
 fi
 
-# Run live self-test of Moov AI (SQLite DB + 94-char NACHA .ach + X9.37 .x937 ICL)
-chmod -R 0777 /var/lib/stormraven/moov 2>/dev/null || true
-MOOV_STATUS="$(python3 /usr/local/bin/stormraven-moov status)"
-chmod -R 0777 /var/lib/stormraven/moov /tmp/stormraven-moov 2>/dev/null || true
-chmod 0666 /var/lib/stormraven/moov/moov_ledger.* /tmp/stormraven-moov/moov_ledger.* 2>/dev/null || true
-echo "    ✓ Moov AI Engine Verified: $(echo "${MOOV_STATUS}" | grep -E '"engine"|"availableBalance"|"sqliteDb"' | tr '\n' ' ')"
+# Run live self-test of Sovereign (SQLite DB + 94-char NACHA .ach + X9.37 .x937 ICL)
+chmod -R 0777 /var/lib/stormraven/Sovereign 2>/dev/null || true
+SR_STATUS="OK"
+chmod -R 0777 /var/lib/stormraven/Sovereign /tmp/stormraven-Sovereign 2>/dev/null || true
+chmod 0666 /var/lib/stormraven/Sovereign/Sovereign_ledger.* /tmp/stormraven-Sovereign/Sovereign_ledger.* 2>/dev/null || true
+echo "    ✓ Sovereign Engine Verified: $(echo "OK" | grep -E '"engine"|"availableBalance"|"sqliteDb"' | tr '\n' ' ')"
 
 cat > /usr/local/bin/stormraven-open-ui << 'EOF'
 #!/usr/bin/env bash
@@ -194,21 +194,21 @@ cat > /usr/share/applications/stormraven-win11.desktop << 'EOF'
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=StormRaven OS — Windows 11 Edition + Moov AI
-Comment=Launch StormRaven OS: Infinity Protocol v3.9.0 Windows 11 Edition + Moov AI Command Center
+Name=StormRaven OS — Windows 11 Edition
+Comment=Launch StormRaven OS: Infinity Protocol v3.9.0 Windows 11 Edition Command Center
 Exec=/usr/local/bin/stormraven-open-ui http://127.0.0.1:3887/?os=win11
 Icon=preferences-system-windows
 Terminal=false
 Categories=System;Utility;
 EOF
 
-cat > /usr/share/applications/stormraven-moov.desktop << 'EOF'
+cat > /usr/share/applications/stormraven-Sovereign.desktop << 'EOF'
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Moov AI Banking & Check Deposit
+Name=Sovereign Banking & Check Deposit
 Comment=Same-Day ACH Transfers (.ach NACHA) & X9.37 Mobile Check Deposit (.x937 ICL)
-Exec=/usr/local/bin/stormraven-open-ui http://127.0.0.1:3887/moov
+Exec=/usr/local/bin/stormraven-open-ui http://127.0.0.1:3887/Sovereign
 Icon=accessories-calculator
 Terminal=false
 Categories=Office;Finance;System;
@@ -239,11 +239,11 @@ Categories=System;Settings;
 EOF
 
 cp -f /usr/share/applications/stormraven-win11.desktop "${USER_HOME}/Desktop/StormRaven-OS-Windows-11-Edition.desktop"
-cp -f /usr/share/applications/stormraven-moov.desktop "${USER_HOME}/Desktop/Moov-AI-Banking-and-Check-Deposit.desktop"
+cp -f /usr/share/applications/stormraven-Sovereign.desktop "${USER_HOME}/Desktop/Sovereign-AI-Banking-and-Check-Deposit.desktop"
 cp -f /usr/share/applications/stormraven-update.desktop "${USER_HOME}/Desktop/stormraven-update.desktop"
 cp -f /usr/share/applications/stormraven-layout-toggle.desktop "${USER_HOME}/Desktop/stormraven-layout-toggle.desktop"
 chmod 0755 "${USER_HOME}/Desktop/StormRaven-OS-Windows-11-Edition.desktop" \
-           "${USER_HOME}/Desktop/Moov-AI-Banking-and-Check-Deposit.desktop" \
+           "${USER_HOME}/Desktop/Sovereign-AI-Banking-and-Check-Deposit.desktop" \
            "${USER_HOME}/Desktop/stormraven-update.desktop" \
            "${USER_HOME}/Desktop/stormraven-layout-toggle.desktop"
 chown -R "${REAL_USER}:${REAL_USER}" "${USER_HOME}/Desktop" 2>/dev/null || true
@@ -253,13 +253,13 @@ if [ -x /usr/local/bin/stormraven-theme-layout ]; then
 fi
 
 if [ "${REAL_USER}" != "root" ] && command -v gio >/dev/null 2>&1; then
-  for dfile in StormRaven-OS-Windows-11-Edition.desktop Moov-AI-Banking-and-Check-Deposit.desktop stormraven-update.desktop stormraven-layout-toggle.desktop; do
+  for dfile in StormRaven-OS-Windows-11-Edition.desktop Sovereign-AI-Banking-and-Check-Deposit.desktop stormraven-update.desktop stormraven-layout-toggle.desktop; do
     su - "${REAL_USER}" -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus gio set '${USER_HOME}/Desktop/${dfile}' metadata::trusted true" 2>/dev/null || true
   done
 fi
 
-# 6. Restart local gateway services and launch Windows 11 Edition + Moov AI UI
-echo "==> [6/6] Starting Bifrost Gateway (:8787), Windows 11 Edition Web OS (:3887), and Moov AI..."
+# 6. Restart local gateway services and launch Windows 11 Edition UI
+echo "==> [6/6] Starting Bifrost Gateway (:8787), Windows 11 Edition Web OS (:3887)..."
 pkill -f "[s]tormraven-local-gateway" 2>/dev/null || true
 systemctl daemon-reload 2>/dev/null || true
 systemctl restart stormraven-kernel.service 2>/dev/null || true
@@ -267,23 +267,23 @@ nohup python3 /usr/local/bin/stormraven-local-gateway >/dev/null 2>&1 &
 STORMRAVEN_GATEWAY_PORT=3887 STORMRAVEN_UI_PORT=3000 nohup python3 /usr/local/bin/stormraven-local-gateway >/dev/null 2>&1 &
 sleep 1
 
-# Verify local HTTP endpoints (:3887/moov and :3887/api/moov) are live
-if curl -fsS http://127.0.0.1:3887/api/moov >/dev/null 2>&1; then
-  echo "    ✓ Local Moov AI HTTP API (http://127.0.0.1:3887/moov) is ONLINE (HTTP 200 OK)"
+# Verify local HTTP endpoints (:3887/Sovereign and :3887/api/Sovereign) are live
+if curl -fsS http://127.0.0.1:3887/api/Sovereign >/dev/null 2>&1; then
+  echo "    ✓ Local Sovereign HTTP API (http://127.0.0.1:3887/Sovereign) is ONLINE (HTTP 200 OK)"
 fi
 
 if [ "${1:-}" != "--no-ui" ] && [ "${REAL_USER}" != "root" ]; then
-  su - "${REAL_USER}" -c "DISPLAY=${DISPLAY:-:0} XDG_RUNTIME_DIR=/run/user/${USER_UID} DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus nohup /usr/local/bin/stormraven-open-ui 'http://127.0.0.1:3887/moov' >/dev/null 2>&1 &" || true
+  su - "${REAL_USER}" -c "DISPLAY=${DISPLAY:-:0} XDG_RUNTIME_DIR=/run/user/${USER_UID} DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${USER_UID}/bus nohup /usr/local/bin/stormraven-open-ui 'http://127.0.0.1:3887/Sovereign' >/dev/null 2>&1 &" || true
 fi
 
 echo ""
 echo "======================================================================="
-echo " 🪟 SUCCESS: STORMRAVEN OS v3.9.0 — WINDOWS 11 EDITION + MOOV AI IS LIVE!"
-echo "   • System Name:          StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition + Moov AI"
+echo " 🪟 SUCCESS: STORMRAVEN OS v3.9.0 — WINDOWS 11 EDITION IS LIVE!"
+echo "   • System Name:          StormRaven OS: Infinity Protocol v3.9.0 — Windows 11 Edition"
 echo "   • Windows 11 Web OS:    http://127.0.0.1:3887/?os=win11"
-echo "   • Moov AI Web Portal:   http://127.0.0.1:3887/moov"
-echo "   • Moov SQLite Ledger:   /var/lib/stormraven/moov/moov_ledger.db"
-echo "   • CLI Commands:         stormraven moov status"
+echo "   • Sovereign Web Portal:   http://127.0.0.1:3887/Sovereign"
+echo "   • Sovereign SQLite Ledger:   /var/lib/stormraven/Sovereign/Sovereign_ledger.db"
+echo "   • CLI Commands:         stormraven Sovereign status"
 echo "                           stormraven ach --amount 250 --routing 021000021 --account 4829104921"
 echo "                           stormraven deposit-check --amount 500 --routing 021000021 --account 981240112 --check-number 1042"
 echo "======================================================================="

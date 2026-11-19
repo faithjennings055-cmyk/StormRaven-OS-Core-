@@ -24,7 +24,7 @@ StormRaven OS layers our Sovereign Ymir stack onto `dockur/windows` via three me
 2. **Automatic OEM Post-Install Layer (`C:\OEM\install.bat`):**
    - Executed automatically by `dockur/windows` on first boot.
    - Verifies the SHA-256 sidecar of `install-win11.ps1` (`Get-FileHash -Algorithm SHA256`) before invoking PowerShell — zero blind `irm | iex` execution.
-   - Installs the StormRaven Pantheon CLI (`stormraven`, `freya`, `cortana`, `wsu`, `moov-ai`), per-install 256-bit `Luci.key`, Ymir Glass dark theme, Skydive Desktop/CLI wrapper (`#103`), and starts the Bifrost Gateway inside the VM on `:3887` and `:8787`.
+   - Installs the StormRaven Pantheon CLI (`stormraven`, `freya`, `cortana`, `wsu`, `Sovereign-ai`), per-install 256-bit `Luci.key`, Ymir Glass dark theme, Skydive Desktop/CLI wrapper (`#103`), and starts the Bifrost Gateway inside the VM on `:3887` and `:8787`.
 3. **WinApps & WSU Sovereign Cell Compatibility (`#96`):**
    - Port `3389/tcp` is bound to `127.0.0.1:3389` (or configurable `STORMRAVEN_DOCKUR_RDP_PORT`) and verified via `/cert:tofu` (never `/cert:ignore`) with credentials piped via `/from-stdin` (`FREERDP_ASKPASS`).
 

@@ -86,8 +86,8 @@ mkdir -p "${WORK_DIR}" "${DOWNLOADS_DIR}"
 
 echo "======================================================================="
 echo " ✦ STORMRAVEN OS v3.9.0 — VENTOY DUAL-EDITION USB BUILDER"
-echo "   Edition 1: StormRaven OS — Ubuntu 24.04/26.04 LTS + Moov AI"
-echo "   Edition 2: StormRaven OS — Windows 11 Ymir Edition + Moov AI"
+echo "   Edition 1: StormRaven OS — Ubuntu 24.04/26.04 LTS"
+echo "   Edition 2: StormRaven OS — Windows 11 Ymir Edition"
 echo "   Features:  Ventoy v${VENTOY_VER} (GPT + UEFI/BIOS) · Custom Ymir Theme"
 echo "              TPM 2.0 / CPU Bypass · Offline Windows 11 Auto-Installer"
 echo "======================================================================="
@@ -249,7 +249,7 @@ mountroot() {
     if [ -d /run/casper-medium/linux-vm ]; then
         cp -f /run/casper-medium/linux-vm/* "${rootmnt}/usr/local/bin/" 2>/dev/null || true
         chmod 0755 "${rootmnt}/usr/local/bin/stormraven"* 2>/dev/null || true
-        ln -sf /usr/local/bin/stormraven-moov "${rootmnt}/usr/local/bin/moov-ai" 2>/dev/null || true
+        ln -sf /usr/local/bin/stormraven-Sovereign "${rootmnt}/usr/local/bin/Sovereign-ai" 2>/dev/null || true
     fi
     rm -f "${rootmnt}/tmp/"*.log 2>/dev/null || true
     chmod 1777 "${rootmnt}/tmp" "${rootmnt}/var/tmp" 2>/dev/null || true
@@ -268,7 +268,7 @@ set gfxmode=1920x1080,1280x800,auto
 set gfxpayload=keep
 terminal_output gfxterm
 
-menuentry "StormRaven OS v3.9.0 - Windows 11 Ymir Edition + Moov AI (Live / Install)" {
+menuentry "StormRaven OS v3.9.0 - Windows 11 Ymir Edition (Live / Install)" {
     linux /casper/vmlinuz boot=casper console=tty0 stormraven.edition=win11
     initrd /casper/initrd
 }
@@ -423,7 +423,7 @@ for ms_iso in "${DOWNLOADS_DIR}"/Win11*.iso "${DOWNLOADS_DIR}"/Windows11*.iso; d
   fi
 done
 
-echo "    -> Staging offline StormRaven Windows 11 + Moov AI payload (/StormRaven-Win11-Full/)..."
+echo "    -> Staging offline StormRaven Windows 11 payload (/StormRaven-Win11-Full/)..."
 cp -rf "${W11_UNPACK}/"* "${MNT_VTOY}/StormRaven-Win11-Full/" 2>/dev/null || true
 cp -f "${W11_UNPACK}/Install-StormRaven-Win11.ps1" "${MNT_VTOY}/StormRaven-Win11-Full/Install-StormRaven-Win11.ps1" 2>/dev/null || true
 (cd "${MNT_VTOY}/StormRaven-Win11-Full" && sha256sum Install-StormRaven-Win11.ps1 > Install-StormRaven-Win11.ps1.sha256)
@@ -471,7 +471,7 @@ cat > "${MNT_VTOY}/ventoy/autounattend-win11.xml" << 'EOF'
       <FirstLogonCommands>
         <SynchronousCommand wcm:action="add">
           <Order>1</Order>
-          <Description>Verify SHA-256 and Bootstrap StormRaven OS Windows 11 Edition + Moov AI from Ventoy USB</Description>
+          <Description>Verify SHA-256 and Bootstrap StormRaven OS Windows 11 Edition from Ventoy USB</Description>
           <CommandLine>powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "foreach ($d in [IO.DriveInfo]::GetDrives()) { $p = Join-Path $d.RootDirectory.FullName 'StormRaven-Win11-Full\Install-StormRaven-Win11.ps1'; $s = Join-Path $d.RootDirectory.FullName 'StormRaven-Win11-Full\Install-StormRaven-Win11.ps1.sha256'; if ((Test-Path $p) -and (Test-Path $s)) { if ((Get-FileHash $p -Algorithm SHA256).Hash.ToLower() -ne (Get-Content $s).Split()[0].ToLower()) { exit 1 }; &amp; $p; exit 0 } }"</CommandLine>
         </SynchronousCommand>
       </FirstLogonCommands>
@@ -493,11 +493,11 @@ cat > "${MNT_VTOY}/ventoy/ventoy.json" << 'EOF'
     "menu_alias": [
         {
             "image": "/ISO/StormRavenOS-Ubuntu-v3.9.0-amd64.iso",
-            "alias": "1) StormRaven OS v3.9.0 — Ubuntu Edition + Moov AI (Live / Install)"
+            "alias": "1) StormRaven OS v3.9.0 — Ubuntu Edition (Live / Install)"
         },
         {
             "image": "/ISO/StormRavenOS-Win11-Ymir-v3.9.0-amd64.iso",
-            "alias": "2) StormRaven OS v3.9.0 — Windows 11 Ymir Edition + Moov AI (Live / Install)"
+            "alias": "2) StormRaven OS v3.9.0 — Windows 11 Ymir Edition (Live / Install)"
         }
     ],
     "auto_install": [
@@ -520,8 +520,8 @@ rmdir "${MNT_VTOY}" 2>/dev/null || true
 echo ""
 echo "======================================================================="
 echo " ✦ SUCCESS: STORMRAVEN OS DUAL-EDITION VENTOY USB READY ON ${TARGET_DEV}!"
-echo "   • Edition 1: StormRaven OS v3.9.0 — Ubuntu Edition + Moov AI"
-echo "   • Edition 2: StormRaven OS v3.9.0 — Windows 11 Ymir Edition + Moov AI"
+echo "   • Edition 1: StormRaven OS v3.9.0 — Ubuntu Edition"
+echo "   • Edition 2: StormRaven OS v3.9.0 — Windows 11 Ymir Edition"
 echo "   • Bonus:     Drop any extra .iso into the 'STORMRAVEN/ISO' folder anytime"
 echo "                without reformatting — Ventoy lists & boots it automatically!"
 echo "======================================================================="

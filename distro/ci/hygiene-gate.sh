@@ -34,3 +34,16 @@ if [ "$fail" -eq 1 ]; then
 fi
 
 echo "[PASS] no dangling symlinks"
+
+echo "==> forbidden retired tokens (#114: moov)"
+while IFS= read -r hit; do
+  [ -n "$hit" ] || continue
+  printf '  [FAIL] retired token in %s\n' "$hit"
+  fail=1
+done < <(grep -ril "moov" . --exclude-dir=.git --exclude="hygiene-gate.sh" --exclude="COMPENDIUM_ACCURACY_AUDIT.md" 2>/dev/null || true)
+
+if [ "$fail" -eq 1 ]; then
+  echo "[FAIL] repository contains retired Moov references (#114)." >&2
+  exit 1
+fi
+echo "[PASS] no retired Moov references"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# StormRaven OS: Infinity Protocol v3.9.0 — 64-Bit Windows 10 Surface GPT/UEFI USB Creator (No Moov)
+# StormRaven OS: Infinity Protocol v3.9.0 — 64-Bit Windows 10 Surface GPT/UEFI USB Creator (No Sovereign)
 # =============================================================================
 # Regression story (Issue #108, 2026-11-16 Surface 3 incident; pattern source #87):
 #   A boot-repair sequence from Windows RE used 'assign letter=S' on an ambiguous
@@ -142,7 +142,7 @@ cp -f "${MNT_ISO}/sources/boot.wim" "${MNT_ESP}/sources/boot.wim"
 echo "==> [3/4] Copying full 64-bit Windows 10 installation payload to NTFS partition..."
 cp -rf "${MNT_ISO}/." "${MNT_NTFS}/"
 
-echo "==> [4/4] Staging StormRaven OS Infinity Protocol 64-Bit (Surface Edition, No Moov) + autounattend.xml..."
+echo "==> [4/4] Staging StormRaven OS Infinity Protocol 64-Bit (Surface Edition, No Sovereign) + autounattend.xml..."
 UNATTEND_TMP="/tmp/autounattend-win10-surface.xml"
 curl -fsSL "${CLOUD_URL}/autounattend-win10-surface.xml" -o "${UNATTEND_TMP}"
 curl -fsSL "${CLOUD_URL}/autounattend-win10-surface.xml.sha256" -o "${UNATTEND_TMP}.sha256"
@@ -164,4 +164,4 @@ fi
 rm -rf /tmp/sr-win10-oem "${ZIP_TMP}" "${ZIP_TMP}.sha256" "${UNATTEND_TMP}" "${UNATTEND_TMP}.sha256"
 sync
 
-echo "==> Done! ${USB_DEV} is now a Surface UEFI-bootable 64-bit Windows 10 Infinity Protocol USB (No Moov, no 0xc000000f)."
+echo "==> Done! ${USB_DEV} is now a Surface UEFI-bootable 64-bit Windows 10 Infinity Protocol USB (No Sovereign, no 0xc000000f)."

@@ -83,7 +83,7 @@ if [ ! -s "${SR_ROOT}/Luci.key" ]; then
   echo "sr-luci-v4-$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > "${SR_ROOT}/Luci.key"
 fi
 
-# Bundle official Windows x64 Embeddable Python 3.12 runtime so Odin Pantheon & Moov AI run offline out-of-the-box on Windows 11
+# Bundle official Windows x64 Embeddable Python 3.12 runtime so Odin Pantheon
 mkdir -p "${SR_ROOT}/python-win64"
 PY_EMBED_ZIP="${WORK_DIR}/python-3.12.7-embed-amd64.zip"
 if [ ! -s "${PY_EMBED_ZIP}" ]; then
