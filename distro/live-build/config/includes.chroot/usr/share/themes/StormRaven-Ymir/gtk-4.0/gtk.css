@@ -1,0 +1,52 @@
+/* StormRaven OS - Ymir Edition GTK3 (Ethereal Void) */
+@define-color sr_bg          #050811;
+@define-color sr_bg_alt      #0b1220;
+@define-color sr_bg_raised   #111c30;
+@define-color sr_border      #1f304d;
+@define-color sr_accent      #38bdf8;
+@define-color sr_accent2     #a855f7;
+@define-color sr_text        #e2e8f0;
+@define-color sr_text_dim    #94a3b8;
+
+window, .background, dialog, .view, treeview, textview, iconview,
+notebook, scrolledwindow, stack, stackswitcher, flowbox {
+  background-color: @sr_bg;
+  color: @sr_text;
+}
+headerbar, .titlebar, .toolbar, menubar, .menubar {
+  background-image: none;
+  background-color: @sr_bg_alt;
+  color: @sr_text;
+  border-bottom: 1px solid @sr_border;
+  box-shadow: none;
+}
+headerbar entry, headerbar button { background-color: @sr_bg_raised; }
+button, entry, spinbutton, combobox, .linked > button {
+  background-image: none;
+  background-color: @sr_bg_raised;
+  color: @sr_text;
+  border: 1px solid @sr_border;
+  border-radius: 8px;
+}
+button:hover, entry:hover { border-color: alpha(@sr_accent, 0.6); }
+button:active, button:checked { background-color: alpha(@sr_accent, 0.22); border-color: @sr_accent; }
+button.suggested-action { background-color: @sr_accent; color: #041016; font-weight: 700; }
+button.destructive-action { background-color: #b91c1c; color: #fff; }
+menu, .menu, .context-menu, popover, popover.background, .popover {
+  background-color: @sr_bg_alt;
+  color: @sr_text;
+  border: 1px solid @sr_border;
+  border-radius: 10px;
+}
+menuitem:hover, modelbutton:hover { background-color: alpha(@sr_accent, 0.18); }
+scrollbar slider { background-color: #2b3d5e; border-radius: 999px; min-width: 6px; min-height: 24px; }
+scrollbar slider:hover { background-color: @sr_accent; }
+progressbar trough { background-color: @sr_bg_raised; border-radius: 999px; }
+progressbar progress { background-image: linear-gradient(90deg, #0284c7, @sr_accent); border-radius: 999px; }
+switch { background-color: @sr_bg_raised; border: 1px solid @sr_border; }
+switch:checked { background-color: @sr_accent; }
+checkbutton check, radiobutton radio { background-color: @sr_bg_raised; border: 1px solid @sr_border; }
+checkbutton check:checked { background-color: @sr_accent; border-color: @sr_accent; }
+tooltip, tooltip.background { background-color: @sr_bg_raised; color: @sr_text; border: 1px solid @sr_border; border-radius: 8px; }
+.nautilus-window, .nautilus-canvas-item { background-color: @sr_bg; color: @sr_text; }
+terminal-window, vte-terminal, .terminal-screen { background-color: @sr_bg; color: @sr_text; }

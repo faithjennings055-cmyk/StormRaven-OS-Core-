@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Verification Gate
+GenericName=Artifact Verification
+Comment=Check ISO and package integrity against published SHA-256 sidecars
+Exec=xterm -bg "#050811" -fg "#4ade80" -fa "JetBrains Mono" -fs 11 -T "Verification Gate" -e bash -lc "stormraven-attest; exec bash"
+Icon=security-high
+Terminal=false
+Categories=System;
+Keywords=verify;checksum;stormraven;
