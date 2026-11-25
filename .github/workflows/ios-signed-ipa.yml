@@ -8,12 +8,13 @@ on:
         required: false
         default: 'org.starforge.stormraven.os'
       team_id:
-        description: 'Apple Developer Team ID (optional if using ad-hoc / AltStore / Sideloadly)'
+        description: 'Apple Developer Team ID (optional; falls back to repo secret)'
         required: false
         default: ''
   push:
     paths:
       - 'ios/**'
+      - 'archive/ios/**'
       - '.github/workflows/ios-signed-ipa.yml'
 
 jobs:
@@ -29,21 +30,68 @@ jobs:
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
           xcodebuild -version
 
+      - name: Resolve iOS project path
+        id: resolve
+        run: |
+          set -euo pipefail
+          # The Xcode project has moved between ios/ and archive/ios/ before.
+          # Resolve it wherever it actually lives instead of hardcoding one path,
+          # so a move never silently breaks signing again.
+          for base in ios archive/ios; do
+            if [ -d "$base/StormRavenCompanion" ]; then
+              echo "Found StormRavenCompanion at $base/StormRavenCompanion"
+              echo "project_dir=$base/StormRavenCompanion" >> "$GITHUB_OUTPUT"
+              echo "script_path=$base/StormRavenCompanion/scripts/cloud-build-and-sign.sh" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "::error::StormRavenCompanion not found in ios/ or archive/ios/. The signing script cannot run."
+          find . -maxdepth 4 -name 'StormRavenCompanion' -type d 2>/dev/null || true
+          exit 1
+
+      - name: Report signing credentials present
+        env:
+          TEAM_ID_A: ${{ secrets.APPLE_TEAM_ID }}
+          TEAM_ID_B: ${{ secrets.APPLETEAMID }}
+          P12_A: ${{ secrets.APPLE_P12_BASE64 }}
+          P12_B: ${{ secrets.APPLEP12BASE64 }}
+          PROV_A: ${{ secrets.APPLE_PROVISION_BASE64 }}
+          PROV_B: ${{ secrets.APPLEPROVISIONBASE64 }}
+          ASC_KEY: ${{ secrets.APPLE_ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          # Which credential names are populated, without ever printing values.
+          # Three different naming conventions have been used across the crew;
+          # the build step accepts any of them.
+          chk() { if [ -n "${2:-}" ]; then echo "  $1: present"; else echo "  $1: missing"; fi; }
+          echo "Signing credentials:"
+          chk "APPLE_TEAM_ID"            "${TEAM_ID_A:-}"
+          chk "APPLETEAMID"              "${TEAM_ID_B:-}"
+          chk "APPLE_P12_BASE64"         "${P12_A:-}"
+          chk "APPLEP12BASE64"           "${P12_B:-}"
+          chk "APPLE_PROVISION_BASE64"   "${PROV_A:-}"
+          chk "APPLEPROVISIONBASE64"     "${PROV_B:-}"
+          chk "APPLE_ASC_KEY_P8"         "${ASC_KEY:-}"
+
       - name: Package & Sign StormRavenCompanion.ipa
         env:
           BUNDLE_ID: ${{ github.event.inputs.bundle_id || 'org.starforge.stormraven.os' }}
-          APPLE_TEAM_ID: ${{ github.event.inputs.team_id || secrets.APPLE_TEAM_ID || '' }}
-          APPLE_P12_BASE64: ${{ secrets.APPLE_P12_BASE64 || '' }}
-          APPLE_P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD || '' }}
-          APPLE_PROVISION_BASE64: ${{ secrets.APPLE_PROVISION_BASE64 || '' }}
+          # Accept either secret naming convention so whoever stored them wins.
+          APPLE_TEAM_ID: ${{ github.event.inputs.team_id || secrets.APPLE_TEAM_ID || secrets.APPLETEAMID || '' }}
+          APPLE_P12_BASE64: ${{ secrets.APPLE_P12_BASE64 || secrets.APPLEP12BASE64 || '' }}
+          APPLE_P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD || secrets.APPLEP12PASSWORD || '' }}
+          APPLE_PROVISION_BASE64: ${{ secrets.APPLE_PROVISION_BASE64 || secrets.APPLEPROVISIONBASE64 || '' }}
         run: |
-          bash ios/StormRavenCompanion/scripts/cloud-build-and-sign.sh
+          set -euo pipefail
+          bash "${{ steps.resolve.outputs.script_path }}"
 
       - name: Upload StormRavenOS Signed/Compiled .ipa Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: StormRavenOS-iOS-ipa
           path: |
-            ios/StormRavenCompanion/build/StormRavenOS.ipa
-            ios/StormRavenCompanion/build/StormRavenOS.ipa.sha256
+            ${{ steps.resolve.outputs.project_dir }}/build/StormRavenOS.ipa
+            ${{ steps.resolve.outputs.project_dir }}/build/StormRavenOS.ipa.sha256
           retention-days: 30
+          if-no-files-found: warn
