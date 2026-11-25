@@ -61,9 +61,9 @@ jobs:
           P12_B: ${{ secrets.APPLEP12BASE64 }}
           PROV_A: ${{ secrets.APPLE_PROVISION_BASE64 }}
           PROV_B: ${{ secrets.APPLEPROVISIONBASE64 }}
-          ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
+          ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID || secrets.APPLEASCKEYID }}
           ASC_ISSUER: ${{ secrets.APPLE_ASC_ISSUER_ID || secrets.APPLEASCISSUER_ID }}
-          ASC_KEY: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 }}
+          ASC_KEY: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 || secrets.APPLEASCKEYP8 }}
         run: |
           set -euo pipefail
           # Which credential names are populated, without ever printing values.
@@ -91,7 +91,7 @@ jobs:
           APPLE_PROVISION_BASE64: ${{ secrets.APPLE_PROVISION_BASE64 || secrets.APPLEPROVISIONBASE64 || '' }}
           APPLE_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID || secrets.APPLEASCKEYID || '' }}
           APPLE_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID || secrets.APPLEASCISSUER_ID || '' }}
-          APPLE_ASC_KEY_P8_BASE64: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 || '' }}
+          APPLE_ASC_KEY_P8_BASE64: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 || secrets.APPLEASCKEYP8 || '' }}
           EXPORT_METHOD: ${{ github.event.inputs.export_method || 'development' }}
         run: |
           set -euo pipefail
