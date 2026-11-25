@@ -1,0 +1,53 @@
+name: iOS signing preflight (ASC key check)
+
+# Why: three macOS builds were burned on a credential pair Apple rejected with
+# 401. This runs the validator against Apple's API in ~10 seconds and fails
+# loudly, so a bad key/issuer pair never costs a full signing run.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'distro/ci/validate-asc-key.sh'
+      - '.github/workflows/ios-asc-preflight.yml'
+
+jobs:
+  preflight:
+    name: Validate App Store Connect key
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate key/issuer pair against Apple
+        env:
+          KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID || secrets.APPLEASCKEYID }}
+          ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID || secrets.APPLEASCISSUER_ID }}
+          P8_B64: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 || secrets.APPLEASCKEYP8 }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -n "$KEY_ID" ]    || missing="$missing APPLE_ASC_KEY_ID"
+          [ -n "$ISSUER_ID" ] || missing="$missing APPLE_ASC_ISSUER_ID"
+          [ -n "$P8_B64" ]    || missing="$missing APPLE_ASC_KEY_P8_BASE64"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repo secrets:$missing"
+            exit 1
+          fi
+          install -d "$RUNNER_TEMP/asc"
+          printf '%s' "$P8_B64" | base64 -d > "$RUNNER_TEMP/asc/AuthKey_${KEY_ID}.p8"
+          chmod 600 "$RUNNER_TEMP/asc/AuthKey_${KEY_ID}.p8"
+          bash distro/ci/validate-asc-key.sh \
+            --key "$RUNNER_TEMP/asc/AuthKey_${KEY_ID}.p8" \
+            --key-id "$KEY_ID" \
+            --issuer "$ISSUER_ID" | tee "$RUNNER_TEMP/preflight.txt"
+          rm -rf "$RUNNER_TEMP/asc"
+
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### App Store Connect preflight"
+            echo '```'
+            cat "$RUNNER_TEMP/preflight.txt" 2>/dev/null || echo "no output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
