@@ -1,0 +1,60 @@
+# StormRaven OS - Ymir Edition GNOME defaults
+# Consumed at build time by glib-compile-schemas; Ubuntu GNOME reads these as
+# system-wide defaults, so a fresh user lands on the Ymir desktop with no
+# first-run setup.
+[org.gnome.desktop.interface]
+gtk-theme='StormRaven-Ymir'
+color-scheme='prefer-dark'
+icon-theme='Yaru'
+cursor-theme='Yaru'
+clock-format='24h'
+font-name='Inter 11'
+document-font-name='Inter 11'
+monospace-font-name='JetBrains Mono 11'
+
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/stormraven/ymir-void.jpg'
+picture-uri-dark='file:///usr/share/backgrounds/stormraven/ymir-void.jpg'
+picture-options='zoom'
+primary-color='#050811'
+secondary-color='#0b1220'
+
+[org.gnome.desktop.screensaver]
+picture-uri='file:///usr/share/backgrounds/stormraven/ymir-void.jpg'
+primary-color='#050811'
+
+[org.gnome.shell]
+favorite-apps=['org.gnome.Terminal.desktop','org.gnome.Nautilus.desktop','stormraven-hud.desktop','stormraven-odin.desktop','org.gnome.TextEditor.desktop','org.gnome.Settings.desktop','stormraven-installer.desktop']
+enabled-extensions=['ubuntu-dock@ubuntu.com']
+command-history=['stormraven status','stormraven odin','stormraven health']
+
+# Ubuntu 26.04 ships ubuntu-dock (a dash-to-dock fork). Using the dash-to-dock
+# UUID here silently does nothing: the extension simply is not present, so the
+# dock keeps Ubuntu defaults and these keys are never read.
+[org.gnome.shell.extensions.ubuntu-dock]
+dock-position='LEFT'
+extend-height=false
+dock-fixed=true
+autohide=false
+intellihide=false
+icon-size=40
+show-mounts=true
+show-trash=true
+transparency-mode='FIXED'
+background-opacity=0.78
+running-indicator-style='DOTS'
+
+[org.gnome.desktop.wm.preferences]
+button-layout='appmenu:none'
+titlebar-font='Inter Bold 11'
+
+[org.gnome.mutter]
+center-new-windows=true
+edge-tiling=true
+
+[org.gnome.Nautilus]
+default-folder-viewer='list-view'
+
+[org.gnome.TextEditor]
+show-line-numbers=true
+highlight-current-line=true

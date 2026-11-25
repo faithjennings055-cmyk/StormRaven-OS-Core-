@@ -196,6 +196,29 @@ apt-get install -y --no-install-recommends \
   chkrootkit \
   libimage-exiftool-perl
 
+# --- Real Ubuntu GNOME (Faith's call, 2026-11-25) ---
+# StormRaven Ubuntu Edition must look and behave like Ubuntu, not like a custom
+# Openbox shell. ubuntu-desktop-minimal is genuine Ubuntu GNOME + Yaru without
+# the LibreOffice/media bulk of the full metapackage (~1.2 GB vs ~1.5 GB).
+# GNOME is the default session; the Openbox "Ethereal Void" session stays
+# installed as a low-RAM fallback, which is why openbox/lightdm remain below.
+#
+# gdm3 replaces lightdm as the display manager: ubuntu-desktop-minimal pulls
+# gdm3 in, and having two DMs installed makes which one starts depend on
+# postinst ordering, which is exactly the kind of nondeterminism we removed
+# from the artifact pipeline.
+apt-get install -y --no-install-recommends \
+  ubuntu-desktop-minimal \
+  gnome-shell \
+  gnome-shell-extensions \
+  gnome-tweaks \
+  yaru-theme-gtk \
+  yaru-theme-icon \
+  yaru-theme-gnome-shell \
+  fonts-inter \
+  fonts-jetbrains-mono \
+  xterm || true
+
 # --- Modern desktop baseline & Ethereal Void Graphical Desktop UI (#26, #48) ---
 # falkon's postinst symlinks into /usr/share/qt5 without creating the parent dir (resolute packaging bug)
 mkdir -p /usr/share/qt5 /usr/share/hunspell-bdic
@@ -518,13 +541,58 @@ ln -sf /lib/systemd/system/systemd-resolved.service /etc/systemd/system/multi-us
 # so users land on tty1 instead of the Ethereal Void desktop.
 systemctl set-default graphical.target || true
 
+# --- Ymir GNOME layer: theme, wallpaper, dconf defaults, app grid entries ---
+# Applied at build time so the live session and the installed system both boot
+# straight into the StormRaven-styled GNOME with no first-run setup. The
+# gschema override is compiled here; if glib-compile-schemas is unavailable the
+# layer is skipped loudly rather than shipping half-applied defaults.
+echo "==> Installing StormRaven Ymir GNOME layer..."
+if [ -d /usr/share/themes/StormRaven-Ymir ] && [ -f /usr/share/glib-2.0/schemas/90-stormraven-gnome.gschema.override ]; then
+  if command -v glib-compile-schemas >/dev/null 2>&1; then
+    glib-compile-schemas /usr/share/glib-2.0/schemas/ && echo "    [+] GNOME schema defaults compiled"
+  else
+    echo "    [!] glib-compile-schemas missing - GNOME defaults will not apply" >&2
+  fi
+else
+  echo "    [!] Ymir GNOME layer files missing from the ISO tree" >&2
+fi
+
+# GNOME is the default session; Ethereal Void (Openbox) remains selectable.
+mkdir -p /usr/share/xsessions
+cat > /usr/share/xsessions/stormraven-gnome.desktop <<'XGNOME'
+[Desktop Entry]
+Name=StormRaven OS (Ubuntu)
+Comment=Ubuntu GNOME with the StormRaven Ymir theme
+Exec=gnome-session
+Type=Application
+X-GDM-SessionRegisters=true
+XGNOME
+
+# gdm3 autologin for the live session (mirrors the lightdm config below, which
+# stays for anyone booting the Ethereal Void fallback).
+mkdir -p /etc/gdm3
+cat > /etc/gdm3/custom.conf <<'GDMCONF'
+[daemon]
+AutomaticLoginEnable=true
+AutomaticLogin=ubuntu
+WaylandEnable=true
+
+[security]
+
+[xdmcp]
+
+[chooser]
+
+[debug]
+GDMCONF
+
 # Configure LightDM graphical autologin & tty1 fallback launcher (#48)
 mkdir -p /etc/lightdm/lightdm.conf.d /usr/share/xsessions
 cat > /etc/lightdm/lightdm.conf.d/50-stormraven.conf <<'LIGHTDM'
 [Seat:*]
 autologin-user=ubuntu
 autologin-user-timeout=0
-user-session=stormraven-void
+user-session=stormraven-gnome
 LIGHTDM
 
 cat > /usr/share/xsessions/stormraven-void.desktop <<'XSESS'
@@ -541,7 +609,11 @@ cat > /home/ubuntu/.bash_profile <<'PROFILE'
 if [ -f "$HOME/.bashrc" ]; then
   . "$HOME/.bashrc"
 fi
-if [ -z "${DISPLAY:-}" ] && [ "$(tty 2>/dev/null || true)" = "/dev/tty1" ] && ! grep -q "forensic=1" /proc/cmdline 2>/dev/null; then
+# Only fall back to the Openbox "Ethereal Void" session when no display
+# manager is up. gdm3 now owns the graphical session, so without this check an
+# autologin shell on tty1 would start a second X server and collide with the
+# running GNOME session.
+if [ -z "${DISPLAY:-}" ] && [ "$(tty 2>/dev/null || true)" = "/dev/tty1" ] && ! grep -q "forensic=1" /proc/cmdline 2>/dev/null && ! systemctl -q is-active gdm3 2>/dev/null && ! systemctl -q is-active gdm 2>/dev/null; then
   if [ ! -f /tmp/.stormraven-x11-attempted ]; then
     touch /tmp/.stormraven-x11-attempted
     echo "[StormRaven OS] Launching Ethereal Void Desktop (press Ctrl+Alt+F2 anytime for master console)..."
