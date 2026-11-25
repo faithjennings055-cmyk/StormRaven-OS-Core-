@@ -11,6 +11,10 @@ on:
         description: 'Apple Developer Team ID (optional; falls back to repo secret)'
         required: false
         default: ''
+      export_method:
+        description: 'development | ad-hoc | app-store'
+        required: false
+        default: 'development'
   push:
     paths:
       - 'ios/**'
@@ -57,7 +61,9 @@ jobs:
           P12_B: ${{ secrets.APPLEP12BASE64 }}
           PROV_A: ${{ secrets.APPLE_PROVISION_BASE64 }}
           PROV_B: ${{ secrets.APPLEPROVISIONBASE64 }}
-          ASC_KEY: ${{ secrets.APPLE_ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.APPLE_ASC_ISSUER_ID }}
+          ASC_KEY: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 }}
         run: |
           set -euo pipefail
           # Which credential names are populated, without ever printing values.
@@ -71,7 +77,9 @@ jobs:
           chk "APPLEP12BASE64"           "${P12_B:-}"
           chk "APPLE_PROVISION_BASE64"   "${PROV_A:-}"
           chk "APPLEPROVISIONBASE64"     "${PROV_B:-}"
-          chk "APPLE_ASC_KEY_P8"         "${ASC_KEY:-}"
+          chk "APPLE_ASC_KEY_ID"         "${ASC_KEY_ID:-}"
+          chk "APPLE_ASC_ISSUER_ID"      "${ASC_ISSUER:-}"
+          chk "APPLE_ASC_KEY_P8_BASE64"  "${ASC_KEY:-}"
 
       - name: Package & Sign StormRavenCompanion.ipa
         env:
@@ -81,6 +89,10 @@ jobs:
           APPLE_P12_BASE64: ${{ secrets.APPLE_P12_BASE64 || secrets.APPLEP12BASE64 || '' }}
           APPLE_P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD || secrets.APPLEP12PASSWORD || '' }}
           APPLE_PROVISION_BASE64: ${{ secrets.APPLE_PROVISION_BASE64 || secrets.APPLEPROVISIONBASE64 || '' }}
+          APPLE_ASC_KEY_ID: ${{ secrets.APPLE_ASC_KEY_ID || '' }}
+          APPLE_ASC_ISSUER_ID: ${{ secrets.APPLE_ASC_ISSUER_ID || '' }}
+          APPLE_ASC_KEY_P8_BASE64: ${{ secrets.APPLE_ASC_KEY_P8_BASE64 || secrets.APPLE_ASC_KEY_P8 || '' }}
+          EXPORT_METHOD: ${{ github.event.inputs.export_method || 'development' }}
         run: |
           set -euo pipefail
           bash "${{ steps.resolve.outputs.script_path }}"
